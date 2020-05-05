@@ -27,6 +27,7 @@
 			</div>
 			<div class="sliderGroup">
 				<div id="sliderGroup1"></div>
+				<!--
 				<div id="sliderGroup2">
 					<div class="dataset">
 						<div>
@@ -41,12 +42,15 @@
 							<input class="slider" id="gamma_slider" type="range" min="0" max="50" value="10"/>
 						</div>
 						<input class="opacity" id="gamma_value" type="text" value="0"/>
-					</div>
-				</div>
+					</div> 
+				</div> 
+				-->
 			</div>
 			<div class="hidebtn">
-				<button id="btnHideShow" onclick="hideShow();">Hide delineations</button>
-				<button id="editbtn">Edit</button>
+				<button id="btnHideShow" onclick="hideShow();">Hide regions</button>
+				<!--
+				<button id="editbtn">Modify layer settings</button>
+				-->
 				<div id="btnShrinkSliderpanel" onclick="checkSliderPanel();"></div>
 			</div>
 		</div>
@@ -54,6 +58,14 @@
 		<div id="subviewPanel" class="subviewPanel subviewPanelShow">
 			<div id="sagittal_holder" class="sagittalHolder" >
 				<div id="sagittal_label" class="sagittalLabel" ></div>
+				<div class="spinControl">
+					<div id="sagittal_spinner" class="spinner">
+						<input class="spinner-input" type="text" value="1" maxlength="3"/>
+						<div class="spinner-button spinner-up"><div></div></div>
+						<div class="spinner-button spinner-down"><div></div></div>
+					</div>
+					<div id="sagittal_spinner_max" class="spinner_max">123</div>
+				</div>
 				<img id="sagittal_image" alt="Sagittal view" width="200" height="200"/>
 			</div>
 			<div id="btnShrinkSubviewpanel" onclick="checkSubviewPanel();"></div>
@@ -108,8 +120,12 @@ $(window).load(function() {
 	$("#infoPanel").css({"left" : $(".vsplitter").css("left")});
 	$(this).bind('splitter.resize', function(e) {
 		$("#infoPanel").css({"left" : $(".vsplitter").css("left")});
-	});
+    });
+    //hideInfoPanel();
+
 });
+
+
 
 $(window).resize(function(){
 	var mh = 3000;
@@ -127,15 +143,24 @@ $(window).resize(function(){
 	{
 		$('#widget').width(mw).height(mh).split({orientation:'vertical', limit:200, position:'20%', minheight:'600px'});
 	}
+	windowSizeCheck();
 });
 	
-// Check windows resize
-window.onload = windowSizeCheck;
+// Do something after page has loaded
+window.onload = function(){
+	windowSizeCheck();
+	hideInfoPanel();
+};
+
+
 window.onresize = windowSizeCheck;
 
 function windowSizeCheck(){
-	//
-	if ( window.innerHeight < document.getElementById("infoPanel").clientHeight + 40 ) {
+    //AW 2020/01/26: Added a check to see if info panel is hidden or not
+    var infoPanelNowClass = document.getElementById("infoPanel").className;
+    //console.log(infoPanelNowClass);
+    if ( (window.innerHeight < document.getElementById("infoPanel").clientHeight + 40)
+        || infoPanelNowClass == "infoPanel infoPanelHide") {
 		hideInfoPanel();
 	} else {
 		showInfoPanel();
@@ -211,13 +236,13 @@ function checkInfoPanel(){
 		hideInfoPanel();
 	} else {
 		showInfoPanel();
-	}
+    }
 };
 // Hide
 function hideInfoPanel() {
 		document.getElementById("infoPanel").className="infoPanel infoPanelHide";
 		document.getElementById("infoPanel").style.top="-" + ( document.getElementById("infoPanel").clientHeight - 23 ) + "px";
-		document.getElementById("btnShrinkInfoPanel").style.backgroundPosition="left top";
+        document.getElementById("btnShrinkInfoPanel").style.backgroundPosition="left top";
 }
 // Show
 function showInfoPanel() {
@@ -256,8 +281,7 @@ function showPosview2Panel() {
 		document.getElementById("posviewPanel2").style.height="";
 		//document.getElementById("posDis").style.marginBottom="";
 		document.getElementById("btnShrinkPosviewpanel").style.backgroundPosition="left bottom";
-}
-
+}	
 
 </script>
 
@@ -275,9 +299,9 @@ function showPosview2Panel() {
 	</div>
 </div>
 <!-- end of #widget -->
-	<script src="./js/alexViewer.js"></script>
+	<script src="./js/zaviewer.js"></script>
 	</div>
 	</body>
 </html>
 
-
+ 

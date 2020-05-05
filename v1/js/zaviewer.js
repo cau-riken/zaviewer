@@ -348,14 +348,14 @@ function hideShow() {
 				$("#poscanvas").show();
 			});
 		
-			$("#btnHideShow").html('Show delineations'); 
+			$("#btnHideShow").html('Show regions'); 
 		}else{
 			set.forEach(function(el){
 				el.show();
 				$("#poscanvas").hide();
 			});
 		
-			$("#btnHideShow").html('Hide delineations'); 
+			$("#btnHideShow").html('Hide regions'); 
 		}
 		bHideDelineation = !bHideDelineation;
 	}
@@ -393,9 +393,11 @@ function addLayer( key, name ,ext ) {
 	var addLayerHandler = function( event ) {
 		viewer.world.removeHandler( "add-item", addLayerHandler );
 		layers[key].name = name;
+		updateFilters();
 	};
 	viewer.world.addHandler( "add-item", addLayerHandler );
 	viewer.addTiledImage( options );
+        
 }
 //End of layer stuff
 
@@ -412,7 +414,7 @@ for(i=0; url[i]; i++) {
 
 
 $(document).ready(function(){
-	updateFilters();
+//	updateFilters();
 });
 
 $.ajax({
@@ -464,6 +466,7 @@ $.ajax({
 		}
 		
 		matrix = response.matrix?response.matrix.split(","):matrix;
+		//console.log(matrix);
 		//axialSliceStep = response.axial_slice_step;
 		coronalSliceStep = response.slice_step;
 		//sagittalSliceStep = response.sagittal_slice_step;
@@ -493,6 +496,7 @@ $.ajax({
 				//datasetIndex[key] = i++;
 				layers[key] = {"name":value.metadata, "ext":"."+value.extension, "index":i++};
 			});
+			
 		}
 		
 		if(response.first_access){
@@ -500,7 +504,7 @@ $.ajax({
 			initialSlice = parseInt(response.first_access.slide ? response.first_access.slide : 30);
 			if (response.first_access.delineations == "hide") {
 				bHideDelineation = true;
-				$("#btnHideShow").html('Show delineations');
+				$("#btnHideShow").html('Show regions');
 			}
 
 	//		selectedSubview = CORONAL;
@@ -513,7 +517,15 @@ $.ajax({
 
 		//$("#axial_holder").hide();
 		//$("#coronal_holder").hide();
-		//if(sagittalSlideCount == 0){$("#sagittal_holder").hide();}
+		if(coronalSlideCount == 0){$("#sagittal_holder").hide();}
+		else if(coronalSlideCount == 1){
+			$("#sagittal_spinner").hide();
+                	$("#sagittal_spinner_max").hide();
+		}else{
+			$("#sagittal_spinner>input").val(coronalChosenSlice);
+			$("#sagittal_spinner>input").attr('maxlength',((String)(coronalSlideCount-1)).length);
+			$("#sagittal_spinner_max").html(coronalSlideCount-1);
+		}
 		//$("#sagittal_spinner").hide();
 		//$("#sagittal_spinner_max").hide();
 				
@@ -524,7 +536,7 @@ $.ajax({
 			$("#gamma_slider").val(response.gamma);
 		}
 		if(response.bright || response.gamma){
-			updateFilters();
+		//	updateFilters();
 		}
 		
 		if(response.group_id || (response.data && Object.keys(response.data).length > 0)){
@@ -545,7 +557,7 @@ function showSlider(key , name, opacity){
 	html +=   "<br/>";
 	html +=   "<div>";
 	html +=     "<div>";
-	html +=       "<input type=\"checkbox\" id=\"" + key + "Enabled\" class=\"opcChk\" />";
+	html +=       "<input type=\"checkbox\" id=\"" + key + "Enabled\" class=\"opcChk\" checked/>";
 	html +=     "</div>";
 	html +=     "<div>";
 	html +=       "<input type=\"range\" id=\"" + key + "\" class=\"slider\" value=\""+opacity+"\" />";
@@ -640,13 +652,17 @@ function showInfoText(publicId){
 
 //--------------------------------------------------
 //viewer init
+//https://github.com/openseadragon/openseadragon/issues/1421 to improve caching
 var viewer = OpenSeadragon({
 	id: "openseadragon1",
 	tileSources: tileSources,
 	initialPage: initialSlice,
 	minZoomLevel: 0,
-	maxZoomLevel: 10,
+	minZoomImageRatio: 0.5,
+	maxZoomLevel: 16,
+	maxImageCacheCount: 2000,
 	sequenceMode: true,
+	preserveViewport: true,
 	showHomeControl: false,
 	showZoomControl: false,
 	showSequenceControl: false,
@@ -657,18 +673,18 @@ var viewer = OpenSeadragon({
 });
 
 viewer.scalebar({
-	type: OpenSeadragon.ScalebarType.MAP,
+	type: OpenSeadragon.ScalebarType.MICROSCOPY,
 	pixelsPerMeter:1000/(getPointXY(0,imageSize/2).x - getPointXY(imageSize,imageSize/2).x)*imageSize,//37cm:1000px
-	minWidth: "75px",
+	minWidth: "150px",
 	location: OpenSeadragon.ScalebarLocation.BOTTOM_LEFT,
 	xOffset: 5,
 	yOffset: 10,
 	stayInsideImage: false,
-	color: "rgb(150, 150, 150)",
+	color: "rgb(255, 0, 0)",
 	fontColor: "rgb(255,255,255)",
-	backgroundColor: "rgba(100,100, 100, 0.5)",
+	backgroundColor: "rgba(100,100, 100, 0.25)",
 	fontSize: "small",
-	barThickness: 2
+	barThickness: 4
 });
 
 
@@ -691,19 +707,21 @@ viewer.addHandler('open', function (event) {
 			addLayer(key, value.name, value.ext);
 		} else {
 			setOpacity(key);
+			
 			if(!viewer.referenceStrip){
-				viewer.referenceStrip = new OpenSeadragon.ReferenceStrip({
-					id:          viewer.referenceStripElement,
-					position:    viewer.referenceStripPosition,
-					sizeRatio:   viewer.referenceStripSizeRatio,
-					scroll:      viewer.referenceStripScroll,
-					height:      viewer.referenceStripHeight,
-					width:       viewer.referenceStripWidth,
-					tileSources: viewer.tileSources,
-					prefixUrl:   viewer.prefixUrl,
-					viewer:      viewer
-				});
-				viewer.referenceStrip.setFocus(viewer.currentPage());
+				//AW(2020/01/16): Disabled reference strip
+//				viewer.referenceStrip = new OpenSeadragon.ReferenceStrip({
+//					id:          viewer.referenceStripElement,
+//					position:    viewer.referenceStripPosition,
+//					sizeRatio:   viewer.referenceStripSizeRatio,
+//					scroll:      viewer.referenceStripScroll,
+//					height:      viewer.referenceStripHeight,
+//					width:       viewer.referenceStripWidth,
+//					tileSources: viewer.tileSources,
+//					prefixUrl:   viewer.prefixUrl,
+//					viewer:      viewer
+//				});
+//				viewer.referenceStrip.setFocus(viewer.currentPage());
 			}
 		}
 		i++;
@@ -713,6 +731,7 @@ viewer.addHandler('open', function (event) {
 	$(viewer.canvas).on('mousemove.posview', mousemoveHandler);
 	
 	updateSubVLine(viewer.currentPage());
+
 });
 	
 viewer.addHandler('resize', function (event) {
@@ -733,7 +752,7 @@ viewer.addHandler('add-overlay', function (event) {
 	if(svgFolerName != ""){
 		//addSVGData(dataRootPath + "/" + svgFolerName + "/coronal/Anno_"+ (currentPage - coronalFirstIndex ) + ".svg",event);
 		addSVGData(PUBLISH_PATH + "/" + svgFolerName + "/Anno_"+ (viewer.currentPage() - coronalFirstIndex ) + ".svg",event);
-	}
+	}	
 });
 
 //Handle changing the page; perhaps dynamically load new data at this point
@@ -756,6 +775,7 @@ viewer.addHandler('page', function (event) {
 
 //--------------------------------------------------
 // position
+
 var mousemoveHandler = function(event) {
 	if(viewer.currentOverlays[0] == null){return;}
 	var rect = viewer.canvas.getBoundingClientRect();
@@ -925,6 +945,8 @@ function getPoint(x,y){
 	var tx = imageSize-x;
 	var ty = imageSize-y;
 	point = new Array(tx,coronalChosenSlice * coronalSliceStep,ty,1);
+	//console.log(point);
+	//console.log(matrix);
 	//return multiplyMatrixAndPoint(point);
 	var result = [0,0,0,0];
 	for(var i = 0; i < 4;i++){
@@ -932,6 +954,7 @@ function getPoint(x,y){
 		result[i] += (matrix[i*4 + j] * point[j]);
 		}
 	}
+	//console.log(result);
 	return result;
 }
 function getPointXY(x,y){
@@ -941,7 +964,7 @@ function getPointXY(x,y){
 
 function setPoint(x,y){
 	var pos = getPoint(x,y);
-	
+        	
 	//$("#posnow").html("x: "+(pos[0]+".00").replace(/(\.\d{2}).*$/,"$1") + "<br/>y: "+(pos[1]+".00").replace(/(\.\d{2}).*$/,"$1") + "<br/>z: "+(pos[2]+".00").replace(/(\.\d{2}).*$/,"$1"));
 	$("#posX").text(pos[0].toFixed(2));
 	$("#posY").text(pos[1].toFixed(2));
@@ -950,21 +973,64 @@ function setPoint(x,y){
 
 	
 //--------------------------------------------------
+//AW(2010/01/16): Added a tileDrawnHandler event to call updateFilters once the tiles have drawn properly
+var tileDrawnHandler = function(event) {
+	//var c=viewer.world.getItemCount();
+	
+	//$.each(layers,function(key){
+	//	
+	//	if(layers[key].name.includes("nn_tracer")){
+	//		updateFilters();
+	//	}
+	//});
+	//if (c==5){
+	//	viewer.removeHandler('tile-drawn',tileDrawnHandler);
+	//	updateFilters();
+	//}
+}
+viewer.addHandler('tile-drawn',tileDrawnHandler);
+//AW(2010/01/16): Modified code to add alpha channel, now the brightness and gamma are disabled, and we expect the NN seg to work on layer
+function fullyLoaded(){
+	console.log("fullylod");
+}
 
 function updateFilters() {
 	if(viewer){
-		var processors = [];
-		if($('#intensity_slider').val() != "0"){
-			processors.push(OpenSeadragon.Filters.BRIGHTNESS(parseFloat($('#intensity_slider').val())));
-		}
-		if($('#gamma_slider').val() != "10"){
-			processors.push(OpenSeadragon.Filters.GAMMA(parseFloat($('#gamma_slider').val())/10.0));
-		}
-		viewer.setFilterOptions({
-			filters: {
-				processors: processors,
+		var nn_tracer_layer_ind = -1;	
+		var count=0;
+		$.each(layers,function(key){
+			//console.log(key);
+			if(layers[key].name.includes("nn_tracer")){
+//				console.log("FOUND");
+				nn_tracer_layer_ind=count;
 			}
+			count++;
 		});
+//		console.log(nn_tracer_layer_ind);
+		var processors = [];
+		//if($('#intensity_slider').val() != "0"){
+		//	processors.push(OpenSeadragon.Filters.BRIGHTNESS(parseFloat($('#intensity_slider').val())));
+		//}
+		//if($('#gamma_slider').val() != "10"){
+		//	processors.push(OpenSeadragon.Filters.GAMMA(parseFloat($('#gamma_slider').val())/10.0));
+		//}
+		console.log(nn_tracer_layer_ind);
+		var nn_layer = viewer.world.getItemAt(nn_tracer_layer_ind);
+		console.log(nn_layer);
+		if (nn_tracer_layer_ind!=-1 && nn_layer !== undefined){
+			//viewer.world.getItemAt(nn_tracer_layer_ind).addHandler('tile-loaded',fullyLoaded);
+			viewer.setFilterOptions({
+				filters: [{
+				    items: viewer.world.getItemAt(nn_tracer_layer_ind),
+	                            processors: [
+					OpenSeadragon.Filters.INTENSITYALPHA()
+                	            ]	
+				}]
+			});
+		}
+		else if (nn_tracer_layer_ind!=-1 && nn_layer === undefined){
+			waitForNNLayer(nn_tracer_layer_ind);
+		}
 	}
 	$("#intensity_value").val($("#intensity_slider").val());
 	$("#gamma_value").val((parseFloat($("#gamma_slider").val())/10.0).toFixed(1));
@@ -974,8 +1040,17 @@ $('#intensity_value, #gamma_value').change(function(){
 	$("#gamma_value").val(parseFloat($("#gamma_value").val()).toFixed(1))
 	$("#intensity_slider").val($("#intensity_value").val())
 	$("#gamma_slider").val($("#gamma_value").val()*10);
-	updateFilters();
+//	updateFilters();
 });
+
+function waitForNNLayer(nn_tracer_layer_ind){
+	var nn_layer = viewer.world.getItemAt(nn_tracer_layer_ind);
+	if (nn_layer===undefined){
+		setTimeout(function() {waitForNNLayer(nn_tracer_layer_ind) },100);
+	}else{
+		updateFilters();
+	}
+}
 
 function updateSubVLine(page) {
 	var sagittalVLine = sagittalHolderPaper.getById(sagittalVerticalLineId);
@@ -1017,7 +1092,8 @@ function addSVGData(svgName, event){
 	set.remove();
 	//load from a file
 	var strReturn = "";
-
+	console.log("svg");
+	
 	jQuery.ajax({
 		url: svgName,
 		success: function(html) {
@@ -1118,6 +1194,7 @@ function addSVGData(svgName, event){
 	if (bHideDelineation) {
 		hideDelineation();
 	}
+	
 }
 	
 function sagittalOnerror() {
@@ -1201,7 +1278,10 @@ function updateSubVview(fx, isClick) {
 	if(coronalSlideCount > 1 && isClick){
 		viewer.goToPage(coronalFirstIndex + coronalChosenSlice);
 	}
+	$("#sagittal_spinner>input:first-child").val(coronalChosenSlice);
 	updateSubVLine(coronalChosenSlice);
+        //AW(2010/01/16): Added this code to call a tile-drawn event, which then calls updateFilters
+	viewer.addHandler('tile-drawn', tileDrawnHandler);
 }
 
 function updateLinePosBaseSlide(coronalSlide) {
@@ -1423,6 +1503,126 @@ $("#layerSubmit").click(function(){
 	editLayers = {};
 	hideImageList();
 	viewer.goToPage(coronalChosenSlice);
-	
+	hideInfoPanel();
 });
 
+$(document).on('keydown', '.spinner-input', function(e){
+	var k = e.keyCode;
+	// 0~9,t0~t9,arrow,BS,DLL
+	if(!((k >= 48 && k <= 57) || (k >= 96 && k <= 105) || (k >= 37 && k <= 40) || k == 8 || k == 46)) {
+		return false;
+	}
+});
+$(document).on('keyup', '.spinner-input', function(e){
+	$(this).val($(this).val().replace(/[^\d]|^0+/g,""));
+	if($(this).val() == ""){$(this).val("0");}
+	if (e.which == 38) { // up-arrow
+		$(this).val((parseInt($(this).val()) + 1));
+	} else if (e.which == 40) { // down-arrow
+		$(this).val((parseInt($(this).val()) - 1));
+	}
+	changeSpinner(this.parentElement.id);
+});
+/*
+$(document).on('click', '.spinner-button', function(){
+	var target = $(this).siblings(':first');
+	target.val(target.val().replace(/[^\d]/g,""));
+	if(target.val() == ""){target.val("0");}
+	if ($(this).hasClass('spinner-up')){
+		target.val((parseInt(target.val()) + 1));
+	}else{
+		target.val((parseInt(target.val()) - 1));
+	}
+	changeSpinner(this.parentElement.id);
+	return false;
+});*/
+var intervalID = null;
+var timeoutID = 0;
+var spinnerTarget = null;
+$(document).on('mousedown', '.spinner-button', function(){
+	//console.log("mousedown");
+	if(intervalID == null){
+		spinnerTarget = this;
+		setSpinner(true);
+		intervalID = setInterval(function(){
+			setSpinner();
+		},150);
+		timeoutID = setTimeout(function(){
+			timeoutID = null;
+		},500);
+	}
+});
+function setSpinner(force){
+	//console.log("setSpinner");
+	if(spinnerTarget != null && (timeoutID == null || force == true)){
+		var target = $(spinnerTarget).siblings(':first');
+		target.val(target.val().replace(/[^\d]/g,""));
+		if(target.val() == ""){target.val("0");}
+		if ($(spinnerTarget).hasClass('spinner-up')){
+			target.val((parseInt(target.val()) + 1));
+		}else{
+			target.val((parseInt(target.val()) - 1));
+		}
+		changeSpinner(spinnerTarget.parentElement.id);
+	}
+}
+$(document).on('mouseup', function(){
+	clearInterval(intervalID);
+	clearInterval(timeoutID);
+	intervalID = null;
+	timeoutID = 0;
+	spinnerTarget = null;
+	//console.log("clearInterval");
+});
+
+function changeSpinner(id){
+	var num = parseInt($("#"+id+">input:first-child").val());
+	var old = num;
+	switch(id){
+	case "sagittal_spinner":
+		if(num > (coronalSlideCount-1)){
+			num = coronalSlideCount-1;
+		}else if(num < 0){
+			num = 0;
+		}
+		if(coronalChosenSlice != num){
+			coronalChosenSlice = num;
+			//sagittalImg.node.href.baseVal = dataRootPath + "/" + subviewFolerName +"/sagittal/" + sagittalChosenSlice + ".jpg";
+			updateLinePosBaseSlide(-1, -1, coronalChosenSlice);
+			//if(selectedSubview == SAGITTAL){
+			viewer.goToPage(coronalFirstIndex + coronalChosenSlice);
+			//}
+		}
+		break;
+	}
+	if(old != num){
+		$("#"+id+">input:first-child").val(num);
+	}
+}
+
+function areAllFullyLoaded() {
+  var tiledImage;
+  var count = viewer.world.getItemCount();
+  for (var i = 0; i < count; i++) {
+    tiledImage = viewer.world.getItemAt(i);
+    if (!tiledImage.getFullyLoaded()) {
+      return false;
+    }
+  }
+  return true;
+}
+
+var isFullyLoaded = false;
+
+viewer.world.addHandler('add-item', function(event) {
+  var tiledImage = event.item;
+	console.log("A");  
+tiledImage.addHandler('fully-loaded-change', function() {
+    var newFullyLoaded = areAllFullyLoaded();
+    if (newFullyLoaded !== isFullyLoaded) {
+      isFullyLoaded = newFullyLoaded;
+      // Raise event
+        console.log("test");
+    }
+  });
+});
