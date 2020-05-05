@@ -1,0 +1,26 @@
+div#tableMenu{
+	background:#EEE;
+	padding:7px;
+	left:5px;
+	top:5px;
+	width:50px;
+	height:20px;
+	overflow:hidden;
+	position:absolute
+}
+
+div#tableMenu:hover{
+	overflow:visible;
+	width:auto;
+	height:auto;
+}
+div#tableMenu>div{
+	height:20px;
+}
+div#tableMenu ul{
+	padding:0 20px;
+	margin: 2px 0 8px 0;
+}
+div#tableMenu li{
+	padding:1px;
+}

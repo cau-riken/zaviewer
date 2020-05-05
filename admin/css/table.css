@@ -1,0 +1,257 @@
+
+body{
+	margin: 0;
+}
+#body{
+	padding: 8px;
+	height: 100vh;
+	overflow: auto;
+	box-sizing: border-box;
+}
+
+h3{
+	text-align: center;
+}
+input{
+	vertical-align: middle;
+}
+
+form{
+	text-align: center;
+}
+form>span{
+	background-color:#eee;
+	display: inline-block;
+}
+
+table#editTable{
+	padding: 20px 10px 10px 10px;
+	width:760px;
+	text-align: center;
+}
+table#editTable td{
+	padding: 5px;
+	text-align: right;
+	white-space:nowrap;
+}
+table#editTable tr td:nth-child(2n){
+	text-align: left;
+}
+
+span#submitMessage div{
+	font-size: small;
+	padding: 1px 0px 1px 20px;
+	text-align: left;
+}
+span#submitMessage div:before{
+	content:"・";
+}
+span#submitMessage div.error{
+	color:#F70;
+}
+span#submitMessage div.error:before{
+	color:#F50;
+}
+
+div#btnArea{
+	float:right;
+	margin: 0 8px 8px 0;
+}
+
+td.key:before{
+	content:"*[";
+	color:#F70;
+}
+td.key:after{
+	content:"]";
+	color:#F70;
+}
+
+td.uniq:before{
+	content:"[";
+	color:#F70;
+}
+td.uniq:after{
+	content:"]";
+	color:#F70;
+}
+
+td.req:before{
+	content:"*";
+	color:#F70;
+}
+
+table.dataList tr:first-child td.keyColumn:before{
+	content:"[";
+	color:#F70;
+}
+table.dataList tr:first-child td.keyColumn:after{
+	content:"]";
+	color:#F70;
+}
+
+
+table.dataList{
+	border-spacing: 0px;
+}
+table.dataList hr{
+	margin: 0;
+}
+table.dataList tr:first-child td{
+	padding:3px 3px 0 3px;
+	min-width: 100px;
+}
+table.dataList tr:nth-child(n+3) td{
+	padding:4px;
+}
+table.dataList tr:nth-child(n+3):hover {
+	background-color:#ddd;
+}
+table.dataList tr:nth-child(2n+3) {
+	background-color:#e7e7e7;
+}
+
+table.dataList tr.selected  {
+	background-color:#cef;
+}
+table.dataList tr.selected:hover  {
+	background-color:#bde;
+}
+
+
+div.tableLoader{
+	display:none;
+	height:100px;
+	position: relative;
+}
+
+div.tableLoader img{
+	width:50px;
+	height:50px;
+	position: absolute;
+	margin: auto;
+	left: 0px;
+	top: 0px;
+	right: 0px;
+	bottom: 0px;
+}
+
+div.dialogArea{
+	display:none;
+}
+div.blackbg{
+	position:absolute;
+	z-index:5;
+	top: 0;
+	left: 0;
+	right: 0;
+	bottom: 0;
+	background-color: #000;
+	opacity: 0.3;
+}
+
+div#dialog {
+	z-index:100;
+	position: absolute;
+	top: 0;
+	left: 0;
+	right: 0;
+	bottom: 0;
+	width:270px;
+	height:140px;
+	background-color: #FFF;
+	margin:auto;
+	border-radius: 6px 6px 6px 6px;
+	box-shadow: 6px 6px 6px rgba(0,0,0,0.4);
+}
+
+div#dialog>div{
+	position: relative;
+	height:100%;
+	width: 100%;
+}
+
+div#dialog .title{
+	border-radius: 6px 6px 0 0;
+	padding:10px 12px;
+	background-color: #EEE;
+}
+
+div#dialog .body{
+	display: table;
+	width: 100%;
+	height: 65px;
+}
+
+div#dialog .body>span{
+	display: table-cell;
+	width: 100%;
+	padding:5px;
+	text-align: center;
+	vertical-align: middle;
+}
+
+div#dialog .button{
+	position: absolute;
+	right: 8px;
+	bottom: 8px;
+}
+div#dialog .button>input{
+	vertical-align : middle;
+	padding: 3px 18px;
+	margin-left:4px;
+}
+
+
+div.dataListDialog {
+	z-index:100;
+	position: absolute;
+	top: 0;
+	left: 0;
+	right: 0;
+	bottom: 0;
+	display: table;
+	width: 100%;
+	height: 100%;
+}
+
+div.dataListDialog>div {
+	text-align: center;
+	vertical-align: middle;
+	display: table-cell;
+}
+
+div.dataListDialog>div>div {
+	display: inline-block;
+	background-color: #FFF;
+	padding:5px;
+	margin:auto;
+	border-radius: 6px 6px 6px 6px;
+	box-shadow: 6px 6px 6px rgba(0,0,0,0.4);
+}
+div.dataListDialog input{
+	margin-top:5px;
+	margin-left:5px;
+}
+
+div.dataListDialog table.dataList{
+	display: block;
+	padding-bottom: 10px;
+	background-color: #EEE;
+	max-width: -webkit-calc(100vw - 40px);
+	max-width: calc(100vw - 40px);
+	overflow-x: auto;
+	-ms-overflow-x: scroll;
+	max-height: -webkit-calc(100vh - 80px);
+	max-height: calc(100vh - 80px);
+	overflow-y: scroll;
+	-ms-overflow-y: scroll;
+}
+
+table#editTable.importTable{
+	width:auto;
+}
+
+
+
+

@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<title>ImageGroupListTable</title> 
+		<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+		<script type="text/javascript" src="./script/jquery-3.3.1.min.js"></script>
+		<script type="text/javascript" src="./script/main.js"></script>
+		<script type="text/javascript" src="./script/tableMenu.js"></script>
+		<meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+		<link rel="stylesheet" href="./css/table.css">
+		<link rel="stylesheet" href="./css/tableMenu.css">
+	</head>
+	<body>
+	<div id="body">
+		<h3>Image Group List</h3>
+		<form>
+			<span>
+				<table id="editTable">
+					<tr>
+						<td></td>
+						<td>
+							<input type="text" name="f_upload_id" readonly/>
+							<input type="button" name="file" value="Select" class="findKey"/>
+							<input type="hidden" name="path_type" value="0" class="s_upload_id"/>
+						</td>
+						<td></td>
+						<td>
+							<input type="text" name="f_group_id" readonly />
+							<input type="button" name="imageGroup" value="Select" class="findKey"/>
+						</td>
+					</tr>
+				</table>
+				<span id="submitMessage">
+				</span>
+				<div id="btnArea">
+					<input type="button" value="Add" id="addBtn" />
+					<input type="button" value="Update" id="updBtn" />
+					<input type="button" value="Delete" id="delBtn" />
+				</div>
+			</span>
+			<hr/>
+			<span>
+				<table id="dataTable" class="dataList">
+					<tr id="columnName">
+						<td class="t_upload_id keyColumn">Upload ID</td>
+						<td class="t_group_id keyColumn">Group ID</td>
+					</tr>
+					<tr>
+						<td colspan="2"><hr/></td>
+					</tr>
+				</table>
+				<div id="tableLoader" class="tableLoader">
+					<img src="./css/loader.png">
+				</div>
+			</span>
+			<input type="hidden" name="tableName" value="imageGroupList">
+		</form>
+		<div id="dialogArea" class="dialogArea">
+			<div class="blackbg dialogClose">
+			</div>
+			<div id="dialog">
+				<div>
+					<div class="title">Confirmation</div>
+					<div class="body"><span>Message</span></div>
+					<div class="button">
+						<input type="button" value="OK" id="okBtn" />
+						<input type="button" value="Cancel" id="cancelBtn" />
+					</div>
+				</div>
+			</div>
+		</div>
+		<div id="l_file" class="dialogArea">
+			<div class="blackbg">
+			</div>
+			<div class="dataListDialog">
+				<div class="dialogClose">
+					<div>
+						<table class="dataList">
+							<tr>
+								<!--<td class="t_path_type">Path Type</td>-->
+								<td class="t_upload_id keyColumn">Upload ID</td>
+								<td class="t_publish_id">Publish ID</td>
+								<td class="t_extension">Extension</td>
+								<td class="t_display_name">Display Name</td>
+								<td class="t_description">Description</td>
+							</tr>
+							<tr>
+								<td colspan="4"><hr/></td>
+							</tr>
+						</table>
+						<div class="tableLoader">
+							<img src="./css/loader.png">
+						</div>
+						<div class="button">
+							<input type="text" name="k_upload_id" readonly /><input type="button" name="okBtn" value="OK" />
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
+		<div id="l_imageGroup" class="dialogArea">
+			<div class="blackbg">
+			</div>
+			<div class="dataListDialog">
+				<div class="dialogClose">
+					<div>
+						<table class="dataList">
+							<tr>
+								<td class="t_group_id keyColumn">Group ID</td>
+								<td class="t_group_name">Group Name</td>
+								<td class="t_description">Description</td>
+							</tr>
+							<tr>
+								<td colspan="3"><hr/></td>
+							</tr>
+						</table>
+						<div class="tableLoader">
+							<img src="./css/loader.png">
+						</div>
+						<div class="button">
+							<input type="text" name="k_group_id" readonly /><input type="button" name="okBtn" value="OK" />
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
+	</body>
+</html>

@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<title>ImportsGroupList</title> 
+		<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+		<script type="text/javascript" src="./script/jquery-3.3.1.min.js"></script>
+		<script type="text/javascript" src="./script/main.js"></script>
+		<script type="text/javascript" src="./script/tableMenu.js"></script>
+		<script type="text/javascript" src="./script/importGroupList.js"></script>
+		<meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+		<link rel="stylesheet" href="./css/table.css">
+		<link rel="stylesheet" href="./css/tableMenu.css">
+	</head>
+	<body>
+	<div id="body">
+		<h3>ContentImage Imports GroupList</h3>
+		<form>
+			<span>
+				<table id="editTable" class="importTable">
+					<tr>
+						<td>To:</td>
+						<td class="key">View ID</td>
+						<td>
+							<input type="text" name="f_view_id" readonly/>
+							<input type="button" name="content" value="Select" class="findKey"/>
+						</td>
+						<td></td>
+					</tr>
+					<tr>
+						<td>From:</td>
+						<td class="key">Group ID</td>
+						<td>
+							<input type="text" name="f_group_id" readonly />
+							<input type="button" name="imageGroup" value="Select" class="findKey"/>
+						</td>
+						<td></td>
+					</tr>
+				</table>
+				<span id="submitMessage">
+				</span>
+				<div id="btnArea">
+					<input type="button" value="Import" id="impBtn" />
+				</div>
+			</span>
+		</form>
+		
+		<div id="dialogArea" class="dialogArea">
+			<div class="blackbg dialogClose">
+			</div>
+			<div id="dialog">
+				<div>
+					<div class="title">Confirmation</div>
+					<div class="body"><span>Message</span></div>
+					<div class="button">
+						<input type="button" value="OK" id="okBtn" />
+						<input type="button" value="Cancel" id="cancelBtn" />
+					</div>
+				</div>
+			</div>
+		</div>
+
+		<div id="l_content" class="dialogArea">
+			<div class="blackbg">
+			</div>
+			<div class="dataListDialog">
+				<div class="dialogClose">
+					<div>
+						<table class="dataList">
+							<tr>
+								<td class="t_view_id keyColumn">View ID</td>
+								<td class="t_view_publish_id uniqColumn">View Publish ID</td>
+								<td class="t_description">Description</td>
+								<td class="t_image_group">Image Group</td>
+								<td class="t_subview_image">Subview Image</td>
+								<td class="t_subview_size">Subview Size</td>
+								<td class="t_subview_range_min">Subview Range Min</td>
+								<td class="t_subview_range_max">Subview Range Max</td>
+								<td class="t_svg_file">SVG File</td>
+								<td class="t_init_deliniation">Init Deliniation</td>
+								<td class="t_image_size">Image Size</td>
+								<td class="t_slide_count">Slide Count</td>
+								<td class="t_slice_step">Slice Step</td>
+								<td class="t_first_slide">First Slide</td>
+								<td class="t_init_gamma">Init Gamma</td>
+								<td class="t_init_bright">Init Bright</td>
+								<td class="t_tree_view">Tree View</td>
+								<td class="t_matrix_data">Matrix Data</td>
+								<td class="t_zaviwer_ver">ZAViwer Ver</td>
+							</tr>
+							<tr>
+								<td><hr/></td>
+							</tr>
+						</table>
+						<div class="tableLoader">
+							<img src="./css/loader.png">
+						</div>
+						<div class="button">
+							<input type="text" name="k_view_id" readonly /><input type="button" name="okBtn" value="OK" />
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
+		
+		<div id="l_imageGroup" class="dialogArea">
+			<div class="blackbg">
+			</div>
+			<div class="dataListDialog">
+				<div class="dialogClose">
+					<div>
+						<table class="dataList">
+							<tr>
+								<td class="t_group_id keyColumn">Group ID</td>
+								<td class="t_group_name">Group Name</td>
+								<td class="t_description">Description</td>
+								<td class="t_count">Count</td>
+							</tr>
+							<tr>
+								<td colspan="3"><hr/></td>
+							</tr>
+						</table>
+						<div class="tableLoader">
+							<img src="./css/loader.png">
+						</div>
+						<div class="button">
+							<input type="text" name="k_group_id" readonly /><input type="button" name="okBtn" value="OK" />
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
+	</body>
+</html>

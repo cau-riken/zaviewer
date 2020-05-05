@@ -1,0 +1,792 @@
+/* CSS for ZAViewer */
+		@media only screen and (max-width: 885px){
+			.sliderPanel { visibility: hidden }
+			.subviewPanel { visibility: hidden }
+			.posviewPanel { visibility: hidden }
+		}
+		@media only screen and (max-height: 80px){
+			.sliderPanel { visibility: hidden }
+			.subviewPanel { visibility: hidden }
+			.posviewPanel { visibility: hidden }
+		}
+
+/ *  */
+
+		#foo {
+			background-color: #888888;
+		}
+		#x {
+			background-color: #EFBD73;
+		}
+		#y {
+			background-color: #EF3e32;
+		}
+		#b {
+			background-color: #73A4EF;
+		}
+		#bar {
+			background-color: #000000;
+		}
+
+		/* Text */
+		.textNote {
+			position: absolute;
+			border: 3px solid #8AC007;
+			background-color: white;
+			top: 300px;
+			right: 400px;
+			z-index: 100;
+		} 
+		
+
+/* ▼ ------ All ------ */
+
+		body {
+			margin:0;
+			background-color:#000;
+			font-family: sans-serif,"ヒラギノ角ゴ ProN W3","Hiragino Kaku Gothic ProN", "メイリオ","Meiryo";
+			line-height:1.2em;
+			overflow: hidden;
+		}
+
+		/* Around the main image */
+
+		.openseadragon
+		{
+			width: 100%;
+			height: 100%;
+			border: none;
+			color: #333; /* text color for messages */
+			background-color: black;
+			z-index: -1000;
+		}
+
+		.overlay {
+			border:thin solid #444;
+		}
+
+		.overlay>*{
+			height:100%;
+			width:100%;
+		}
+
+
+/* ▼ ------ Slider panel ------ */
+
+		/* Main of slider panel */
+		.sliderPanel {
+			width:230px;
+			right:6px;
+			position: absolute;
+			background-color:rgba(100,100,100,0.5);
+			border-top: 1px solid rgba(255,255,255,0.5);
+			border-left: 1px solid rgba(255,255,255,0.5);
+			border-right: 1px solid rgba(0,0,0,0.6);
+			border-bottom: 1px solid rgba(0,0,0,0.6);
+			box-shadow: -1px -1px 1px rgba(0,0,0,0.4) inset;
+			display:block;
+			z-index:70;
+			-webkit-user-select: none; /* Safari・Chrome */
+			-moz-user-select: none; /* Firefox */
+			-ms-user-select: none; /* IE */
+			-o-user-select:none; /* Opera */
+			user-select:none;
+			transition-duration:0.20s;
+			transition-timing-function:ease-in-out;
+		}
+		.sliderPanelShow {
+			top:6px;
+		}
+		.sliderPanelHide {
+			/* Set the value calculated from the display size at index.html */
+		}
+
+		/* Display information(※Not use) */
+		.infoGroup {
+			margin:12px 0 0 10px;
+			z-index: 80;
+			font-size:12px;
+			white-space:nowrap;
+			color:#eee;
+			text-align:left;
+			background-color:red;
+		}
+
+		/* Display navigation */
+		.navigatorParentClass {
+			margin:10px 0 0 10px;
+			top: 60px;
+			right: 10px;
+			width: 210px;
+			z-index: 80;
+		}
+		.navigatorChildClass {
+			width: 208px;
+			height: 120px;
+			background-color: black;
+			border-top: 1px solid rgba(0,0,0,0.6);
+			border-left: 1px solid rgba(0,0,0,0.6);
+			border-right: 1px solid rgba(255,255,255,0.4);
+			border-bottom: 1px solid rgba(255,255,255,0.4);
+		}
+
+		/* Main of slider group */
+		.sliderGroup {
+			margin:10px 0 0 10px;
+			width: 210px;
+			z-index: 80;
+			display:inline-block;
+		}
+		
+		/* Set of data name +  slider + transparency BOX */
+		.dataset:first-child {
+			margin:0 0 0 0;
+		}
+		.dataset {
+			margin:3px 0 0 0;
+			text-align:left;
+			font-size:12px;
+			line-height:13px;
+			color:#e0e0e0;
+			text-shadow:0 0 3px rgba(0,0,0,1.0);
+			/* white-space:nowrap; */
+		}
+		
+		/* Data name */
+		.dataset label {
+			font-weight:bold;
+			color:#fff;
+		}
+
+		/* Slider */
+		.slider {
+			margin:2px 0 0 0;
+			padding:0;
+			border:none;
+			cursor:pointer;
+		}
+
+		/* Transparency BOX */
+		.opacity {
+			margin:0 0 0 6px;
+			padding:3px 2px;
+			width:28px;
+			font-size:12px;
+			line-height:12px;
+			text-align:right;
+			color:#fff;
+			background-color:rgba(0,0,0,0.6);
+			border-top:1px solid rgba(0,0,0,0.6);
+			border-left:1px solid rgba(0,0,0,0.6);
+			border-right:1px solid rgba(255,255,255,0.4);
+			border-bottom:1px solid rgba(255,255,255,0.4);
+		}
+
+		/* Hide button */
+		.hidebtn {
+			margin:0;
+			display:block;
+			min-height: 36px;
+		}
+		.hidebtn button {
+			margin:10px 0 8px 10px;
+			font-size:13px;
+			color:#333;
+			width:130px;
+			cursor:pointer;
+		}
+		.hidebtn #editbtn {
+			width:50px;
+			margin-left: 4px;
+		}
+
+		/* Shrink button for Slider panel */
+		div#btnShrinkSliderpanel {
+			cursor: pointer;
+			position:absolute;
+			bottom:7px;
+			right:6px;
+			width:18px;
+			height:18px;
+			background-image:url('../img/btn_shrink.png');
+			background-position:bottom;
+		}
+
+
+
+/* ▼ ------ Sub-view panel ------ */
+
+		/* Main of sub-view panel */
+		.subviewPanel {
+			/*width:673px;*/
+			padding-left: 8px;
+			height:247px;
+			right:6px;
+			position:absolute;
+			background-color:rgba(100,100,100,0.5);
+			border-top: 1px solid rgba(255,255,255,0.5);
+			border-left: 1px solid rgba(255,255,255,0.5);
+			border-right: 1px solid rgba(0,0,0,0.6);
+			border-bottom: 1px solid rgba(0,0,0,0.6);
+			box-shadow: -1px -1px 1px rgba(0,0,0,0.4) inset;
+			z-index:90;
+			-webkit-user-select: none; /* Safari・Chrome */
+			-moz-user-select: none; /* Firefox */
+			-ms-user-select: none; /* IE */
+			-o-user-select:none; /* Opera */
+			user-select:none;
+			transition-duration:0.20s;
+			transition-timing-function:ease-in-out;
+		}
+		.subviewPanelShow {
+			bottom:6px;
+		}
+		.subviewPanelHide {
+			bottom:-220px;
+		}
+
+		/* Each subview */
+		.axialHolder,.coronalHolder,.sagittalHolder {
+			width: 220px;
+			height: 220px;
+			float:right;
+		}
+		.axialHolder {
+			margin:21px 0 0 0;
+			background-image: url('../img/bg_axialHolder.png');
+		}
+		.coronalHolder {
+			margin:21px 0 0 0;
+			background-image: url('../img/bg_coronalHolder.png');
+		}
+		.sagittalHolder {
+			margin:21px 5px 0 0;
+			background-image: url('../img/bg_sagittalHolder.png');
+		}
+		
+		
+		/* Label of subview */
+		.axialLabel,.coronalLabel,.sagittalLabel {
+			position:absolute;
+			margin:-241px 0 0 4px ;
+			height:21px;
+			background-repeat: no-repeat;
+		}
+		.axialLabel {
+			width:100px;
+			background-image: url('../img/btn_axial.png');
+		}
+		.coronalLabel {
+			width:120px;
+			background-image: url('../img/btn_coronal.png');
+		}
+		.sagittalLabel {
+			width:120px;
+			background-image: url('../img/btn_sagittal.png');
+		}
+
+		/* Each radio button ON/OFF */
+		.btnOff {
+			background-position:0 top;
+			cursor: pointer;
+		}
+		.btnOn {
+			background-position:0 bottom;
+			cursor: default;
+		}
+
+		/* Sub-view panel shrink button */
+		div#btnShrinkSubviewpanel {
+			position:absolute;
+			cursor: pointer;
+			/*margin:5px 0 0 649px;*/
+			width:18px;
+			height:18px;
+			background-image:url('../img/btn_shrink.png');
+			background-position:bottom;
+			right: 5px;
+			top: 5px;
+		}
+
+
+/* ▼ ------ Search pane ------ */
+
+		div#tree_search {
+			background-image:url('../img/logo.png');
+			background-repeat:no-repeat;
+			background-position:6px 12px;
+			background-color:#333;
+			box-shadow: 0px 5px 4px rgba(0,0,0,0.5);
+			z-index: 101;
+		}
+
+		div#region_search_label {
+			padding:48px 0 0 10px;
+			white-space:nowrap;
+			text-align:justify;
+			font-size:12px;
+			line-height:16px;
+			font-weight:bold;
+			color:#ddd;
+		}
+		
+		input#region_search_form {
+			width: calc( 100% - 28px );
+			max-width:300px;
+			font-size:13px;
+			margin:3px 0 0 10px;
+		}
+
+/* ▼ ------ Tree pane ------ */
+
+		div #jstree {
+			background-image:url('../img/bg_tree.png');
+			background-attachment: local;
+			z-index: 100;
+		}
+
+		div#jstree li {
+			font-size:13px;
+			line-height:14px;
+		}
+		
+		div#tree_search{
+			-webkit-user-select: none; /* Safari・Chrome */
+			-moz-user-select: none; /* Firefox */
+			-ms-user-select: none; /* IE */
+			-o-user-select:none; /* Opera */
+			user-select:none;
+		}
+
+
+
+		/* sliderGroup */
+		/*input[type='range'] { //add checkbox
+			width: calc( 100% - 40px ); 
+			width: calc( 100% - 60px );
+		}*/
+
+		div.sliderGroup span {
+			-ms-word-wrap: break-word;
+		}
+		
+		#sliderGroup1{
+			padding-bottom: 2px;
+			max-height: calc(100vh - 300px);
+			min-height: 40px;
+			overflow-y: auto;
+		}
+		
+		#sliderGroup1 span {
+			text-decoration: none;
+		}
+		
+		#sliderGroup1 span.selected {
+			text-decoration: underline;
+			color: #FFFFFF;
+			/*font-weight: bold;*/
+		}
+		
+		#sliderGroup1 span.selected:before {
+			content: '-';
+		}
+		
+		#sliderGroup1 .dataset>div, 
+		#sliderGroup2 .dataset{
+			width: 100%;
+			display: table;
+		}
+		#sliderGroup1 .dataset>div>div, 
+		#sliderGroup2 .dataset>div{
+			width: 100%;
+			display: table-cell;
+			vertical-align: middle;
+		}
+		#sliderGroup1 .dataset>div>div:first-child{
+			width:auto;
+			padding-right: 2px;
+		}
+		
+		#sliderGroup1 input[type='range'] {
+			width: 100%;
+		}
+		
+		#sliderGroup2 input[type='range'] {
+			width: calc( 100% - 50px );
+			float: right;
+		}
+		#sliderGroup2 .dataset{
+			margin: 8px 0 0 0;
+			line-height: normal
+		}
+		
+				
+		
+		/* Nextech Edt */
+		.spinControl {
+			margin:-242px 0 0 125px;
+			height:21px
+		}
+		.spinner {
+			height:21px;
+			display:inline-block;
+			position:relative;
+			border:1px solid #dcdcdc;
+			border-radius:4px;
+			overflow:hidden;
+			font-size: 10px;
+			text-align: center;
+		}
+		.spinner-input {
+			text-align:right;
+			width:25px;
+			margin-right:15px;
+			border:none;
+			padding:0 3px;
+			height:23px;
+			line-height:23px;
+			border-right:1px solid #dcdcdc;
+			ime-mode:disabled;
+		}
+		.spinner-button {
+			text-decoration:none;
+			position:absolute;
+			right:0;
+			background: #efefef;
+			height:10px;
+			line-height:10px;
+			width:15px;
+			cursor:pointer;
+		}
+		.spinner-up {
+			top:0;
+		}
+		.spinner-down{
+			bottom:0;
+			border-top:1px solid #dcdcdc;
+		}
+		.spinner-button>div{
+			width:9px;
+			height:9px;
+			margin: 1px 3px;
+		}
+		.spinner-up>div{
+			background-image:url('../img/arrow.png');
+			background-position:top;
+		}
+		.spinner-down>div{
+			background-image:url('../img/arrow.png');
+			background-position:bottom;
+		}
+		.spinner_max{
+			width: 22px;
+			margin-right: 21px;
+			margin-top: 3px;
+			font-size: 12px;
+			color: #fff;
+			float: right;
+		}
+
+		/* Position-view panel */
+		#posviewPanel {
+			width: 210px;
+			right:242px;
+			top:6px;
+			font-size: 12px;
+			color:#ffffff;
+			position:absolute;
+			z-index:90;
+			-webkit-user-select: none; /* Safari・Chrome */
+			-moz-user-select: none; /* Firefox */
+			-ms-user-select: none; /* IE */
+			-o-user-select:none; /* Opera */
+			user-select:none;
+			transition-duration:0.20s;
+			transition-timing-function:ease-in-out;
+		}
+		
+		.posviewPanel {
+			height:62px;
+			width: 210px;
+			background-color:rgba(100,100,100,0.5);
+			border-top: 1px solid rgba(255,255,255,0.5);
+			border-left: 1px solid rgba(255,255,255,0.5);
+			border-right: 1px solid rgba(0,0,0,0.6);
+			border-bottom: 1px solid rgba(0,0,0,0.6);
+			box-shadow: -1px -1px 1px rgba(0,0,0,0.4) inset;
+			z-index:90;
+			transition-duration:0.20s;
+			transition-timing-function:ease-in-out;
+		}
+		.posTbl{
+			display: table;
+		}
+		.posTbl>div{
+			text-align: left;
+			display: table-row;
+		}
+		.posTbl>div>div{
+			display: table-cell;
+		}		
+		#posviewPanel1>div>div:first-child{
+			width: 0px;
+			white-space: nowrap;
+			padding-left: 2px;
+			padding-right: 2px;
+		}
+		#posviewPanel1>div>div:last-child{
+			text-align: right;
+			padding-left: 2px;
+			padding-right: 4px;
+		}
+		
+		#posviewPanel2{
+			text-align: left;
+			top: 2px;
+			position: relative;
+			overflow: hidden;
+		}
+		#posviewPanel2>div{
+			position: absolute;
+			bottom: 0px;
+			width: 100%;
+		}
+		#posviewPanel2 .posTbl>div>div{
+			text-align: right;
+			padding-left: 1px;
+			padding-right: 1px;
+		}
+		#posviewPanel2 .posTbl>div>div:not(:first-child){
+			width: 10px;
+		}
+		#posviewPanel2 #posDis{
+			margin-bottom: 2px;
+		}
+		#posdistance{
+			text-align: right;
+			padding-left: 5px;
+			min-width: 34px;
+			display: inline-block;
+		}
+
+		/* Shrink button for Posview panel */
+		div#btnShrinkPosviewpanel {
+			cursor: pointer;
+			position:absolute;
+			bottom:3px;
+			right:2px;
+			width:18px;
+			height:18px;
+			background-image:url('../img/btn_shrink.png');
+			background-position:bottom;
+		}
+		
+		#poscanvas{
+			position: absolute;
+			width: 100%;
+			height: 100%;
+		}
+		
+		/* Info-view panel */
+		#infoPanel {
+			margin-left: 10px;
+			min-width: 220px;
+			width: 18vw;
+			left:0px;
+			top:6px;
+			font-size: 12px;
+			color:#ffffff;
+			position:absolute;
+			z-index:90;
+			-webkit-user-select: none; /* Safari・Chrome */
+			-moz-user-select: none; /* Firefox */
+			-ms-user-select: none; /* IE */
+			-o-user-select:none; /* Opera */
+			user-select:none;
+			background-color:rgba(100,100,100,0.5);
+			border-top: 1px solid rgba(255,255,255,0.5);
+			border-left: 1px solid rgba(255,255,255,0.5);
+			border-right: 1px solid rgba(0,0,0,0.6);
+			border-bottom: 1px solid rgba(0,0,0,0.6);
+			box-shadow: -1px -1px 1px rgba(0,0,0,0.4) inset;
+			transition-duration:0.20s;
+			transition-timing-function:ease-in-out;
+		}
+		#infoPanel>div {
+		}
+		
+		#infoPanelText{
+			height: 380px;
+			overflow-y: auto;
+			overflow-x: hidden;
+			margin: 1px 2px 1px 1px;
+		}
+		
+		#infoPanelButton{
+			height: 18px;
+			margin: 3px 2px;
+			padding-left: 4px;
+			color: #e0e0e0;
+		}
+		
+		#btnShrinkInfoPanel {
+			cursor:pointer;
+			float:right;
+			width:18px;
+			height:18px;
+			background-image:url('../img/btn_shrink.png');
+			background-position:bottom;
+		}
+		
+		/* layerEditor panel */
+		#layerEditor {
+			position:absolute;
+			top:-100vh;/*20px;*/
+			left:80px;
+			right: 250px;
+			height: calc(100vh - 80px);
+			font-size: 12px;
+			color:#ffffff;
+			z-index:950;
+			-webkit-user-select: none; /* Safari・Chrome */
+			-moz-user-select: none; /* Firefox */
+			-ms-user-select: none; /* IE */
+			-o-user-select:none; /* Opera */
+			user-select:none;
+			background-color:rgba(100,100,100,0.8);
+			border-top: 1px solid rgba(255,255,255,0.5);
+			border-left: 1px solid rgba(255,255,255,0.5);
+			border-right: 1px solid rgba(0,0,0,0.6);
+			border-bottom: 1px solid rgba(0,0,0,0.6);
+			box-shadow: -1px -1px 1px rgba(0,0,0,0.4) inset;
+			transition-duration:0.20s;
+			transition-timing-function:ease-in-out;
+			overflow: hidden;
+		}
+		#GroupName{
+			height:20px;
+			font-size: 14px;
+			padding: 3px;
+			margin-left: 6px;
+		}
+		#ImageArea{
+			position: absolute;
+			top: 0px;
+			bottom: 0px;
+			left: 0px;
+			right: 0px;
+			padding: 26px 5px 5px 5px;
+		}
+		#ImageList{
+			float: left;
+			width: 100%;
+			height: 100%;
+			padding-right: 155px;
+			margin-right: -155px;
+			box-sizing: border-box;
+		}
+		#ImageList ul{
+			list-style: none;
+			margin: 0px;
+			padding: 0px;
+			width: 100%;
+			height: 100%;
+			overflow-y: auto;
+			-ms-overflow-y: auto;
+		}
+		#ImageList li{
+			box-sizing: border-box;
+    	position: relative;
+			float:left;
+			min-width: 150px;
+			min-height: 150px;
+			max-width: calc((100vw - 519px)/3);
+			max-height: calc((100vw - 519px)/3);
+			width:calc(100vh - 118px);
+			height:calc(100vh - 118px);
+		}
+		@media screen and (min-width: 1519px) {
+			/* 画面1320px以上 */
+			#ImageList li{
+				max-width: calc((100vw - 519px)/4);
+				max-height: calc((100vw - 519px)/4);
+			}
+		}
+		#ImageList li:before {
+			content:"";
+			display: block;
+			padding-top: 100%;
+		}
+		#ImageList li>span{
+			position: absolute;
+			top: 0;
+			left: 0;
+			bottom: 0;
+			right: 0;
+			text-align: center;
+			margin: 3px;
+			border-top: 1px solid rgba(255,255,255,0.5);
+			border-left: 1px solid rgba(255,255,255,0.5);
+			border-right: 1px solid rgba(0,0,0,0.6);
+			border-bottom: 1px solid rgba(0,0,0,0.6);
+			box-shadow: -1px -1px 1px rgba(0,0,0,0.4) inset;
+		}
+		#ImageList li>span.selected{
+			background-color:rgba(128,128,128,0.7);
+			border-top: 1px solid rgba(0,0,0,0.6);
+			border-left: 1px solid rgba(0,0,0,0.6);
+			border-right: 1px solid rgba(255,255,255,0.5);
+			border-bottom: 1px solid rgba(255,255,255,0.5);
+			box-shadow: 1px 1px 1px rgba(0,0,0,0.4) inset;
+		}
+ 		#ImageList li>span img{
+			position: absolute;
+			max-height:100%;
+			max-width:100%;
+			bottom: 50%;
+			right: 50%;
+			padding: 10px 10px 25px 10px;
+			transform: translate(50%, 50%);
+			box-sizing: border-box;
+		}
+		#ImageList div.imageName{
+			position: absolute;
+			padding: 8px;
+			left: 0px;
+			bottom: 0px;
+			width: 100%;
+			text-align: center;
+			box-sizing: border-box;
+		}
+		#ImageList .imageName>div{
+			display: inline-block;
+			max-width: 100%;
+			word-break: break-all;
+		}
+		#ImageList .imageName>div>span{
+			white-space: normal;
+		}
+		#ImageList .imageName input{
+			float: left;
+			margin-left: 0px;
+		}
+		#LayerList{
+			float: right;
+			height: 100%;
+			width: 150px;
+		}
+		#LayerList select{
+			background-color:lightGray;
+			width: 150px;
+		}
+		#LayerList div{
+			text-align: center;
+		}
+		#LayerList input{
+			margin-top: 2px;
+		}
+		#layerButton2{
+			position:absolute;
+			bottom:4px;
+			right:4px;
+		}

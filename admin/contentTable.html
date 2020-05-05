@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<title>ContentTable</title> 
+		<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
+		<script type="text/javascript" src="./script/jquery-3.3.1.min.js"></script>
+		<script type="text/javascript" src="./script/main.js"></script>
+		<script type="text/javascript" src="./script/tableMenu.js"></script>
+		<meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+		<link rel="stylesheet" href="./css/table.css">
+		<link rel="stylesheet" href="./css/tableMenu.css">
+	</head>
+	<body>
+	<div id="body">
+		<h3>Content</h3>
+		<form>
+			<span>
+				<table id="editTable">
+					<tr>
+						<td></td>
+						<td><input type="text" name="f_view_id" /></td>
+						<td></td>
+						<td><input type="text" name="f_view_publish_id" /></td>
+					</tr>
+					<tr>
+						<td></td>
+						<td><input type="text" name="f_description" /></td>
+						<td></td>
+						<td>
+							<input type="text" name="f_image_group" readonly />
+							<input type="button" name="imageGroup" value="Select" class="findKey"/>
+						</td>
+					</tr>
+					<tr>
+						<td></td>
+						<td>
+							<input type="text" name="f_subview_image" readonly />
+							<input type="button" name="file" value="Select" class="findKey"/>
+							<input type="hidden" name="path_type" value="1" class="s_subview_image"/>
+						</td>
+						<td></td>
+						<td><input type="number" min="0" name="f_subview_size" /></td>
+					</tr>
+					<tr>
+						<td></td>
+						<td><input type="number" min="0" name="f_subview_range_min" /></td>
+						<td></td>
+						<td><input type="number" min="0" name="f_subview_range_max" /></td>
+					</tr>
+					<tr>
+						<td></td>
+						<td>
+							<input type="text" name="f_svg_file" readonly />
+							<input type="button" name="file" value="Select" class="findKey"/>
+							<input type="hidden" name="path_type" value="2" class="s_svg_file"/>
+						</td>
+						<td></td>
+						<td><input type="checkbox" name="f_init_deliniation"/></td>
+					</tr>
+					<tr>
+						<td></td>
+						<td><input type="number" min="1" name="f_image_size" /></td>
+						<td></td>
+						<td><input type="number" min="1" name="f_slide_count" /></td>
+					</tr>
+					<tr>
+						<td></td>
+						<td><input type="number" min="1" name="f_slice_step" /></td>
+						<td></td>
+						<td><input type="number" min="0" name="f_first_slide" /></td>
+					</tr>
+					<tr>
+						<td></td>
+						<td><input type="number" min="0.0" max="5.0" step="0.1" name="f_init_gamma" /></td>
+						<td></td>
+						<td><input type="number" min="-255" max="255" name="f_init_bright" /></td>
+					</tr>
+					<tr>
+						<td></td>
+						<td>
+							<input type="text" name="f_tree_view" readonly />
+							<input type="button" name="file" value="Select" class="findKey"/>
+							<input type="hidden" name="path_type" value="3" class="s_tree_view"/>
+						</td>
+						<td></td>
+						<td><input type="text" name="f_matrix_data" /></td>
+					</tr>
+					<tr>
+						<td></td>
+						<td><input type="number" min="0" name="f_zaviwer_ver" /></td>
+					</tr>
+				</table>
+				<span id="submitMessage">
+				</span>
+				<div id="btnArea">
+					<input type="button" value="Add" id="addBtn" />
+					<input type="button" value="Update" id="updBtn" />
+					<input type="button" value="Delete" id="delBtn" />
+				</div>
+			</span>
+			<hr/>
+			<span>
+				<table id="dataTable" class="dataList">
+					<tr id="columnName">
+						<td class="t_view_id keyColumn">View ID</td>
+						<td class="t_view_publish_id uniqColumn">View Publish ID</td>
+						<td class="t_description">Description</td>
+						<td class="t_image_group">Image Group</td>
+						<td class="t_subview_image">Subview Image</td>
+						<td class="t_subview_size">Subview Size</td>
+						<td class="t_subview_range_min">Subview Range Min</td>
+						<td class="t_subview_range_max">Subview Range Max</td>
+						<td class="t_svg_file">SVG File</td>
+						<td class="t_init_deliniation">Init Deliniation</td>
+						<td class="t_image_size">Image Size</td>
+						<td class="t_slide_count">Slide Count</td>
+						<td class="t_slice_step">Slice Step</td>
+						<td class="t_first_slide">First Slide</td>
+						<td class="t_init_gamma">Init Gamma</td>
+						<td class="t_init_bright">Init Bright</td>
+						<td class="t_tree_view">Tree View</td>
+						<td class="t_matrix_data">Matrix Data</td>
+						<td class="t_zaviwer_ver">ZAViwer Ver</td>
+					</tr>
+					<tr>
+						<td><hr/></td>
+					</tr>
+				</table>
+				<div id="tableLoader" class="tableLoader">
+					<img src="./css/loader.png">
+				</div>
+			</span>
+			<input type="hidden" name="tableName" value="content">
+		</form>
+		<div id="dialogArea" class="dialogArea">
+			<div class="blackbg dialogClose">
+			</div>
+			<div id="dialog">
+				<div>
+					<div class="title">Confirmation</div>
+					<div class="body"><span>Message</span></div>
+					<div class="button">
+						<input type="button" value="OK" id="okBtn" />
+						<input type="button" value="Cancel" id="cancelBtn" />
+					</div>
+				</div>
+			</div>
+		</div>
+		<div id="l_file" class="dialogArea">
+			<div class="blackbg">
+			</div>
+			<div class="dataListDialog">
+				<div class="dialogClose">
+					<div>
+						<table class="dataList">
+							<tr>
+								<!--<td class="t_path_type_name">Type Name</td>-->
+								<td class="t_upload_id keyColumn">Upload ID</td>
+								<td class="t_publish_id">Publish ID</td>
+								<td class="t_extension">Extension</td>
+								<td class="t_display_name">Display Name</td>
+								<td class="t_description">Description</td>
+							</tr>
+							<tr>
+								<td><hr/></td>
+							</tr>
+						</table>
+						<div class="tableLoader">
+							<img src="./css/loader.png">
+						</div>
+						<div class="button">
+							<input type="text" name="k_upload_id" readonly /><input type="button" name="okBtn" value="OK" />
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
+		<div id="l_imageGroup" class="dialogArea">
+			<div class="blackbg">
+			</div>
+			<div class="dataListDialog">
+				<div class="dialogClose">
+					<div>
+						<table class="dataList">
+							<tr>
+								<td class="t_group_id keyColumn">Group ID</td>
+								<td class="t_group_name">Group Name</td>
+								<td class="t_description">Description</td>
+								<td class="t_count">Count</td>
+							</tr>
+							<tr>
+								<td><hr/></td>
+							</tr>
+						</table>
+						<div class="tableLoader">
+							<img src="./css/loader.png">
+						</div>
+						<div class="button">
+							<input type="text" name="k_group_id" readonly /><input type="button" name="okBtn" value="OK" />
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
+	</body>
+</html>
