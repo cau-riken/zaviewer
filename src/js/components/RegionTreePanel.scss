@@ -1,0 +1,56 @@
+/* ▼ ------ Search pane ------ */
+
+div#tree_search {
+	background-image: url("../img/logo.png");
+	background-repeat: no-repeat;
+	background-position: 6px 12px;
+	background-color: #333;
+	box-shadow: 0px 5px 4px rgba(0, 0, 0, 0.5);
+	z-index: 101;
+}
+
+div#region_search_label {
+	padding: 48px 0 0 10px;
+	white-space: nowrap;
+	text-align: justify;
+	font-size: 12px;
+	line-height: 16px;
+	font-weight: bold;
+	color: #ddd;
+}
+
+input#region_search_form {
+	width: calc(100% - 28px);
+	max-width: 300px;
+	font-size: 13px;
+	margin: 3px 0 0 10px;
+}
+
+/* ▼ ------ Tree pane ------ */
+
+div #jstree {
+	background-image: url("../img/bg_tree.png");
+	background-attachment: local;
+	z-index: 100;
+}
+
+div#jstree li {
+	font-size: 13px;
+	line-height: 14px;
+}
+
+div#tree_search {
+	-webkit-user-select: none; /* Safari・Chrome */
+	-moz-user-select: none; /* Firefox */
+	-ms-user-select: none; /* IE */
+	-o-user-select: none; /* Opera */
+	user-select: none;
+}
+
+
+
+
+
+
+
+

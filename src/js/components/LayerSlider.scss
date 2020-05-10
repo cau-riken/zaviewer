@@ -1,0 +1,32 @@
+/* Slider */
+.slider {
+	margin: 2px 0 0 0;
+	padding: 0;
+	border: none;
+	cursor: pointer;
+}
+
+/* Transparency BOX */
+.opacity {
+	margin: 0 0 0 6px;
+	padding: 3px 2px;
+	width: 28px;
+	font-size: 12px;
+	line-height: 12px;
+	text-align: right;
+	color: #fff;
+	background-color: rgba(0, 0, 0, 0.6);
+	border-top: 1px solid rgba(0, 0, 0, 0.6);
+	border-left: 1px solid rgba(0, 0, 0, 0.6);
+	border-right: 1px solid rgba(255, 255, 255, 0.4);
+	border-bottom: 1px solid rgba(255, 255, 255, 0.4);
+}
+
+.slider[disabled] {
+    opacity: 0.3;
+}
+
+.opacity[disabled] {
+    opacity: 0.3;
+}
+

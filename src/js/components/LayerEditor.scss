@@ -1,0 +1,152 @@
+/* layerEditor panel */
+#layerEditor {
+	position: absolute;
+	top: -100vh; /*20px;*/
+	left: 80px;
+	right: 250px;
+	height: calc(100vh - 80px);
+	font-size: 12px;
+	color: #ffffff;
+	z-index: 950;
+	-webkit-user-select: none; /* Safari・Chrome */
+	-moz-user-select: none; /* Firefox */
+	-ms-user-select: none; /* IE */
+	-o-user-select: none; /* Opera */
+	user-select: none;
+	background-color: rgba(100, 100, 100, 0.8);
+	border-top: 1px solid rgba(255, 255, 255, 0.5);
+	border-left: 1px solid rgba(255, 255, 255, 0.5);
+	border-right: 1px solid rgba(0, 0, 0, 0.6);
+	border-bottom: 1px solid rgba(0, 0, 0, 0.6);
+	box-shadow: -1px -1px 1px rgba(0, 0, 0, 0.4) inset;
+	transition-duration: 0.2s;
+	transition-timing-function: ease-in-out;
+	overflow: hidden;
+}
+#GroupName {
+	height: 20px;
+	font-size: 14px;
+	padding: 3px;
+	margin-left: 6px;
+}
+#ImageArea {
+	position: absolute;
+	top: 0px;
+	bottom: 0px;
+	left: 0px;
+	right: 0px;
+	padding: 26px 5px 5px 5px;
+}
+#ImageList {
+	float: left;
+	width: 100%;
+	height: 100%;
+	padding-right: 155px;
+	margin-right: -155px;
+	box-sizing: border-box;
+}
+#ImageList ul {
+	list-style: none;
+	margin: 0px;
+	padding: 0px;
+	width: 100%;
+	height: 100%;
+	overflow-y: auto;
+	-ms-overflow-y: auto;
+}
+#ImageList li {
+	box-sizing: border-box;
+	position: relative;
+	float: left;
+	min-width: 150px;
+	min-height: 150px;
+	max-width: calc((100vw - 519px) / 3);
+	max-height: calc((100vw - 519px) / 3);
+	width: calc(100vh - 118px);
+	height: calc(100vh - 118px);
+}
+@media screen and (min-width: 1519px) {
+	/* 画面1320px以上 */
+	#ImageList li {
+		max-width: calc((100vw - 519px) / 4);
+		max-height: calc((100vw - 519px) / 4);
+	}
+}
+#ImageList li:before {
+	content: "";
+	display: block;
+	padding-top: 100%;
+}
+#ImageList li > span {
+	position: absolute;
+	top: 0;
+	left: 0;
+	bottom: 0;
+	right: 0;
+	text-align: center;
+	margin: 3px;
+	border-top: 1px solid rgba(255, 255, 255, 0.5);
+	border-left: 1px solid rgba(255, 255, 255, 0.5);
+	border-right: 1px solid rgba(0, 0, 0, 0.6);
+	border-bottom: 1px solid rgba(0, 0, 0, 0.6);
+	box-shadow: -1px -1px 1px rgba(0, 0, 0, 0.4) inset;
+}
+#ImageList li > span.selected {
+	background-color: rgba(128, 128, 128, 0.7);
+	border-top: 1px solid rgba(0, 0, 0, 0.6);
+	border-left: 1px solid rgba(0, 0, 0, 0.6);
+	border-right: 1px solid rgba(255, 255, 255, 0.5);
+	border-bottom: 1px solid rgba(255, 255, 255, 0.5);
+	box-shadow: 1px 1px 1px rgba(0, 0, 0, 0.4) inset;
+}
+#ImageList li > span img {
+	position: absolute;
+	max-height: 100%;
+	max-width: 100%;
+	bottom: 50%;
+	right: 50%;
+	padding: 10px 10px 25px 10px;
+	transform: translate(50%, 50%);
+	box-sizing: border-box;
+}
+#ImageList div.imageName {
+	position: absolute;
+	padding: 8px;
+	left: 0px;
+	bottom: 0px;
+	width: 100%;
+	text-align: center;
+	box-sizing: border-box;
+}
+#ImageList .imageName > div {
+	display: inline-block;
+	max-width: 100%;
+	word-break: break-all;
+}
+#ImageList .imageName > div > span {
+	white-space: normal;
+}
+#ImageList .imageName input {
+	float: left;
+	margin-left: 0px;
+}
+#LayerList {
+	float: right;
+	height: 100%;
+	width: 150px;
+}
+#LayerList select {
+	background-color: lightGray;
+	width: 150px;
+}
+#LayerList div {
+	text-align: center;
+}
+#LayerList input {
+	margin-top: 2px;
+}
+#layerButton2 {
+	position: absolute;
+	bottom: 4px;
+	right: 4px;
+}

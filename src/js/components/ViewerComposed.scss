@@ -1,0 +1,59 @@
+@media only screen and (max-width: 885px) {
+	.sliderPanel {
+		visibility: hidden;
+	}
+	.subviewPanel {
+		visibility: hidden;
+	}
+	.posviewPanel {
+		visibility: hidden;
+	}
+}
+@media only screen and (max-height: 80px) {
+	.sliderPanel {
+		visibility: hidden;
+	}
+	.subviewPanel {
+		visibility: hidden;
+	}
+	.posviewPanel {
+		visibility: hidden;
+	}
+}
+
+
+/* ▼ -Absolute positioned panels ------ */
+
+/* Main of slider panel */
+.sliderPanel {
+	width: 230px;
+	right: 6px;
+	position: absolute;
+	top: 6px;
+}
+
+/* Main of sub-view panel */
+.subviewPanel {
+	right: 6px;
+	bottom: 6px;
+	position: absolute;
+}
+
+#posviewPanel {
+	right: 242px;
+	top: 6px;
+	position: absolute;
+}
+
+.posviewPanel {
+	height: 62px;	
+	width: 210px;
+}
+
+#infoPanel {
+	margin-left: 10px;
+	width: 18vw;
+	left: 0px;
+	top: 6px;
+	position: absolute;
+}

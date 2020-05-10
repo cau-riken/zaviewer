@@ -1,0 +1,26 @@
+/* Around the main image */
+
+.openseadragon {
+	width: 100%;
+	height: 100%;
+	border: none;
+	color: #333; /* text color for messages */
+	background-color: black;
+	z-index: -1000;
+}
+
+.overlay {
+	border: thin solid #444;
+}
+
+.overlay > * {
+	height: 100%;
+	width: 100%;
+}
+
+
+#poscanvas {
+	position: absolute;
+	width: 100%;
+	height: 100%;
+}
