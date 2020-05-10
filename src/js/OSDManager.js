@@ -568,8 +568,8 @@ class OSDManager {
                 this.viewer.viewport.zoomTo(1.1);
             }
             this.status.selectedRegionName = nameList[0];
-            this.status.userClickedRegion = false;
         }
+        this.status.userClickedRegion = false;
     }
 
     static selectRegion(regionName) {
@@ -628,8 +628,8 @@ class OSDManager {
                 //console.log("I made it");
             }
             this.status.selectedRegionName = regionName;
-            this.status.userClickedRegion = false;
         }
+        this.status.userClickedRegion = false;
     }
 
     static setSelection(selectedRegion) {
