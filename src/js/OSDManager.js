@@ -261,10 +261,12 @@ class OSDManager {
 
 
     static resizeCanvas() {
+        //TODO remove useless code
         $("#poscanvas").attr({
             'width': this.viewer.canvas.clientWidth,
             'height': this.viewer.canvas.clientHeight
         });
+
         this.viewPosition();
 
         if (this.viewer.referenceStrip) {
@@ -294,11 +296,12 @@ class OSDManager {
             this.viewPosition();
             return;
         }
+        var orig = this.viewer.viewport.pixelFromPoint(new OpenSeadragon.Point(0, 0), true);
         var rect = this.viewer.canvas.getBoundingClientRect();
         //var zoom = viewer.viewport.getZoom(true);
         var zoom = this.viewer.viewport.getZoom(true) * (this.viewer.canvas.clientWidth / this.config.imageSize);
-        var x = (event.clientX - this.viewer.currentOverlays[0].position.x - rect.left) / zoom;
-        var y = (event.clientY - this.viewer.currentOverlays[0].position.y - rect.top) / zoom;
+        var x = (event.clientX - orig.x - rect.left) / zoom;
+        var y = (event.clientY - orig.y - rect.top) / zoom;
         this.status.position[0].c++
         this.status.position[this.status.position[0].c].x = x;
         this.status.position[this.status.position[0].c].y = y;
@@ -721,8 +724,9 @@ class OSDManager {
         var zoom = this.viewer.viewport.getZoom(true) * (this.viewer.canvas.clientWidth / this.config.imageSize);
         this.status.position[0].x = event.clientX;
         this.status.position[0].y = event.clientY;
-        var x = (this.status.position[0].x - this.viewer.currentOverlays[0].position.x - rect.left) / zoom;
-        var y = (this.status.position[0].y - this.viewer.currentOverlays[0].position.y - rect.top) / zoom;
+        var orig = this.viewer.viewport.pixelFromPoint(new OpenSeadragon.Point(0, 0), true);
+        var x = (this.status.position[0].x - orig.x - rect.left) / zoom;
+        var y = (this.status.position[0].y - orig.y - rect.top) / zoom;
 
         this.status.pos = this.getPoint(x, y);
         this.signalStatusChanged(this.status);
@@ -821,21 +825,22 @@ class OSDManager {
 
         this.status.ctx.clearRect(0, 0, $("#poscanvas")[0].width, $("#poscanvas")[0].height);
 
+        var orig = this.viewer.viewport.pixelFromPoint(new OpenSeadragon.Point(0, 0), true);
         var rect = this.viewer.canvas.getBoundingClientRect();
         //var zoom = viewer.viewport.getZoom(true);
         var zoom = this.viewer.viewport.getZoom(true) * (this.viewer.canvas.clientWidth / this.config.imageSize);
-        var x = (this.status.position[0].x - this.viewer.currentOverlays[0].position.x - rect.left) / zoom;
-        var y = (this.status.position[0].y - this.viewer.currentOverlays[0].position.y - rect.top) / zoom;
+        var x = (this.status.position[0].x - orig.x - rect.left) / zoom;
+        var y = (this.status.position[0].y - orig.y - rect.top) / zoom;
 
         this.status.pos = this.getPoint(x, y);
         this.signalStatusChanged(this.status);
 
         // distance line
         if (this.status.position[0].c == 2) {
-            var px1 = Math.round((this.status.position[1].x * zoom) + this.viewer.currentOverlays[0].position.x + 0.5) - 0.5;
-            var py1 = Math.round((this.status.position[1].y * zoom) + this.viewer.currentOverlays[0].position.y + 0.5) - 0.5;
-            var px2 = Math.round((this.status.position[2].x * zoom) + this.viewer.currentOverlays[0].position.x + 0.5) - 0.5;
-            var py2 = Math.round((this.status.position[2].y * zoom) + this.viewer.currentOverlays[0].position.y + 0.5) - 0.5;
+            var px1 = Math.round((this.status.position[1].x * zoom) + orig.x + 0.5) - 0.5;
+            var py1 = Math.round((this.status.position[1].y * zoom) + orig.y + 0.5) - 0.5;
+            var px2 = Math.round((this.status.position[2].x * zoom) + orig.x + 0.5) - 0.5;
+            var py2 = Math.round((this.status.position[2].y * zoom) + orig.y + 0.5) - 0.5;
             this.status.ctx.beginPath();
             this.status.ctx.strokeStyle = "#888";
             this.status.ctx.moveTo(px1, py1);
@@ -847,8 +852,8 @@ class OSDManager {
             this.status.ctx.beginPath();
             this.status.ctx.strokeStyle = "#000";
             for (var i = 1; i <= this.status.position[0].c; i++) {
-                var px = Math.round((this.status.position[i].x * zoom) + this.viewer.currentOverlays[0].position.x + 0.5) + 0.5;
-                var py = Math.round((this.status.position[i].y * zoom) + this.viewer.currentOverlays[0].position.y + 0.5) + 0.5;
+                var px = Math.round((this.status.position[i].x * zoom) + orig.x + 0.5) + 0.5;
+                var py = Math.round((this.status.position[i].y * zoom) + orig.y + 0.5) + 0.5;
                 this.status.ctx.moveTo(px, py - 10);
                 this.status.ctx.lineTo(px, py + 10);
                 this.status.ctx.moveTo(px - 10, py);
@@ -858,8 +863,8 @@ class OSDManager {
             this.status.ctx.beginPath();
             this.status.ctx.strokeStyle = "#FFF";
             for (var i = 1; i <= this.status.position[0].c; i++) {
-                var px = Math.round((this.status.position[i].x * zoom) + this.viewer.currentOverlays[0].position.x + 0.5) - 0.5;
-                var py = Math.round((this.status.position[i].y * zoom) + this.viewer.currentOverlays[0].position.y + 0.5) - 0.5;
+                var px = Math.round((this.status.position[i].x * zoom) + orig.x + 0.5) - 0.5;
+                var py = Math.round((this.status.position[i].y * zoom) + orig.y + 0.5) - 0.5;
                 this.status.ctx.moveTo(px, py - 10);
                 this.status.ctx.lineTo(px, py + 10);
                 this.status.ctx.moveTo(px - 10, py);
