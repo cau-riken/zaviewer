@@ -3,6 +3,7 @@ import React from 'react';
 import ViewerManager from '../ViewerManager.js'
 import ExpandablePanel from './ExpandablePanel.js';
 
+import Utils from '../Utils.js';
 
 class SubViewPanel extends React.Component {
 
@@ -100,16 +101,16 @@ class SubViewPanel extends React.Component {
         this.subviewStatus.sagittalImg = this.subviewStatus.sagittalHolderPaper.image(img.src, 10, 10, this.config.subviewSize, this.config.subviewSize,
             () => {
                 //console.log("sagittalOnerror");
-                that.subviewStatus.sagittalImg.node.href.baseVal = "./img/no_image.jpg";
+                that.subviewStatus.sagittalImg.node.href.baseVal = "./assets/img/no_image.jpg";
             }
         );
         if (this.config.subviewFolerName) {
-            this.subviewStatus.sagittalImg.node.href.baseVal = this.config.PUBLISH_PATH + "/" + this.config.subviewFolerName + "/subview.jpg";
+            this.subviewStatus.sagittalImg.node.href.baseVal = Utils.makePath(this.config.PUBLISH_PATH, this.config.subviewFolerName, "/subview.jpg");
         } else {
-            this.subviewStatus.sagittalImg.node.href.baseVal = "./img/null.png";
+            this.subviewStatus.sagittalImg.node.href.baseVal = "./assets/img/null.png";
         }
-        this.subviewStatus.sagittalHolderPaper.image("./img/yz.png", 110, 110, 100, 100);
-        sagittalImgFg = this.subviewStatus.sagittalHolderPaper.image("./img/null.png", 10, 10, this.config.subviewSize, this.config.subviewSize);
+        this.subviewStatus.sagittalHolderPaper.image("./assets/img/yz.png", 110, 110, 100, 100);
+        sagittalImgFg = this.subviewStatus.sagittalHolderPaper.image("./assets/img/null.png", 10, 10, this.config.subviewSize, this.config.subviewSize);
         this.subviewStatus.sagittalRect = this.subviewStatus.sagittalHolderPaper.rect(10, 10, this.config.subviewSize, this.config.subviewSize);
 
         //		if (selectedSubview == SAGITTAL) {

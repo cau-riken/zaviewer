@@ -6,11 +6,11 @@ Project web site [brainminds.riken.jp](https://www.brainminds.riken.jp/)
 
 ---
 
-## building the bundle from the source code
+## building bundles from the source code
 
 ### requirement and dependencies
 
-* `NodeJs` and `gulp` must be installed on you platform beforehand
+* `NodeJs` and `gulp` must be installed on your platform beforehand
 
 
 * Use terminal windows and go to source folder 
