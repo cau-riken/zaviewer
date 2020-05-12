@@ -248,23 +248,6 @@
     }
 
     $.Filters = {
-        INTENSITYALPHA: function() {
-            return function(context, callback) {
-                var imgData = context.getImageData(
-                    0, 0, context.canvas.width, context.canvas.height);
-                var pixels = imgData.data;
-                for (var i = 0; i < pixels.length; i += 4) {
-                    var r = pixels[i];
-                    var g = pixels[i + 1];
-                    var b = pixels[i + 2];
-                    var v = (r + g + b) / 3;
-                    pixels[i+3] = v;
-		    pixels[i]=pixels[i+2]=0;	 
-                }
-                context.putImageData(imgData, 0, 0);
-                callback();
-            };
-        },
         THRESHOLDING: function(threshold) {
             if (threshold < 0 || threshold > 255) {
                 throw new Error('Threshold must be between 0 and 255.');
@@ -473,6 +456,33 @@
                         imgData.data[offset + 1] = g;
                         imgData.data[offset + 2] = b;
                     }
+                }
+                context.putImageData(imgData, 0, 0);
+                callback();
+            };
+        },
+        COLORMAP: function(cmap, ctr) {
+            var resampledCmap = cmap.slice(0);
+            var diff = 255 - ctr;
+            for(var i = 0; i < 256; i++) {
+                var position = 0;
+                if(i > ctr) {
+                    position = Math.min((i - ctr) / diff * 128 + 128,255) | 0;
+                }else{
+                    position = Math.max(0, i / (ctr / 128)) | 0;
+                }
+                resampledCmap[i] = cmap[position];
+            }
+            return function(context, callback) {
+                var imgData = context.getImageData(
+                    0, 0, context.canvas.width, context.canvas.height);
+                var pxl = imgData.data;
+                for (var i = 0; i < pxl.length; i += 4) {
+                    var v = (pxl[i] + pxl[i + 1] + pxl[i + 2]) / 3 | 0;
+                    var c = resampledCmap[v];
+                    pxl[i] = c[0];
+                    pxl[i + 1] = c[1];
+                    pxl[i + 2] = c[2];
                 }
                 context.putImageData(imgData, 0, 0);
                 callback();

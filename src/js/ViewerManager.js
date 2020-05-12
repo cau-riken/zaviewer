@@ -1,4 +1,5 @@
 import Utils from './Utils.js';
+import CustomFilters from './CustomFilters.js';
 
 export const VIEWER_ID = "openseadragon1";
 export const NAVIGATOR_ID = "navigatorDiv";
@@ -320,7 +321,7 @@ class ViewerManager {
                     filters: [{
                         items: this.viewer.world.getItemAt(nn_tracer_layer_ind),
                         processors: [
-                            OpenSeadragon.Filters.INTENSITYALPHA()
+                            CustomFilters.INTENSITYALPHA()
                         ]
                     }]
                 });
