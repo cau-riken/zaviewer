@@ -1,7 +1,7 @@
 
 import React from 'react';
 
-import ExpPanel from './ExpPanel.js'
+import ExpandablePanel from './ExpandablePanel.js'
 
 
 class InfoPanel extends React.Component {
@@ -12,7 +12,7 @@ class InfoPanel extends React.Component {
 
     render() {
         return (
-            <ExpPanel header={
+            <ExpandablePanel header={
                 <div id="infoPanelButton">
                     <span>{this.props.infoTextName}</span>
                 </div>
@@ -21,7 +21,7 @@ class InfoPanel extends React.Component {
                     {this.props.infoText}
                     <br />
                 </div>
-            </ExpPanel>
+            </ExpandablePanel>
         );
     }
 

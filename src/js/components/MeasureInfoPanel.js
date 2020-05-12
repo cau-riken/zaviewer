@@ -1,6 +1,6 @@
 import React from 'react';
 
-import ExpPanel from './ExpPanel.js';
+import ExpandablePanel from './ExpandablePanel.js';
 
 class MeasureInfoPanel extends React.Component {
 
@@ -23,14 +23,14 @@ class MeasureInfoPanel extends React.Component {
 
         return (
 
-            <ExpPanel
+            <ExpandablePanel
                 header={<div id="posDis">Distance:<span id="posdistance">{distance}</span>(mm)</div>}
             >
                 <div className="posTbl">
                     <div><div>P1</div>&nbsp;(<div id="pos1x">{posx[0]}</div>,&nbsp;<div id="pos1y">{posy[0]}</div>)</div>
                     <div><div>P2</div>&nbsp;(<div id="pos2x">{posx[1]}</div>,&nbsp;<div id="pos2y">{posy[1]}</div>)</div>
                 </div>
-            </ExpPanel>
+            </ExpandablePanel>
         );
     }
 }

@@ -1,7 +1,4 @@
 import React from 'react';
-
-import ExpPanel from './ExpPanel.js';
-
 import OSDMain from './OSDMain.js';
 import PositionInfoPanel from './PositionInfoPanel.js';
 import MeasureInfoPanel from './MeasureInfoPanel.js';
@@ -9,7 +6,7 @@ import SubViewPanel from './SubViewPanel.js';
 import SliderNavigatorPanel from './SliderNavigatorPanel.js';
 import InfoPanel from './InfoPanel.js';
 
-import OSDManager from '../OSDManager.js'
+import ViewerManager from '../ViewerManager.js'
 
 class ViewerComposed extends React.Component {
 
@@ -22,7 +19,7 @@ class ViewerComposed extends React.Component {
     render() {
 
         if (this.props.config && !this.initialized) {
-            OSDManager.init(this.props.config, (osdstatus) => {
+            ViewerManager.init(this.props.config, (osdstatus) => {
                 this.setState(state => ({ ...osdstatus }));
             });
             console.info('Initializing OSD');
@@ -49,7 +46,7 @@ class ViewerComposed extends React.Component {
                 </div>
 
                 <div id="posviewPanel">
-                    <PositionInfoPanel pos={this.state.pos} />
+                    <PositionInfoPanel livePosition={this.state.livePosition} />
                     <MeasureInfoPanel posCount={this.state.position ? this.state.position[0].c : 0} pos={this.state.pos} markedPos={this.state.markedPos} />
                 </div>
                 <div id="infoPanel">

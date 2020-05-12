@@ -1,8 +1,8 @@
 import React from 'react';
 
-import ExpPanel from './ExpPanel.js';
+import ExpandablePanel from './ExpandablePanel.js';
 
-import OSDManager from '../OSDManager.js'
+import ViewerManager from '../ViewerManager.js'
 
 class LayerSlider extends React.Component {
     constructor(props) {
@@ -41,11 +41,11 @@ class LayerSlider extends React.Component {
     }
 
     handleOpacityChange(layerid, enabled, event) {
-        OSDManager.changeLayerOpacity(layerid, enabled, event.target.value);
+        ViewerManager.changeLayerOpacity(layerid, enabled, event.target.value);
     }
 
     handleCheckedChange(layerid, opacity, event) {
-        OSDManager.changeLayerOpacity(layerid, event.target.checked, opacity);
+        ViewerManager.changeLayerOpacity(layerid, event.target.checked, opacity);
     }
 
     handleClickName(layerid) {
@@ -78,21 +78,21 @@ class SliderNavigatorPanel extends React.Component {
 
         return (
 
-            <ExpPanel header={showRegionButton} >
+            <ExpandablePanel header={showRegionButton} >
                 <div className="navigatorParentClass">
-                    <div id={OSDManager.NAVIGATOR_ID} className="navigatorChildClass"></div>
+                    <div id={ViewerManager.NAVIGATOR_ID} className="navigatorChildClass"></div>
                 </div>
                 <div className="sliderGroup">
                     <div id="sliderGroup1">
                         {layerSliders}
                     </div>
                 </div>
-            </ExpPanel>
+            </ExpandablePanel>
         );
     }
 
     handleClickHideShow() {
-        OSDManager.showRegions(!this.props.showRegions);
+        ViewerManager.changeRegionsVisibility(!this.props.showRegions);
     }
 }
 

@@ -1,5 +1,3 @@
-/* Around the main image */
-
 .openseadragon {
 	width: 100%;
 	height: 100%;
@@ -18,9 +16,11 @@
 	width: 100%;
 }
 
-
 #poscanvas {
 	position: absolute;
 	width: 100%;
 	height: 100%;
+	background: transparent;
+	margin: 0;
+	padding: 0;
 }

@@ -3,7 +3,7 @@ import React from 'react';
 import SplitterLayout from 'react-splitter-layout';
 
 import Utils from '../Utils.js';
-import OSDManager from '../OSDManager.js'
+import ViewerManager from '../ViewerManager.js'
 
 
 class RegionTreePanel extends React.Component {
@@ -18,8 +18,7 @@ class RegionTreePanel extends React.Component {
                 <div id="tree_search" style={{ height: "100%", width: "100%" }}>
                     <div id="region_search_label">Search for a region:</div>
                     <div>
-                        {/*<input autocomplete="off" id="region_search_form" value="Region search" type="text" />*/}
-                        <input autocomplete="off" id="region_search_form" type="text" />
+                        <input autoComplete="off" id="region_search_form"  placeholder= " Region search " type="text" />
                     </div>
                 </div>
                 <div style={{ height: "100%", width: "100%" }}>
@@ -80,7 +79,7 @@ class RegionTreePanel extends React.Component {
         $('#jstree').on("changed.jstree", function (e, data) {
             //console.log("user interaction");
             //remove selection on all elements
-            OSDManager.unselectRegions();
+            ViewerManager.unselectRegions();
 
             if (data.action == "deselect_all") {
                 //console.log("deselect_all");
@@ -92,11 +91,11 @@ class RegionTreePanel extends React.Component {
                 if (node.children.length > 0) {
                     var nameList = [];
                     that.getAllChildrenTexts(data, data.selected[0].trim(), nameList);
-                    OSDManager.selectRegions(nameList);
+                    ViewerManager.selectRegions(nameList);
 
                 } else {
                     //console.log("Has no children");
-                    OSDManager.selectRegion(data.selected[0].trim());
+                    ViewerManager.selectRegion(data.selected[0].trim());
                 }
 
                 //$('#current_region').html(data.selected[0].trim());

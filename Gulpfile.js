@@ -14,7 +14,7 @@ gulp.task('sass', function () {
     return gulp.src('src/js/components/*.scss')
         .pipe(sass().on('error', sass.logError))
         .pipe(concat("ZAViewer.css"))
-        .pipe(gulp.dest('dist/css'));
+        .pipe(gulp.dest('./assets/css'));
 });
 
 gulp.task('build', function () {
@@ -25,7 +25,7 @@ gulp.task('build', function () {
         .bundle()
         .pipe(source('main.js'))
         .pipe(buffer())
-        .pipe(gulp.dest('./dist'));
+        .pipe(gulp.dest('./assets/js'));
 });
 
 gulp.task('buildall', gulp.parallel('sass', 'build'), (done) => {

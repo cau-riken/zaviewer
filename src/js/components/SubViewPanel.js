@@ -1,7 +1,7 @@
 import React from 'react';
 
-import OSDManager from '../OSDManager.js'
-import ExpPanel from './ExpPanel.js';
+import ViewerManager from '../ViewerManager.js'
+import ExpandablePanel from './ExpandablePanel.js';
 
 
 class SubViewPanel extends React.Component {
@@ -39,7 +39,7 @@ class SubViewPanel extends React.Component {
         }
 
         return (
-            <ExpPanel collapseToBottom
+            <ExpandablePanel collapseToBottom
                 header={
                     <div>
                         <div id="sagittal_label" className="sagittalLabel" ></div>
@@ -74,15 +74,15 @@ class SubViewPanel extends React.Component {
                 <div id="sagittal_holder" className="sagittalHolder" >
                     <img id="sagittal_image" alt="Sagittal view" width="200" height="200" />
                 </div>
-            </ExpPanel>
+            </ExpandablePanel>
         );
     }
 
     handleClickUp() {
-        OSDManager.goToSlice(OSDManager.CORONAL, this.props.coronalChosenSlice + 1);
+        ViewerManager.goToSlice(ViewerManager.CORONAL, this.props.coronalChosenSlice + 1);
     }
     handleClickDown() {
-        OSDManager.goToSlice(OSDManager.CORONAL, this.props.coronalChosenSlice - 1);
+        ViewerManager.goToSlice(ViewerManager.CORONAL, this.props.coronalChosenSlice - 1);
     }
 
     addSagittalSelectSection() {
@@ -149,7 +149,7 @@ class SubViewPanel extends React.Component {
             var dragStart = function (x, y) {
             }
             var dragEnd = function () {
-                OSDManager.goToSlice(OSDManager.CORONAL, that.subviewStatus.targetCoronalChosenSlice);
+                ViewerManager.goToSlice(ViewerManager.CORONAL, that.subviewStatus.targetCoronalChosenSlice);
             };
             sagittalImgFg.drag(dragMove, dragStart, dragEnd);
         }
@@ -166,7 +166,7 @@ class SubViewPanel extends React.Component {
             newCoronalChosenSlice = Math.round((this.config.coronalSlideCount - 1.0) * percent);
         }
         if (this.config.coronalSlideCount > 1 && isClick) {
-            OSDManager.goToSlice(OSDManager.CORONAL, newCoronalChosenSlice);
+            ViewerManager.goToSlice(ViewerManager.CORONAL, newCoronalChosenSlice);
         }
 
         this.subviewStatus.targetCoronalChosenSlice = newCoronalChosenSlice;

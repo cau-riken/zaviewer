@@ -1,11 +1,17 @@
 import Utils from './Utils.js';
 
+/** Class in charge of retrieving and holding configuration associated to a dataset */
 class ZAVConfig {
 
     static getConfig(configId, callbackWhenReady) {
         return new ZAVConfig(configId, callbackWhenReady);
     }
 
+    /**
+     * Create a configuration 
+     * @param {string} configId - ID of the configuration.
+     * @param {function} callbackWhenReady - function asynchronously invoked to signal that the configuration is fully loaded
+     */
     constructor(configId, callbackWhenReady) {
 
         const _subviewSize = 200;
@@ -23,16 +29,20 @@ class ZAVConfig {
 
             subviewFolerName: undefined,
             coronalSlideCount: undefined,
+            /** folder of the SVG region files */
             svgFolerName: undefined,
 
-            coronalFirstIndex: undefined, // the first index of Coronal of selected dataset
+            /** First index of Coronal of selected dataset */
+            coronalFirstIndex: undefined, 
 
             subviewSize: _subviewSize,
             subviewZoomRatio: _subviewZoomRatio,
             yMinGlobal: 5 / _subviewZoomRatio,
             yMaxGlobal: 585 / _subviewZoomRatio,
 
+            /** matrix to convert image space to physical space */
             matrix: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+
             coronalSliceStep: 1,
             imageSize: 1000,
 
@@ -59,8 +69,9 @@ class ZAVConfig {
             dzDiff: 0,//1290.0;
 
 
-            bHideDelineation: false, // true if delineation is hidden
-
+            /** Set to true if delineation is hidden */
+            bHideDelineation: false, 
+            /** Path to the tree region data */
             treeUrlPath: undefined,
 
             data: undefined,
@@ -74,32 +85,27 @@ class ZAVConfig {
 
     }
 
+    /**
+     * Retrieve configuration from remote server
+     * @param {function} callbackWhenReady - function invoked when the configuration is fully loaded
+     * @private
+     */
     retrieveConfig(callbackWhenReady) {
-        //FIXME
-        const TempPrefix = "http://localhost:8080";
-
         const that = this;
 
         $.ajax({
-            //FIXME url: "../path.json",
-            url: Utils.makePath(TempPrefix, "path.json"),
-
+            url: "../path.json",
             type: "GET",
             async: true,
             dataType: 'json',
             success: function (response) {
 
-                //FIXME that.config.ADMIN_PATH = response.admin_path;
-                //FIXME that.config.IIPSERVER_PATH = response.iipserver_path;
-                //FIXME that.config.PUBLISH_PATH = response.publish_path;
-
-                that.config.ADMIN_PATH = Utils.makePath(TempPrefix, response.admin_path);
-                that.config.IIPSERVER_PATH = Utils.makePath(TempPrefix, response.iipserver_path);
-                that.config.PUBLISH_PATH = Utils.makePath(TempPrefix, "data");
+                that.config.ADMIN_PATH = response.admin_path;
+                that.config.IIPSERVER_PATH = response.iipserver_path;
+                that.config.PUBLISH_PATH = response.publish_path;
 
                 $.ajax({
-                    //FIXME url: "../" + that.config.ADMIN_PATH + "json.php",
-                    url: Utils.makePath(that.config.ADMIN_PATH, "json.php"),
+                    url: Utils.makePath("../", that.config.ADMIN_PATH, "json.php"),
 
                     type: "POST",
                     async: true,
@@ -248,10 +254,9 @@ class ZAVConfig {
 
                 //search
                 $.ajax({
-                    //FIXME url: "../" + G.ADMIN_PATH + "findImageGroupList.php",
-                    url: Utils.makePath(G.ADMIN_PATH, "findImageGroupList.php"),
+                    url: Utils.makePath("../", that.config.ADMIN_PATH, "findImageGroupList.php"),
                     type: "POST",
-                    async: true,
+                    async: true,    
                     dataType: 'json',
                     data: {
                         id: that.config.paramId,

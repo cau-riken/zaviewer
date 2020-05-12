@@ -6,8 +6,8 @@ export const AXIAL = 0;
 export const CORONAL = 1;
 export const SAGITTAL = 2;
 
-
-class OSDManager {
+/** Class in charge of managing viewer's main display (OSD) and state of related elements */
+class ViewerManager {
 
     static get VIEWER_ID() {
         return VIEWER_ID;
@@ -27,6 +27,11 @@ class OSDManager {
         return SAGITTAL;
     }
 
+    /**
+     * Create ViewManager from the specified config and setup underlying OpenSeaDragon and related components
+     * @param {object} config - configuration used as blueprint to setup the viewer
+     * @param {function} callbackWhenReady - function repeatidly invoked whenever viewer's status has changed
+     */
     static init(config, callbackWhenStatusChanged) {
         this.config = config;
         this.signalStatusChanged = callbackWhenStatusChanged;
@@ -38,33 +43,54 @@ class OSDManager {
             initLayerDisplaySettings[key] = { enabled: true, opacity: parseInt(value.opacity), name: value.metadata };
         });
 
+        /** dynamic state of the viewer */
         this.status = {
 
+            /** Set of region delineations */
             set: undefined,
+            /** Main Container where region delineations are drawn */
             paper: undefined,
+
+            /** 2D context of canvas used to draw measuring tape */
             ctx: null,
 
-            isFullyLoaded: false,
-            tileDrawnHandler: undefined,
-
-
+            /** set to true when user directly click region delineation on overlay (vs selecting it from region treeview) */
             userClickedRegion: false,
+            /** name of the currently selected region */
             selectedRegionName: "",
-            reloaded: false,
 
-            // range pointer
+            /** range pointer used to provide info for measuring line feature (image space coordinates) */
             position: [{ x: 0, y: 0, c: 0 }, { x: 0, y: 0 }, { x: 0, y: 0 }],
-            pos: undefined,
 
+            /** couple of recorded pointer positions in physical space coordinates (used by measuring line feature) */
+            markedPos: undefined,
+
+            /** up-to-date 3D position in physical space coordinates (for live display of position) */
+            livePosition: undefined,
+
+            /** pointer position when click started (used to prevent position marking when Dragging occurs) */
             pointerdownpos: { x: 0, y: 0 },
 
-            //layers display values
+
+            /** layers display values */
             layerDisplaySettings: initLayerDisplaySettings,
 
-            //visibility of region delineations
+            /** visibility of region delineations */
             showRegions: !this.config.bHideDelineation,
 
+            /** currently selected coronal slice */
             coronalChosenSlice: this.config.initialSlice,
+
+
+            //TODO probably useless
+            isFullyLoaded: false,
+
+            //TODO probably useless
+            tileDrawnHandler: undefined,
+
+            //TODO probably useless
+            reloaded: false,
+
 
         }
 
@@ -112,24 +138,27 @@ class OSDManager {
             if (that.config.svgFolerName != "") {
                 //addSVGData(dataRootPath + "/" + G.svgFolerName + "/coronal/Anno_"+ (currentPage - coronalFirstIndex ) + ".svg",event);
 
-
-                that.addSVGData(that.config.PUBLISH_PATH + "/" + that.config.svgFolerName + "/Anno_" + (that.viewer.currentPage() - that.config.coronalFirstIndex) + ".svg", event);
+                that.addSVGData(that.config.PUBLISH_PATH + "/" + that.config.svgFolerName + "/Anno_" + (that.viewer.currentPage() - that.config.coronalFirstIndex) + ".svg", event.element);
             }
         });
 
         this.viewer.addHandler('open', function (event) {
 
             that.status.coronalChosenSlice = that.viewer.currentPage();
-            var elt = document.createElement("div");
-            elt.className = "overlay";
 
             if (!that.viewer.source) { return; }
+
+            /** overlay to hold region delineations */
+            var elt = document.createElement("div");
+            elt.className = "overlay";
 
             var dimensions = that.viewer.source.dimensions;
             that.viewer.addOverlay({
                 element: elt,
                 location: that.viewer.viewport.imageToViewportRectangle(new OpenSeadragon.Rect(0, 0, dimensions.x, dimensions.y)),
             });
+
+
             $.each(that.config.layers, function (key, value) {
                 if (value.index != 0) {
                     that.addLayer(key, value.name, value.ext);
@@ -171,12 +200,12 @@ class OSDManager {
 
         this.viewer.addHandler('resize', function (event) {
             that.resizeCanvas();
-            that.transform(that.status.set);
+            that.adjustResizeRegionsOverlay(that.status.set);
         });
 
 
         this.viewer.addHandler('animation', function (event) {
-            that.transform(that.status.set);
+            that.adjustResizeRegionsOverlay(that.status.set);
         });
 
         //Handle changing the page; perhaps dynamically load new data at this point
@@ -260,59 +289,6 @@ class OSDManager {
     }
 
 
-    static resizeCanvas() {
-        //TODO remove useless code
-        $("#poscanvas").attr({
-            'width': this.viewer.canvas.clientWidth,
-            'height': this.viewer.canvas.clientHeight
-        });
-
-        this.viewPosition();
-
-        if (this.viewer.referenceStrip) {
-            //FIXME resetReferenceStrip();
-        }
-    }
-
-
-    static pointerdownHandler(event) {
-        this.status.pointerdownpos.x = event.clientX;
-        this.status.pointerdownpos.y = event.clientY;
-    };
-
-    static pointerupHandler(event) {
-        if (this.viewer.currentOverlays.length == 0 || $("#poscanvas").is(":hidden")) {
-            return;
-        }
-
-        if (this.status.pointerdownpos.x > event.clientX + 5 || this.status.pointerdownpos.x < event.clientX - 5 ||
-            this.status.pointerdownpos.y > event.clientY + 5 || this.status.pointerdownpos.y < event.clientY - 5) {
-            return;
-        }
-        if (this.status.position[0].c == 2) {
-            this.resetPositionview();
-            this.viewer.drawer.clear();
-            this.viewer.world.draw();
-            this.viewPosition();
-            return;
-        }
-        var orig = this.viewer.viewport.pixelFromPoint(new OpenSeadragon.Point(0, 0), true);
-        var rect = this.viewer.canvas.getBoundingClientRect();
-        //var zoom = viewer.viewport.getZoom(true);
-        var zoom = this.viewer.viewport.getZoom(true) * (this.viewer.canvas.clientWidth / this.config.imageSize);
-        var x = (event.clientX - orig.x - rect.left) / zoom;
-        var y = (event.clientY - orig.y - rect.top) / zoom;
-        this.status.position[0].c++
-        this.status.position[this.status.position[0].c].x = x;
-        this.status.position[this.status.position[0].c].y = y;
-
-        this.setPosition();
-
-        // show canvas
-        this.viewPosition();
-    };
-
-
     static updateFilters() {
         const that = this;
 
@@ -368,8 +344,15 @@ class OSDManager {
         }
     };
 
-    static addSVGData(svgName, event) {
-        this.status.paper = Raphael(event.element);
+    /** Add region delineations to specified overlay  
+     * 
+     *  @param {string} svgName - url to the SVG containing regions  
+     *  @param {element} overlayElement - overlay element where to load the regions
+     *  @private
+     * 
+    */
+    static addSVGData(svgName, overlayElement) {
+        this.status.paper = Raphael(overlayElement);
         this.status.set = this.status.paper.set();
         //clear the set if necessary
         this.status.set.remove();
@@ -454,6 +437,8 @@ class OSDManager {
                             $('#jstree').scrollTop(Utils.findPosY(document.getElementById(this.attr("title")))
                                 - Utils.findPosY(document.getElementById('jstree')) - $('#jstree').height() / 2);
                             $('#jstree').scrollLeft(Utils.findPosX(document.getElementById(this.attr("title"))));
+
+
                             this.attr("fill-opacity", "0.8");//works
                             this.attr("stroke", "#0000ff");
                             //EDIT: Alex, Feb 1, 2017
@@ -470,7 +455,7 @@ class OSDManager {
                 that.status.reloaded = true;
                 //console.log("reloaded");
 
-                that.transform(that.status.set);
+                that.adjustResizeRegionsOverlay(that.status.set);
                 //if we have come to a new slice from clicking tree view this should occur:
                 that.setSelection(that.status.selectedRegionName, true);
 
@@ -485,7 +470,10 @@ class OSDManager {
 
     }
 
-    static transform(el) {
+    /**  
+     * @private
+    */
+    static adjustResizeRegionsOverlay(el) {
         var zoom = this.viewer.world.getItemAt(0).viewportToImageZoom(this.viewer.viewport.getZoom(true));
         //offset based on (8000-5420)/2
         //original method (slow)
@@ -498,10 +486,13 @@ class OSDManager {
         this.status.paper.setTransform(' scale(' + zoom + ',' + zoom + ') translate(0,' + this.config.dzDiff + ')');//translate(0,1290)');
         //console.log('S' + zoom + ',' + zoom + ',0,0');
 
-        this.viewPosition();
+        this.displayMeasureLine();
     }
 
-    static showRegions(visible) {
+    /**  
+     * @public
+    */
+    static changeRegionsVisibility(visible) {
         this.status.showRegions = visible;
         if (this.status.set) {
             if (!this.status.showRegions) {
@@ -519,12 +510,18 @@ class OSDManager {
         this.signalStatusChanged(this.status);
     }
 
+    /**  
+    * @private
+    */
     static hideDelineation() {
         this.status.set.forEach(function (el) {
             el.hide();
         });
     }
 
+    /**  
+    * @public
+    */
     static unselectRegions() {
 
         this.status.set.forEach(function (el) {
@@ -539,6 +536,9 @@ class OSDManager {
 
     }
 
+    /**  
+    * @public
+    */
     static selectRegions(nameList) {
         if (!this.status.userClickedRegion) {
             const that = this;
@@ -575,6 +575,9 @@ class OSDManager {
         this.status.userClickedRegion = false;
     }
 
+    /**  
+    * @public
+    */
     static selectRegion(regionName) {
         if (!this.status.userClickedRegion) {
             var found = false;
@@ -635,12 +638,16 @@ class OSDManager {
         this.status.userClickedRegion = false;
     }
 
+    /**  
+    * @private
+    */
     static setSelection(selectedRegion) {
         var i, j, r = [];
         var found = false;
         var newX = 0;
         var newY = 0;
         var snCount = 0;
+        const that = this;
         this.status.set.forEach(function (el) {
             var xvdd = el[0].attr("title");//works
             if (xvdd.trim() == selectedRegion) {
@@ -648,8 +655,8 @@ class OSDManager {
                 //move to correct location
                 var bbox = el[0].getBBox();
                 //console.log("The value is"+bbox.x + " "+bbox.y);
-                newX += (bbox.x2 - bbox.width / 2) / this.config.dzWidth;
-                newY += (this.config.dzDiff + bbox.y2 - bbox.height / 2) / this.config.dzHeight;
+                newX += (bbox.x2 - bbox.width / 2) / that.config.dzWidth;
+                newY += (that.config.dzDiff + bbox.y2 - bbox.height / 2) / that.config.dzHeight;
                 snCount++;
                 //console.log(newX + " " + newY);
                 //set pan to and zoom to
@@ -677,6 +684,9 @@ class OSDManager {
     }
 
 
+    /**  
+    * @public
+    */
     static goToSlice(axis, chosenSlice) {
         //TODO use axis 
 
@@ -689,9 +699,6 @@ class OSDManager {
         this.viewer.goToPage(this.config.coronalFirstIndex + this.status.coronalChosenSlice);
     }
 
-    static getViewer() {
-        return this.viewer;
-    }
 
     //https://github.com/openseadragon/openseadragon/issues/1421 to improve caching
     static getPoint(x, y) {
@@ -728,7 +735,7 @@ class OSDManager {
         var x = (this.status.position[0].x - orig.x - rect.left) / zoom;
         var y = (this.status.position[0].y - orig.y - rect.top) / zoom;
 
-        this.status.pos = this.getPoint(x, y);
+        this.status.livePosition = this.getPoint(x, y);
         this.signalStatusChanged(this.status);
     }
 
@@ -815,9 +822,66 @@ class OSDManager {
 
     //--------------------------------------------------
     // position
+    static resizeCanvas() {
+        //TODO remove useless code
+        $("#poscanvas").attr({
+            'width': this.viewer.canvas.clientWidth,
+            'height': this.viewer.canvas.clientHeight
+        });
+        this.displayMeasureLine();
+
+        if (this.viewer.referenceStrip) {
+            //FIXME resetReferenceStrip();
+        }
+    }
 
 
-    static viewPosition() {
+    static pointerdownHandler(event) {
+        this.status.pointerdownpos.x = event.clientX;
+        this.status.pointerdownpos.y = event.clientY;
+    };
+
+    static pointerupHandler(event) {
+        //
+        if (this.viewer.currentOverlays.length == 0 || $("#poscanvas").is(":hidden")) {
+            return;
+        }
+
+        //prevent recording another point if a dragging gesture is occuring
+        if (this.status.pointerdownpos.x > event.clientX + 5 || this.status.pointerdownpos.x < event.clientX - 5 ||
+            this.status.pointerdownpos.y > event.clientY + 5 || this.status.pointerdownpos.y < event.clientY - 5) {
+            return;
+        }
+        //already 2 points recorded, reset measuring line
+        if (this.status.position[0].c == 2) {
+            this.resetPositionview();
+            this.viewer.drawer.clear();
+            this.viewer.world.draw();
+            this.displayMeasureLine();
+            return;
+        }
+
+        var orig = this.viewer.viewport.pixelFromPoint(new OpenSeadragon.Point(0, 0), true);
+        var rect = this.viewer.canvas.getBoundingClientRect();
+        //var zoom = viewer.viewport.getZoom(true);
+        var zoom = this.viewer.viewport.getZoom(true) * (this.viewer.canvas.clientWidth / this.config.imageSize);
+
+        //record next point for measuring line feature
+        var x = (event.clientX - orig.x - rect.left) / zoom;
+        var y = (event.clientY - orig.y - rect.top) / zoom;
+        this.status.position[0].c++
+        this.status.position[this.status.position[0].c].x = x;
+        this.status.position[this.status.position[0].c].y = y;
+
+        this.setPosition();
+
+        // show canvas
+        this.displayMeasureLine();
+    };
+
+
+    /** Draw the measure line widgets on the position canvas */
+    static displayMeasureLine() {
         if (this.viewer.currentOverlays[0] == null) { return; }
         if (this.status.ctx == null) {
             this.status.ctx = $("#poscanvas")[0].getContext('2d');
@@ -827,12 +891,12 @@ class OSDManager {
 
         var orig = this.viewer.viewport.pixelFromPoint(new OpenSeadragon.Point(0, 0), true);
         var rect = this.viewer.canvas.getBoundingClientRect();
-        //var zoom = viewer.viewport.getZoom(true);
+
         var zoom = this.viewer.viewport.getZoom(true) * (this.viewer.canvas.clientWidth / this.config.imageSize);
         var x = (this.status.position[0].x - orig.x - rect.left) / zoom;
         var y = (this.status.position[0].y - orig.y - rect.top) / zoom;
 
-        this.status.pos = this.getPoint(x, y);
+        this.status.livePosition = this.getPoint(x, y);
         this.signalStatusChanged(this.status);
 
         // distance line
@@ -880,13 +944,12 @@ class OSDManager {
     }
 
 
-
     static claerPosition() {
         this.status.position[0].c = 2;
         this.resetPositionview();
         this.viewer.drawer.clear();
         this.viewer.world.draw();
-        this.viewPosition();
+        this.displayMeasureLine();
         return;
     }
 
@@ -910,10 +973,4 @@ class OSDManager {
 
 }
 
-
-
-
-//const osdManager = new OSDManager();
-//Object.freeze(osdManager);
-
-export default OSDManager;
+export default ViewerManager;

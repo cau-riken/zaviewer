@@ -8,10 +8,10 @@ class PositionInfoPanel extends React.Component {
 
     render() {
         var posX, posY, posZ;
-        if (this.props.pos) {
-            posX = this.props.pos[0].toFixed(2);
-            posY = this.props.pos[1].toFixed(2);
-            posZ = this.props.pos[2].toFixed(2);
+        if (this.props.livePosition) {
+            posX = this.props.livePosition[0].toFixed(2);
+            posY = this.props.livePosition[1].toFixed(2);
+            posZ = this.props.livePosition[2].toFixed(2);
         } else {
             posX = posY = posZ = "-";
         }

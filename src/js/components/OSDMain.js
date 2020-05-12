@@ -1,6 +1,6 @@
 import React from 'react';
 
-import OSDManager from '../OSDManager.js'
+import ViewerManager from '../ViewerManager.js'
 
 
 class OSDMain extends React.Component {
@@ -10,8 +10,8 @@ class OSDMain extends React.Component {
     }
 
     render() {
-        return (    
-            <div id={OSDManager.VIEWER_ID} className="openseadragon"></div>
+        return (
+            <div id={ViewerManager.VIEWER_ID} className="openseadragon"></div>
         );
     }
 
