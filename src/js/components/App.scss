@@ -12,3 +12,17 @@ body {
 #primaryViewerPane {
 	background-color: #000000;
 }
+
+div#zav_logo {
+	height: 50px;
+	background-image: url("../img/logo.png");
+	background-repeat: no-repeat;
+	background-position: 6px 12px;
+	background-color: #333;
+	z-index: 101;
+	-webkit-user-select: none; /* Safari・Chrome */
+	-moz-user-select: none; /* Firefox */
+	-ms-user-select: none; /* IE */
+	-o-user-select: none; /* Opera */
+	user-select: none;
+}

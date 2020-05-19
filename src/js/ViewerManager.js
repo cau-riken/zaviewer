@@ -1,4 +1,7 @@
 import Utils from './Utils.js';
+
+import RegionsManager from './RegionsManager.js'
+
 import CustomFilters from './CustomFilters.js';
 
 export const VIEWER_ID = "openseadragon1";
@@ -6,6 +9,8 @@ export const NAVIGATOR_ID = "navigatorDiv";
 export const AXIAL = 0;
 export const CORONAL = 1;
 export const SAGITTAL = 2;
+
+const VIEWER_ACTIONSOURCEID ='VIEWER';
 
 /** Class in charge of managing viewer's main display (OSD) and state of related elements */
 class ViewerManager {
@@ -36,6 +41,7 @@ class ViewerManager {
     static init(config, callbackWhenStatusChanged) {
         this.config = config;
         this.signalStatusChanged = callbackWhenStatusChanged;
+        this.regionActionner = RegionsManager.getActionner(VIEWER_ACTIONSOURCEID);
         const that = this;
 
         //layers initial display values
@@ -65,6 +71,7 @@ class ViewerManager {
 
             /** couple of recorded pointer positions in physical space coordinates (used by measuring line feature) */
             markedPos: undefined,
+            markedPosColors: ["#ff7", "#ff61b3"],
 
             /** up-to-date 3D position in physical space coordinates (for live display of position) */
             livePosition: undefined,
@@ -78,6 +85,8 @@ class ViewerManager {
 
             /** visibility of region delineations */
             showRegions: !this.config.bHideDelineation,
+
+            currentAxis: this.CORONAL,
 
             /** currently selected coronal slice */
             coronalChosenSlice: this.config.initialSlice,
@@ -286,6 +295,12 @@ class ViewerManager {
         });
 
 
+        RegionsManager.addListeners(regionsStatus => {
+            if (RegionsManager.getLastActionSource() != VIEWER_ACTIONSOURCEID) {
+                ViewerManager.unselectRegions();
+                ViewerManager.selectRegions(Array.from(regionsStatus.selected.values()));
+            }
+        });
 
     }
 
@@ -306,6 +321,7 @@ class ViewerManager {
             });
             //		console.log(nn_tracer_layer_ind);
             var processors = [];
+            //TODO remove useless code
             //if($('#intensity_slider').val() != "0"){
             //	processors.push(OpenSeadragon.Filters.BRIGHTNESS(parseFloat($('#intensity_slider').val())));
             //}
@@ -331,8 +347,8 @@ class ViewerManager {
             }
         }
         //TODO remove useless code
-        $("#intensity_value").val($("#intensity_slider").val());
-        $("#gamma_value").val((parseFloat($("#gamma_slider").val()) / 10.0).toFixed(1));
+        //$("#intensity_value").val($("#intensity_slider").val());
+        //$("#gamma_value").val((parseFloat($("#gamma_slider").val()) / 10.0).toFixed(1));
     }
 
     static waitForNNLayer(nn_tracer_layer_ind) {
@@ -371,14 +387,17 @@ class ViewerManager {
                 var root = strReturn.getElementsByTagName('svg')[0];
                 //I can get the name and paths
                 var paths = root.getElementsByTagName('path');
+
                 for (var i = 0; i < paths.length; i++) {
                     var newSet = that.status.paper.importSVG(paths[i]);
                     newSet.id = paths[i].getAttribute('id');
                     newSet.attr("title", paths[i].getAttribute('id'));
                     newSet.attr("fill-opacity", 0.4);
 
-                    //handle the background case
+                    //TODO regroup in one single event handler for all regions
                     if (paths[i].getAttribute('id') == "background") {
+                        //background elements
+
                         newSet.attr("fill-opacity", 0.0);
                         /*					newSet.mouseover(function(e)
                                             {
@@ -386,19 +405,17 @@ class ViewerManager {
                                             });*/
 
                         newSet.mouseout(function (e) {
-                            if (that.status.selectedRegionName != this.attr("title")) {
+                            if (!RegionsManager.isSelected(this.attr("title"))) {
                                 //	this.attr({"fill-opacity":0.4});
                                 //	this.attr("stroke-opacity", "1");
                             }
                         });
 
                         newSet.click(function (e) {
-                            $('#jstree').jstree("deselect_all");
                             //userClickedRegion = true;	
-                            that.status.selectedRegionName = "";
-                            if ($('#jstree').jstree(true).clear_search) {
-                                $('#jstree').jstree(true).clear_search();
-                            }
+                            that.regionActionner.unSelectAll();
+
+                            //FIXME clear region search
                         });
                         that.status.set.push(newSet);
 
@@ -410,35 +427,25 @@ class ViewerManager {
                         });
 
                         newSet.mouseout(function (e) {
-                            if (that.status.selectedRegionName != this.attr("title")) {
+                            if (!RegionsManager.isSelected(this.attr("title"))) {
                                 this.attr({ "fill-opacity": 0.4 });
                                 this.attr("stroke-opacity", "1");
                             }
                         });
 
                         newSet.click(function (e) {
-                            $('#jstree').jstree("deselect_all");
-
+                            
                             that.status.set.forEach(function (el) {
                                 el.attr("fill-opacity", "0.4");//works
                                 el.attr("stroke-opacity", "0");
                             });
-                            //$('#jstree').jstree(true).select_node(this.attr("title"));
-                            //console.log(data.selected[0].offsetTop/2);
+                            
                             //scroll to correct height
                             that.status.userClickedRegion = true;
-                            that.status.selectedRegionName = this.attr("title");
-                            if ($('#jstree').jstree(true).clear_search) {
-                                $('#jstree').jstree(true).clear_search();
-                            }
-                            $('#jstree').jstree('select_node', this.attr("title"));
+                            that.regionActionner.replaceSelected(this.attr("title"));
+                            //FIXME clear region search
 
-                            //this is the correct place for updating the scroll position:
-                            //TODO: change the value of 100 to some calculation
-                            $('#jstree').scrollTop(Utils.findPosY(document.getElementById(this.attr("title")))
-                                - Utils.findPosY(document.getElementById('jstree')) - $('#jstree').height() / 2);
-                            $('#jstree').scrollLeft(Utils.findPosX(document.getElementById(this.attr("title"))));
-
+                            //FIXME for scrolling on selected region 
 
                             this.attr("fill-opacity", "0.8");//works
                             this.attr("stroke", "#0000ff");
@@ -446,8 +453,7 @@ class ViewerManager {
                             //make stroke-width input a variable
                             this.attr("stroke-width", "2");//"8");
                             this.attr("stroke-opacity", "1");
-                            //update horizontal position too
-                            //$.jstree.reference('#jstree').select_node(this.attr("title"));
+
                         });
                         that.status.set.push(newSet);
                     }
@@ -521,59 +527,61 @@ class ViewerManager {
     }
 
     /**  
-    * @public
+    * @private
     */
     static unselectRegions() {
-
-        this.status.set.forEach(function (el) {
-            if (el[0].attr("title") == "background") {
-                el.attr("fill-opacity", "0.0");
-            } else {
-                el.attr("fill-opacity", "0.4");//works
-            }
-            el.attr("stroke-opacity", "0");
-            el.attr("stroke-width", "0");
-        });
-
+        if (this.status.set) {
+            this.status.set.forEach(function (el) {
+                if (el[0].attr("title") == "background") {
+                    el.attr("fill-opacity", "0.0");
+                } else {
+                    el.attr("fill-opacity", "0.4");//works
+                }
+                el.attr("stroke-opacity", "0");
+                el.attr("stroke-width", "0");
+            });
+        }
     }
 
     /**  
-    * @public
+    * @private
     */
     static selectRegions(nameList) {
-        if (!this.status.userClickedRegion) {
-            const that = this;
-            //how to choose a center?
-            var newX = 0;
-            var newY = 0;
-            var snCount = 0;
-            for (var k = 0; k < nameList.length; k++) {
-                //try to find the nodes -> slow way!
-                this.status.set.forEach(function (el) {
-                    var subNode = el[0];
-                    if (el[0].attr("title") == nameList[k]) {
-                        snCount++;
-                        subNode.attr("fill-opacity", "0.4");//we wont fill this in here
-                        subNode.attr("stroke-opacity", "1");
-                        subNode.attr("stroke", "#0000ff");
-                        //EDIT: Alex, Feb 1, 2017
-                        subNode.attr("stroke-width", "2");//"2");
-                        var bbox = subNode.getBBox();
-                        newX += (bbox.x2 - bbox.width / 2) / that.config.dzWidth;
-                        newY += (that.config.dzDiff + bbox.y2 - bbox.height / 2) / that.config.dzHeight;
-                    }
-                });
+        if (this.status.set) {
+            if (!this.status.userClickedRegion) {
+                const that = this;
+                //how to choose a center?
+                var newX = 0;
+                var newY = 0;
+                var snCount = 0;
+                for (var k = 0; k < nameList.length; k++) {
+                    //try to find the nodes -> slow way!
+                    this.status.set.forEach(function (el) {
+                        var subNode = el[0];
+                        if (el[0].attr("title") == nameList[k]) {
+                            snCount++;
+                            subNode.attr("fill-opacity", "0.4");//we wont fill this in here
+                            subNode.attr("stroke-opacity", "1");
+                            subNode.attr("stroke", "#0000ff");
+                            //EDIT: Alex, Feb 1, 2017
+                            subNode.attr("stroke-width", "2");//"2");
+                            var bbox = subNode.getBBox();
+                            newX += (bbox.x2 - bbox.width / 2) / that.config.dzWidth;
+                            newY += (that.config.dzDiff + bbox.y2 - bbox.height / 2) / that.config.dzHeight;
+                        }
+                    });
+                }
+                if (snCount > 0) {
+                    newX /= snCount;
+                    newY /= snCount;
+                    var windowPoint = new OpenSeadragon.Point(newX, newY);
+                    this.viewer.viewport.panTo(windowPoint);
+                    this.viewer.viewport.zoomTo(1.1);
+                }
+                //this.status.selectedRegionName = nameList[0];
             }
-            if (snCount > 0) {
-                newX /= snCount;
-                newY /= snCount;
-                var windowPoint = new OpenSeadragon.Point(newX, newY);
-                this.viewer.viewport.panTo(windowPoint);
-                this.viewer.viewport.zoomTo(1.1);
-            }
-            this.status.selectedRegionName = nameList[0];
+            this.status.userClickedRegion = false;
         }
-        this.status.userClickedRegion = false;
     }
 
     /**  
@@ -628,7 +636,7 @@ class ViewerManager {
                     claerPosition();
                     this.signalStatusChanged(this.status);
 
-                    //coronalImg.node.href.baseVal = dataRootPath + "/" + subviewFolerName +"/coronal/" + coronalChosenSlice + ".jpg";
+                    //coronalImg.node.href.baseVal = dataRootPath + "/" + subviewFolderName +"/coronal/" + coronalChosenSlice + ".jpg";
                     //updateLinePosBaseSlide(coronalChosenSlice);
                 }
                 //WHILE NOT FOUND IN SETSELECTION, wait a bit and try again
@@ -925,17 +933,20 @@ class ViewerManager {
                 this.status.ctx.lineTo(px + 10, py);
             }
             this.status.ctx.stroke();
-            this.status.ctx.beginPath();
-            this.status.ctx.strokeStyle = "#FFF";
+
+
             for (var i = 1; i <= this.status.position[0].c; i++) {
+                this.status.ctx.beginPath();
+                this.status.ctx.strokeStyle = this.status.markedPosColors[i - 1];
                 var px = Math.round((this.status.position[i].x * zoom) + orig.x + 0.5) - 0.5;
                 var py = Math.round((this.status.position[i].y * zoom) + orig.y + 0.5) - 0.5;
                 this.status.ctx.moveTo(px, py - 10);
                 this.status.ctx.lineTo(px, py + 10);
                 this.status.ctx.moveTo(px - 10, py);
                 this.status.ctx.lineTo(px + 10, py);
+                this.status.ctx.stroke();
             }
-            this.status.ctx.stroke();
+
         }
     };
 

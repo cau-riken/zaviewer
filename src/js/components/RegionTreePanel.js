@@ -1,10 +1,201 @@
 import React from 'react';
 
-import SplitterLayout from 'react-splitter-layout';
+import RegionsManager from '../RegionsManager.js'
 
-import Utils from '../Utils.js';
-import ViewerManager from '../ViewerManager.js'
+const TREE_ACTIONSOURCEID = 'TREE'
 
+class RegionItem extends React.Component {
+
+    constructor(props) {
+        super(props);
+        this.treeItemRef = React.createRef();
+
+        this.selectRegionClick = function (event) { this.regionClick(event, false) }.bind(this);
+        this.selectRegionAndChildClick = function (event) { this.regionClick(event, true) }.bind(this);
+        this.expandCollapseClick = this.expandCollapseClick.bind(this);
+
+        this.regionActionner = RegionsManager.getActionner(TREE_ACTIONSOURCEID);
+    }
+
+    render() {
+        const region = RegionsManager.getRegion(this.props.regionId);
+
+        const paddedLinks = []
+
+        // children regions
+        var subregions = null;
+        if (region.children) {
+            const subItems = [];
+            region.children.forEach((childId, i) => subItems.push(
+                <RegionItem
+                    key={"ri-" + childId}
+                    lastChild={RegionsManager.isLastVisibleChild(childId)}
+                    regionsStatus={this.props.regionsStatus}
+                    regionId={childId}
+                    requestScrollIntoView={this.props.requestScrollIntoView}
+                />
+            ))
+            subregions =
+                <ul className="zav-TreeSubItems">
+                    {subItems}
+                </ul>;
+        }
+        const highlightStatus = RegionsManager.getHighlightStatus(region.abb);
+        const isExpanded = RegionsManager.isExpanded(region.abb);
+
+        // ensure visibility of last selected region when selection performed via other component (e.g. Viewer)
+        if (RegionsManager.getLastSelected() === region.abb &&
+            this.regionActionner.lastActionInitiatedByOther()) {
+            setTimeout(() => {
+                console.info('scroll to view ' + region.abb + " @ " + this.treeItemRef.current.offsetTop);
+                //20200518 FF76 : Can't directly use this.treeItemRef.current.scrollIntoView(), because can make above components dissappearing... 
+                this.props.requestScrollIntoView(this.treeItemRef.current.offsetTop);
+            }, 400);
+        }
+
+        return (
+            <li
+                ref={this.treeItemRef}
+                className="zav-TreeItemCont"
+                data-isexpanded={isExpanded}
+                data-islastchild={this.props.lastChild}
+                data-highlight={highlightStatus}
+            >
+                <span
+                    className="zav-TreeItem"
+                    data-highlight={highlightStatus}
+                    data-isselected={RegionsManager.isSelected(region.abb)}
+                    data-exists={1 === region.exists}
+                >
+                    <span className="zav-TreeItemLink" data-islastchild={this.props.lastChild} />
+                    <span
+                        className="zav-TreeItemHeader"
+                        //append low opacity to specified region color for border 
+                        style={{ borderColor: region.color ? region.color + "20" : "#80808024" }}
+                        onClick={region.exists ? this.selectRegionClick : null}
+                    >
+                        <span
+                            className="zav-TreeItemHandle"
+                            data-haschild={null != subregions}
+                            data-isexpanded={isExpanded}
+                            onClick={this.expandCollapseClick}
+                        >
+                            <span className="zav-TreeItemHandleText" />
+                        </span>
+                        <span
+                            className="zav-TreeItemLabel"
+                        >
+                            <span
+                                className="zav-TreeItemLabelBullet"
+                                style={{ backgroundColor: region.color ? (region.exists ? region.color : region.color + "30") : "transparent" }}
+                                onClick={region.exists ? this.selectRegionAndChildClick : null}
+                            />
+                            <b>{region.abb}</b> <span>{region.name}</span>
+                        </span>
+                    </span>
+                </span>
+                {subregions}
+            </li>
+        );
+    }
+
+    regionClick(event, includeChildren) {
+        if (event.ctrlKey) {
+            //when Ctrl key is pressed, allow multi-select or toogle of currently selected region 
+            if (RegionsManager.isSelected(this.props.regionId)) {
+                this.regionActionner.unSelect(this.props.regionId, includeChildren);
+            } else {
+                this.regionActionner.addToSelection(this.props.regionId, includeChildren);
+            }
+        } else {
+            this.regionActionner.replaceSelected(this.props.regionId, includeChildren);
+        }
+
+    }
+
+    expandCollapseClick(event) {
+        event.stopPropagation();
+        this.regionActionner.toogleExpanded(this.props.regionId);
+    }
+}
+
+/** Container of the regions display as a treeview */
+class RegionTree extends React.Component {
+
+    constructor(props) {
+        super(props);
+        this.scrollContainerRef = React.createRef();
+        this.onRequestScrollIntoView = this.onRequestScrollIntoView.bind(this);
+    }
+    render() {
+        return (
+            <div
+                ref={this.scrollContainerRef}
+                className="zav-Tree"
+            >
+                {this.props.regionsStatus ?
+                    <RegionItem
+                        regionsStatus={this.props.regionsStatus}
+                        regionId={RegionsManager.getRoot()}
+                        lastChild={true}
+                        requestScrollIntoView={this.onRequestScrollIntoView}
+                    />
+                    :
+                    null
+                }
+            </div>
+        );
+    }
+
+    onRequestScrollIntoView(yPos) {
+        this.scrollContainerRef.current.scrollTo({
+            top: yPos - this.scrollContainerRef.current.offsetTop - 10,
+            behavior: 'smooth'
+        });
+    }
+}
+
+/** component to receive user's input trigerring region search */
+class RegionTreeSearch extends React.Component {
+
+    constructor(props) {
+        super(props);
+        this.state = { pattern: "" };
+        this.onChange = this.onChange.bind(this);
+
+        this.regionActionner = RegionsManager.getActionner(TREE_ACTIONSOURCEID);
+    }
+
+    static getDerivedStateFromProps(props, state) {
+        if (state.pattern &&
+            !RegionsManager.hasHighlighting() &&
+            RegionsManager.lastActionInitiatedByOther(TREE_ACTIONSOURCEID)) {
+            return { pattern: "" };
+        } else {
+            return state;
+        }
+    }
+
+    render() {
+        return (
+            <div style={{ borderBottom: "solid 2px #80808042", padding: 1, background: "#333" }}>
+                <input
+                    placeholder=" Region search "
+                    type="text"
+                    value={this.state.pattern}
+                    onChange={this.onChange}
+                />
+            </div>
+        );
+    }
+
+    onChange(event) {
+        const pattern = event.target.value;
+        this.setState({ pattern: pattern });
+        this.regionActionner.higlightByName(pattern);
+    }
+
+}
 
 class RegionTreePanel extends React.Component {
 
@@ -14,113 +205,17 @@ class RegionTreePanel extends React.Component {
 
     render() {
         return (
-            <SplitterLayout vertical primaryIndex={1} secondaryMinSize={100} secondaryInitialSize={100}>
-                <div id="tree_search" style={{ height: "100%", width: "100%" }}>
-                    <div id="region_search_label">Search for a region:</div>
-                    <div>
-                        <input autoComplete="off" id="region_search_form"  placeholder= " Region search " type="text" />
-                    </div>
+            <div style={{ height: "100%", width: "100%" }}>
+
+                <div style={{ height: "100%", width: "100%", overflow: "hidden", backgroundColor: "#e1e1e1" }}>
+                    <RegionTreeSearch regionsStatus={this.props.regionsStatus} />
+                    <RegionTree regionsStatus={this.props.regionsStatus} />
                 </div>
-                <div style={{ height: "100%", width: "100%" }}>
-                    <div id="jstree" ></div>
-                </div>
-            </SplitterLayout>
+            </div>
         );
     }
 
-    componentDidUpdate(prevProps) {
-        if (this.props.config && !prevProps.config) {
-            this.createTree(this.props.config);
-        }
-    }
-
-    createTree(config) {
-        const that = this;
-        const urlPath = config.treeUrlPath;
-
-        if (!urlPath || urlPath == null || urlPath.lenght == 0) {
-            return;
-        }
-        // 6 create an instance when the DOM is ready
-        $('#jstree').jstree({
-            "core": {
-                "themes": { "icons": false },
-                "data": {
-                    "url": Utils.makePath(config.PUBLISH_PATH, urlPath, "/tree.html"),
-                    async: true
-                }
-            },
-            "search": {
-                "show_only_matches": true
-            },
-            "plugins": ["search"]
-        });
-
-        var to = false;
-        $('#region_search_form').keyup(function () {
-            if (to) { clearTimeout(to); }
-            to = setTimeout(function () {
-                var v = $('#region_search_form').val();
-                $('#jstree').jstree(true).search(v);
-                $('#jstree').scrollLeft(0);
-            }, 250);
-        });
-
-        var json_nodeList = $('#jstree').jstree().get_json('#', { 'flat': true });
-        for (var i = 0; i < json_nodeList.length; i++) {
-            if (json_nodeList[i]['li_attr']['data-regionexists'] == '0') {
-                //console.log("tryng to disable");
-                $('#jstree').jstree().disable_node(json_nodeList[i]['id']);
-            }
-        }
-
-
-        // 7 bind to events triggered on the tree
-        $('#jstree').on("changed.jstree", function (e, data) {
-            //console.log("user interaction");
-            //remove selection on all elements
-            ViewerManager.unselectRegions();
-
-            if (data.action == "deselect_all") {
-                //console.log("deselect_all");
-            } else if (data.action == "select_node") {
-                //console.log("select_node");
-                var node = $('#jstree').jstree(true).get_node(data.selected[0]);
-                //handle the case when there are children
-                //console.log("testing for children:"+data.selected[0]+"children"+node.children.length)
-                if (node.children.length > 0) {
-                    var nameList = [];
-                    that.getAllChildrenTexts(data, data.selected[0].trim(), nameList);
-                    ViewerManager.selectRegions(nameList);
-
-                } else {
-                    //console.log("Has no children");
-                    ViewerManager.selectRegion(data.selected[0].trim());
-                }
-
-                //$('#current_region').html(data.selected[0].trim());
-            } else {
-                //console.log("else");
-            }
-
-        });
-
-    }
-
-    getAllChildrenTexts(treeObj, nodeId, result) {
-        var node = $('#jstree').jstree(true).get_node(nodeId);
-        result.push(node.id);
-        if (node.children) {
-            for (var i = 0; i < node.children.length; i++) {
-                this.getAllChildrenTexts(treeObj, node.children[i], result);
-            }
-        }
-    }
-
-
-
 }
-
 
 
 export default RegionTreePanel;

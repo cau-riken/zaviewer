@@ -104,8 +104,8 @@ class SubViewPanel extends React.Component {
                 that.subviewStatus.sagittalImg.node.href.baseVal = "./assets/img/no_image.jpg";
             }
         );
-        if (this.config.subviewFolerName) {
-            this.subviewStatus.sagittalImg.node.href.baseVal = Utils.makePath(this.config.PUBLISH_PATH, this.config.subviewFolerName, "/subview.jpg");
+        if (this.config.subviewFolderName) {
+            this.subviewStatus.sagittalImg.node.href.baseVal = Utils.makePath(this.config.PUBLISH_PATH, this.config.subviewFolderName, "/subview.jpg");
         } else {
             this.subviewStatus.sagittalImg.node.href.baseVal = "./assets/img/null.png";
         }
@@ -189,7 +189,39 @@ class SubViewPanel extends React.Component {
         //this.updateSubVLine(tmpCoronalSlide);
     }
 
+                        ///FIXME
+                        /*
+                        //$("#axial_holder").hide();
+                        //$("#coronal_holder").hide();
+                        if (that.config.coronalSlideCount == 0) { $("#sagittal_holder").hide(); }
+                        else if (that.config.coronalSlideCount == 1) {
+                            $("#sagittal_spinner").hide();
+                            $("#sagittal_spinner_max").hide();
+                        } else {
+                            $("#sagittal_spinner>input").val(that.config.coronalChosenSlice);
+                            $("#sagittal_spinner>input").attr('maxlength', ((String)(that.config.coronalSlideCount - 1)).length);
+                            $("#sagittal_spinner_max").html(that.config.coronalSlideCount - 1);
+                        }
+                        //$("#sagittal_spinner").hide();
+                        //$("#sagittal_spinner_max").hide();
 
+                        if (response.bright) {
+                            $("#intensity_slider").val(response.bright);
+                        }
+                        if (response.gamma) {
+                            $("#gamma_slider").val(response.gamma);
+                        }
+                        if (response.bright || response.gamma) {
+                            //	updateFilters();
+                        }
+
+                        if (response.group_id || (response.data && Object.keys(response.data).length > 0)) {
+                            $("#GroupName").html(response.group_name);
+                            $("#editbtn").click(showImageList);
+                        } else {
+                            $("#editbtn").hide();
+                        }
+                        */
 
 
 }

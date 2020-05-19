@@ -14,6 +14,7 @@ class ZAVConfig {
      */
     constructor(configId, callbackWhenReady) {
 
+        /** default subview size */
         const _subviewSize = 200;
         const _subviewZoomRatio = 200 / _subviewSize;
 
@@ -27,13 +28,15 @@ class ZAVConfig {
 
             TILE_EXTENSION: "/info.json",
 
-            subviewFolerName: undefined,
+            /** relative path to folder containing subview background image  */
+            subviewFolderName: undefined,
+
             coronalSlideCount: undefined,
             /** folder of the SVG region files */
             svgFolerName: undefined,
 
             /** First index of Coronal of selected dataset */
-            coronalFirstIndex: undefined, 
+            coronalFirstIndex: undefined,
 
             subviewSize: _subviewSize,
             subviewZoomRatio: _subviewZoomRatio,
@@ -70,7 +73,7 @@ class ZAVConfig {
 
 
             /** Set to true if delineation is hidden */
-            bHideDelineation: false, 
+            bHideDelineation: false,
             /** Path to the tree region data */
             treeUrlPath: undefined,
 
@@ -123,7 +126,7 @@ class ZAVConfig {
 
 
                         //dataRootPath = response.data_root_path;
-                        if (response.subview) { that.config.subviewFolerName = response.subview.foldername; }
+                        if (response.subview) { that.config.subviewFolderName = response.subview.foldername; }
                         that.config.coronalSlideCount = response.slide_count;
                         //sagittalSlideCount = response.subview.sagittal_slide;
 
@@ -210,41 +213,6 @@ class ZAVConfig {
                             //global_Z = 10 + xMinGlobal;
                         }
 
-                        ///FIXME
-                        /*
-                        //$("#axial_holder").hide();
-                        //$("#coronal_holder").hide();
-                        if (that.config.coronalSlideCount == 0) { $("#sagittal_holder").hide(); }
-                        else if (that.config.coronalSlideCount == 1) {
-                            $("#sagittal_spinner").hide();
-                            $("#sagittal_spinner_max").hide();
-                        } else {
-                            $("#sagittal_spinner>input").val(that.config.coronalChosenSlice);
-                            $("#sagittal_spinner>input").attr('maxlength', ((String)(that.config.coronalSlideCount - 1)).length);
-                            $("#sagittal_spinner_max").html(that.config.coronalSlideCount - 1);
-                        }
-                        //$("#sagittal_spinner").hide();
-                        //$("#sagittal_spinner_max").hide();
-
-                        if (response.bright) {
-                            $("#intensity_slider").val(response.bright);
-                        }
-                        if (response.gamma) {
-                            $("#gamma_slider").val(response.gamma);
-                        }
-                        if (response.bright || response.gamma) {
-                            //	updateFilters();
-                        }
-
-                        if (response.group_id || (response.data && Object.keys(response.data).length > 0)) {
-                            $("#GroupName").html(response.group_name);
-                            $("#editbtn").click(showImageList);
-                        } else {
-                            $("#editbtn").hide();
-                        }
-                        */
-
-
                         if (callbackWhenReady && typeof (callbackWhenReady) === 'function') {
 
                             callbackWhenReady(that.config);
@@ -256,7 +224,7 @@ class ZAVConfig {
                 $.ajax({
                     url: Utils.makePath("../", that.config.ADMIN_PATH, "findImageGroupList.php"),
                     type: "POST",
-                    async: true,    
+                    async: true,
                     dataType: 'json',
                     data: {
                         id: that.config.paramId,

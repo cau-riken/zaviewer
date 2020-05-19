@@ -47,7 +47,11 @@ class ViewerComposed extends React.Component {
 
                 <div id="posviewPanel">
                     <PositionInfoPanel livePosition={this.state.livePosition} />
-                    <MeasureInfoPanel posCount={this.state.position ? this.state.position[0].c : 0} pos={this.state.pos} markedPos={this.state.markedPos} />
+                    <MeasureInfoPanel
+                        posCount={this.state.position ? this.state.position[0].c : 0}
+                        pos={this.state.pos} markedPos={this.state.markedPos}
+                        markedPosColors={this.state.markedPosColors}
+                    />
                 </div>
                 <div id="infoPanel">
                     <InfoPanel
