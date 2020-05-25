@@ -10,6 +10,8 @@ class RegionItem extends React.Component {
         super(props);
         this.treeItemRef = React.createRef();
 
+        this.state = { isHovered: false };
+
         this.selectRegionClick = function (event) { this.regionClick(event, false) }.bind(this);
         this.selectRegionAndChildClick = function (event) { this.regionClick(event, true) }.bind(this);
         this.expandCollapseClick = this.expandCollapseClick.bind(this);
@@ -36,7 +38,7 @@ class RegionItem extends React.Component {
                 />
             ))
             subregions =
-                <ul className="zav-TreeSubItems">
+                <ul className="zav-TreeSubItems" data-ishovered={this.state.isHovered}>
                     {subItems}
                 </ul>;
         }
@@ -47,9 +49,8 @@ class RegionItem extends React.Component {
         if (RegionsManager.getLastSelected() === region.abb &&
             this.regionActionner.lastActionInitiatedByOther()) {
             setTimeout(() => {
-                console.info('scroll to view ' + region.abb + " @ " + this.treeItemRef.current.offsetTop);
                 //20200518 FF76 : Can't directly use this.treeItemRef.current.scrollIntoView(), because can make above components dissappearing... 
-                this.props.requestScrollIntoView(this.treeItemRef.current.offsetTop);
+                this.props.requestScrollIntoView(this.treeItemRef.current.getBoundingClientRect());
             }, 400);
         }
 
@@ -61,7 +62,7 @@ class RegionItem extends React.Component {
                 data-islastchild={this.props.lastChild}
                 data-highlight={highlightStatus}
             >
-                <span
+                <div
                     className="zav-TreeItem"
                     data-highlight={highlightStatus}
                     data-isselected={RegionsManager.isSelected(region.abb)}
@@ -88,12 +89,16 @@ class RegionItem extends React.Component {
                             <span
                                 className="zav-TreeItemLabelBullet"
                                 style={{ backgroundColor: region.color ? (region.exists ? region.color : region.color + "30") : "transparent" }}
+                                //to trigger visually highlighting of region and its descendants 
+                                onMouseEnter={(e) => this.setState(state => ({ isHovered: true }))}
+                                onMouseLeave={(e) => this.setState(state => ({ isHovered: false }))}
                                 onClick={region.exists ? this.selectRegionAndChildClick : null}
                             />
+
                             <b>{region.abb}</b> <span>{region.name}</span>
                         </span>
                     </span>
-                </span>
+                </div>
                 {subregions}
             </li>
         );
@@ -133,25 +138,44 @@ class RegionTree extends React.Component {
                 ref={this.scrollContainerRef}
                 className="zav-Tree"
             >
-                {this.props.regionsStatus ?
-                    <RegionItem
-                        regionsStatus={this.props.regionsStatus}
-                        regionId={RegionsManager.getRoot()}
-                        lastChild={true}
-                        requestScrollIntoView={this.onRequestScrollIntoView}
-                    />
-                    :
-                    null
-                }
+                <ul className="zav-TreeSubItems">
+                    {this.props.regionsStatus ?
+                        <RegionItem
+                            regionsStatus={this.props.regionsStatus}
+                            regionId={RegionsManager.getRoot()}
+                            lastChild={true}
+                            requestScrollIntoView={this.onRequestScrollIntoView}
+                        />
+                        :
+                        null
+                    }
+                </ul>
             </div>
         );
     }
 
-    onRequestScrollIntoView(yPos) {
-        this.scrollContainerRef.current.scrollTo({
-            top: yPos - this.scrollContainerRef.current.offsetTop - 10,
-            behavior: 'smooth'
-        });
+    onRequestScrollIntoView(itemRect) {
+        const itemHeight = 22;
+        const contRect = this.scrollContainerRef.current.getBoundingClientRect();
+
+        /** vertical scroll only if region item is not already in view */
+        var desiredScrollY = null;
+        if (itemRect.top < contRect.top) {
+            var desiredScrollY = this.scrollContainerRef.current.scrollTop + itemRect.top - contRect.top - itemHeight / 2;
+            if (desiredScrollY < 0) {
+                desiredScrollY = 0;
+            }
+        } else if (itemRect.bottom > contRect.height) {
+            desiredScrollY = this.scrollContainerRef.current.scrollTop + itemRect.bottom - contRect.height + itemHeight / 2;
+        }
+
+        if (desiredScrollY) {
+            this.scrollContainerRef.current.scrollTo({
+                top: desiredScrollY,
+                behavior: 'smooth'
+            });
+        }
+
     }
 }
 
