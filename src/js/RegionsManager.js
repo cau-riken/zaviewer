@@ -20,7 +20,7 @@ class RegionsManager {
             selected: new Set(),
             /** last selected regions (since multi-select is allowed) */
             lastSelected: null,
-            
+
             /** true when higlighting is currently on (e.g. searching for regions using a text pattern) */
             isHighlightingOn: false,
 
@@ -138,6 +138,10 @@ class RegionsManager {
 
     static getLastSelected() {
         return this.status.lastSelected;
+    }
+    
+    static getSelectedRegions() {
+        return Array.from(this.status.selected.values());
     }
 
 

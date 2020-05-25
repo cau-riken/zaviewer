@@ -10,7 +10,7 @@ export const AXIAL = 0;
 export const CORONAL = 1;
 export const SAGITTAL = 2;
 
-const VIEWER_ACTIONSOURCEID ='VIEWER';
+const VIEWER_ACTIONSOURCEID = 'VIEWER';
 
 /** Class in charge of managing viewer's main display (OSD) and state of related elements */
 class ViewerManager {
@@ -53,9 +53,9 @@ class ViewerManager {
         /** dynamic state of the viewer */
         this.status = {
 
-            /** Set of region delineations */
+            /** Raphael array-like object used to operate on region delineations */
             set: undefined,
-            /** Main Container where region delineations are drawn */
+            /** Main Raphael object used to handle region delineations */
             paper: undefined,
 
             /** 2D context of canvas used to draw measuring tape */
@@ -63,8 +63,7 @@ class ViewerManager {
 
             /** set to true when user directly click region delineation on overlay (vs selecting it from region treeview) */
             userClickedRegion: false,
-            /** name of the currently selected region */
-            selectedRegionName: "",
+
 
             /** range pointer used to provide info for measuring line feature (image space coordinates) */
             position: [{ x: 0, y: 0, c: 0 }, { x: 0, y: 0 }, { x: 0, y: 0 }],
@@ -97,10 +96,6 @@ class ViewerManager {
 
             //TODO probably useless
             tileDrawnHandler: undefined,
-
-            //TODO probably useless
-            reloaded: false,
-
 
         }
 
@@ -173,7 +168,7 @@ class ViewerManager {
                 if (value.index != 0) {
                     that.addLayer(key, value.name, value.ext);
                 } else {
-                    that.setOpacity(key);
+                    that.setLayerOpacity(key);
 
                     if (!that.viewer.referenceStrip) {
                         //AW(2020/01/16): Disabled reference strip
@@ -298,11 +293,12 @@ class ViewerManager {
         RegionsManager.addListeners(regionsStatus => {
             if (RegionsManager.getLastActionSource() != VIEWER_ACTIONSOURCEID) {
                 ViewerManager.unselectRegions();
-                ViewerManager.selectRegions(Array.from(regionsStatus.selected.values()));
+                ViewerManager.selectRegions(RegionsManager.getSelectedRegions());
             }
         });
 
     }
+    // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
 
 
     static updateFilters() {
@@ -389,82 +385,57 @@ class ViewerManager {
                 var paths = root.getElementsByTagName('path');
 
                 for (var i = 0; i < paths.length; i++) {
-                    var newSet = that.status.paper.importSVG(paths[i]);
-                    newSet.id = paths[i].getAttribute('id');
-                    newSet.attr("title", paths[i].getAttribute('id'));
-                    newSet.attr("fill-opacity", 0.4);
 
-                    //TODO regroup in one single event handler for all regions
-                    if (paths[i].getAttribute('id') == "background") {
+                    const abbrev = paths[i].getAttribute('id').trim()
+                    //reset path id before importing path to avoid duplicates
+                    const newId = abbrev + '-' + i;
+                    paths[i].setAttribute('id', newId);
+
+                    var newPathElt = that.status.paper.importSVG(paths[i]);
+                    newPathElt.id = newId;
+                    newPathElt.attr("title", abbrev);
+
+                    that.applyMouseOutPresentation(newPathElt);
+
+                    if (abbrev == "background") {
                         //background elements
 
-                        newSet.attr("fill-opacity", 0.0);
-                        /*					newSet.mouseover(function(e)
-                                            {
-                                                document.getElementById('current_region').innerHTML = this.attr("title");
-                                            });*/
+                        newPathElt.attr("fill-opacity", 0.0);
 
-                        newSet.mouseout(function (e) {
-                            if (!RegionsManager.isSelected(this.attr("title"))) {
-                                //	this.attr({"fill-opacity":0.4});
-                                //	this.attr("stroke-opacity", "1");
-                            }
-                        });
-
-                        newSet.click(function (e) {
-                            //userClickedRegion = true;	
+                        //unselect all when click on the background element
+                        newPathElt.click(function (e) {
+                            that.unselectRegions();
                             that.regionActionner.unSelectAll();
-
-                            //FIXME clear region search
                         });
-                        that.status.set.push(newSet);
 
                     } else {
-                        newSet.mouseover(function (e) {
-                            /*document.getElementById('current_region').innerHTML = this.attr("title");*/
-                            this.attr({ "fill-opacity": 0.8 });
-                            this.attr("stroke-opacity", "1");
+
+                        newPathElt.mouseover(function (e) {
+                            that.applyMouseOverPresentation(this);
                         });
 
-                        newSet.mouseout(function (e) {
+                        newPathElt.mouseout(function (e) {
                             if (!RegionsManager.isSelected(this.attr("title"))) {
-                                this.attr({ "fill-opacity": 0.4 });
-                                this.attr("stroke-opacity", "1");
+                                that.applyMouseOutPresentation(this);
                             }
                         });
 
-                        newSet.click(function (e) {
-                            
-                            that.status.set.forEach(function (el) {
-                                el.attr("fill-opacity", "0.4");//works
-                                el.attr("stroke-opacity", "0");
-                            });
-                            
-                            //scroll to correct height
+                        newPathElt.click(function (e) {
+                            const selectedRegion = this.attr("title");
+                            that.unselectRegions();
                             that.status.userClickedRegion = true;
-                            that.regionActionner.replaceSelected(this.attr("title"));
-                            //FIXME clear region search
-
-                            //FIXME for scrolling on selected region 
-
-                            this.attr("fill-opacity", "0.8");//works
-                            this.attr("stroke", "#0000ff");
-                            //EDIT: Alex, Feb 1, 2017
-                            //make stroke-width input a variable
-                            this.attr("stroke-width", "2");//"8");
-                            this.attr("stroke-opacity", "1");
-
+                            that.selectRegions([selectedRegion])
+                            that.regionActionner.replaceSelected(selectedRegion);
                         });
-                        that.status.set.push(newSet);
                     }
+
+                    that.status.set.push(newPathElt);
                 }
 
-                that.status.reloaded = true;
-                //console.log("reloaded");
-
                 that.adjustResizeRegionsOverlay(that.status.set);
-                //if we have come to a new slice from clicking tree view this should occur:
-                that.setSelection(that.status.selectedRegionName, true);
+
+                //restore presentation of regions selected in previous slice
+                that.selectRegions(RegionsManager.getSelectedRegions());
 
                 if (!that.status.showRegions) {
                     that.hideDelineation();
@@ -517,7 +488,8 @@ class ViewerManager {
         this.signalStatusChanged(this.status);
     }
 
-    /**  
+    /** 
+     * Hide all region delineations
     * @private
     */
     static hideDelineation() {
@@ -526,28 +498,72 @@ class ViewerManager {
         });
     }
 
-    /**  
+
+    static applyMouseOverPresentation(element) {
+        element.attr({
+            "fill-opacity": 0.8,
+            "stroke-opacity": 1
+        });
+    }
+
+    static applyMouseOutPresentation(element) {
+        element.attr({
+            "fill-opacity": 0.4,
+            "stroke-opacity": 1
+        });
+    }
+
+    static applySelectedPresentation(element) {
+        element.attr({
+            "fill-opacity": 0.8,
+            "stroke-opacity": 1,
+            "stroke-width": 20,
+            "stroke": "#0000ff"
+        });
+    }
+
+    static applyUnselectedPresentation(element) {
+        element.attr({
+            "fill-opacity": 0.4,
+            "stroke-opacity": 0,
+            "stroke-width": 0,
+            "stroke": "#000000"
+        });
+    }
+
+
+    /** 
+     * Reset all regions visual presentation to unselected state
     * @private
     */
     static unselectRegions() {
         if (this.status.set) {
+            const that = this;
             this.status.set.forEach(function (el) {
-                if (el[0].attr("title") == "background") {
-                    el.attr("fill-opacity", "0.0");
-                } else {
-                    el.attr("fill-opacity", "0.4");//works
+                if (el[0].attr("title") !== "background") {
+                    that.applyUnselectedPresentation(el);
                 }
-                el.attr("stroke-opacity", "0");
-                el.attr("stroke-width", "0");
             });
         }
     }
 
-    /**  
+    /** 
+     * Set specified regions visual presentation to selected state
     * @private
     */
     static selectRegions(nameList) {
         if (this.status.set) {
+            const that = this;
+
+            // apply presentation for selected regions
+            this.status.set.forEach(function (el) {
+                var abbrev = el[0].attr("title");
+                if (nameList.includes(abbrev)) {
+                    that.applySelectedPresentation(el);
+                }
+            });
+
+            // perform pan & zoom 
             if (!this.status.userClickedRegion) {
                 const that = this;
                 //how to choose a center?
@@ -560,11 +576,6 @@ class ViewerManager {
                         var subNode = el[0];
                         if (el[0].attr("title") == nameList[k]) {
                             snCount++;
-                            subNode.attr("fill-opacity", "0.4");//we wont fill this in here
-                            subNode.attr("stroke-opacity", "1");
-                            subNode.attr("stroke", "#0000ff");
-                            //EDIT: Alex, Feb 1, 2017
-                            subNode.attr("stroke-width", "2");//"2");
                             var bbox = subNode.getBBox();
                             newX += (bbox.x2 - bbox.width / 2) / that.config.dzWidth;
                             newY += (that.config.dzDiff + bbox.y2 - bbox.height / 2) / that.config.dzHeight;
@@ -578,12 +589,13 @@ class ViewerManager {
                     this.viewer.viewport.panTo(windowPoint);
                     this.viewer.viewport.zoomTo(1.1);
                 }
-                //this.status.selectedRegionName = nameList[0];
             }
             this.status.userClickedRegion = false;
         }
+
     }
 
+    //TODO remove useless code
     /**  
     * @public
     */
@@ -645,51 +657,6 @@ class ViewerManager {
             this.status.selectedRegionName = regionName;
         }
         this.status.userClickedRegion = false;
-    }
-
-    /**  
-    * @private
-    */
-    static setSelection(selectedRegion) {
-        var i, j, r = [];
-        var found = false;
-        var newX = 0;
-        var newY = 0;
-        var snCount = 0;
-        const that = this;
-        this.status.set.forEach(function (el) {
-            var xvdd = el[0].attr("title");//works
-            if (xvdd.trim() == selectedRegion) {
-                found = true;
-                //move to correct location
-                var bbox = el[0].getBBox();
-                //console.log("The value is"+bbox.x + " "+bbox.y);
-                newX += (bbox.x2 - bbox.width / 2) / that.config.dzWidth;
-                newY += (that.config.dzDiff + bbox.y2 - bbox.height / 2) / that.config.dzHeight;
-                snCount++;
-                //console.log(newX + " " + newY);
-                //set pan to and zoom to
-                //var windowPoint = new OpenSeadragon.Point(newX, newY);
-                //viewer.viewport.panTo(windowPoint);
-
-                el.attr("fill-opacity", "0.8");//works
-                el.attr("stroke", "#0000ff");
-                //EDIT: Alex, Feb 1, 2017
-                // change this to a parameter
-                el.attr("stroke-width", "2");//"8");
-                el.attr("stroke-opacity", "1");
-
-                //return true;
-            }
-        });
-        if (snCount > 0) {
-            //now we have considered all relevant regions
-            var windowPoint = new OpenSeadragon.Point(newX / snCount, newY / snCount);
-            this.viewer.viewport.panTo(windowPoint);
-            this.viewer.viewport.zoomTo(1.1);
-            return true;
-        }
-        return false;
     }
 
 
@@ -763,7 +730,7 @@ class ViewerManager {
     }
 
 
-    static getOpacity(key) {
+    static getLayerOpacity(key) {
         var opacity = 0;
         if (this.config.layers[key]) {
             if (this.status.layerDisplaySettings[key].enabled) {
@@ -773,9 +740,9 @@ class ViewerManager {
         return opacity;
     }
 
-    static setOpacity(key) {
+    static setLayerOpacity(key) {
         if (this.config.layers[key]) {
-            var opacity = this.getOpacity(key);
+            var opacity = this.getLayerOpacity(key);
             if (this.viewer.world.getItemAt(this.config.layers[key].index)) {
                 this.viewer.world.getItemAt(this.config.layers[key].index).setOpacity(opacity);
             }
@@ -803,7 +770,7 @@ class ViewerManager {
             //tileSource:dataRootPath + "/" + layerName + "/coronal/" + this.viewer.currentPage() +".dzi",
             tileSource: this.config.IIPSERVER_PATH + key + "/" + this.viewer.currentPage() + ext + this.config.TILE_EXTENSION,// +  TILE_EXTENSION,
 
-            opacity: this.getOpacity(key),
+            opacity: this.getLayerOpacity(key),
         };
 
         const that = this;
@@ -823,7 +790,7 @@ class ViewerManager {
         if (this.config.layers[layerid]) {
             this.status.layerDisplaySettings[layerid].enabled = enabled;
             this.status.layerDisplaySettings[layerid].opacity = opacity;
-            this.setOpacity(layerid);
+            this.setLayerOpacity(layerid);
             this.signalStatusChanged(this.status);
         }
     }
