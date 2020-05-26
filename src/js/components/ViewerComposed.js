@@ -1,10 +1,11 @@
 import React from 'react';
+
+import Drawer from './Drawer.js';
 import OSDMain from './OSDMain.js';
 import PositionInfoPanel from './PositionInfoPanel.js';
 import MeasureInfoPanel from './MeasureInfoPanel.js';
 import SubViewPanel from './SubViewPanel.js';
 import SliderNavigatorPanel from './SliderNavigatorPanel.js';
-import InfoPanel from './InfoPanel.js';
 
 import ViewerManager from '../ViewerManager.js'
 
@@ -30,34 +31,25 @@ class ViewerComposed extends React.Component {
             <div style={{ height: "100%" }}>
                 <OSDMain />
 
-                <div id="sliderPanel" className="sliderPanel sliderPanelShow">
-                    <SliderNavigatorPanel
-                        hasDelineation={this.props.config && this.props.config.hasDelineation}
-                        showRegions={this.state.showRegions}
-                        displaySettings={this.state.layerDisplaySettings} />
-                </div>
-
-                <div id="subviewPanel" className="subviewPanel subviewPanelShow">
-                    <SubViewPanel
-                        coronalChosenSlice={this.state.coronalChosenSlice}
-                        config={this.props.config}
-                        type="sagittal"
-                    />
-                </div>
-
-                <div id="posviewPanel">
+                <Drawer width={222}>
                     <PositionInfoPanel livePosition={this.state.livePosition} />
                     <MeasureInfoPanel
                         posCount={this.state.position ? this.state.position[0].c : 0}
                         pos={this.state.pos} markedPos={this.state.markedPos}
                         markedPosColors={this.state.markedPosColors}
                     />
-                </div>
-                <div id="infoPanel">
-                    <InfoPanel
-                        infoText={this.props.config && this.props.config.infoText}
-                        infoTextName={this.props.config && this.props.config.infoTextName} />
-                </div>
+
+                    <SliderNavigatorPanel
+                        hasDelineation={this.props.config && this.props.config.hasDelineation}
+                        showRegions={this.state.showRegions}
+                        displaySettings={this.state.layerDisplaySettings} />
+
+                    <SubViewPanel
+                        coronalChosenSlice={this.state.coronalChosenSlice}
+                        config={this.props.config}
+                        type="sagittal"
+                    />
+                </Drawer>
 
             </div>
         );

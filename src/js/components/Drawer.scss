@@ -1,0 +1,46 @@
+.zav-Drawer {
+    position: fixed;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    background: #2b2b2b;
+}
+
+.zav-Drawer[data-isexpanded="false"] {
+    width: 13px;
+}
+
+.zav-Drawer_handle {
+    position: absolute;
+    top: 0;
+    left: 0;
+    bottom: 0;
+    width: 13px;
+    background: #2b2b2b;
+    z-index: 100;
+    font-weight: bold;
+    color: white;
+
+    cursor: pointer;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.zav-Drawer_handle:hover {
+    background: #646464;
+}
+
+
+.zav-Drawer_cont {
+    margin-left: 16px;
+    height: 100%;
+    display: flex;  
+    flex-direction: column;
+    justify-content: space-evenly;
+}
+
+.zav-Drawer[data-isexpanded="false"] > .zav-Drawer_cont {
+    display: none;
+    width: 0;
+}
