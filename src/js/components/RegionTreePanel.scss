@@ -6,7 +6,6 @@
 	list-style-image: none;
 	background-color: #e1e1e1;
 	width: 100%;
-	height: 100%;
 	overflow-y: scroll;
 	overflow-x: scroll;
 }
@@ -97,7 +96,6 @@
 	color: #8b0000;
 }
 
-
 .zav-TreeItemLabelBullet {
 	padding-left: 16px;
 	border-radius: 16px;
@@ -145,6 +143,13 @@
 
 .zav-TreeItemHandle[data-haschild="false"] .zav-TreeItemHandleText::before {
 	content: "";
+}
+
+.zav-TreeStatus {
+	border-top: solid 2px #80808042;
+	padding: 1px;
+	background-color: #e1e1e1;
+	overflow: hidden;
 }
 
 /* ▼ ------ Search pane ------ */

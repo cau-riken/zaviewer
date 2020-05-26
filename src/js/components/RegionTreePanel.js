@@ -56,13 +56,13 @@ class RegionItem extends React.Component {
 
         return (
             <li
-                ref={this.treeItemRef}
                 className="zav-TreeItemCont"
                 data-isexpanded={isExpanded}
                 data-islastchild={this.props.lastChild}
                 data-highlight={highlightStatus}
             >
                 <div
+                    ref={this.treeItemRef}
                     className="zav-TreeItem"
                     data-highlight={highlightStatus}
                     data-isselected={RegionsManager.isSelected(region.abb)}
@@ -137,6 +137,7 @@ class RegionTree extends React.Component {
             <div
                 ref={this.scrollContainerRef}
                 className="zav-Tree"
+                style={{ position: "absolute", top: (50 + 34), left: 0, bottom: (20 + 4), right: 0 }}
             >
                 <ul className="zav-TreeSubItems">
                     {this.props.regionsStatus ?
@@ -161,7 +162,7 @@ class RegionTree extends React.Component {
         /** vertical scroll only if region item is not already in view */
         var desiredScrollY = null;
         if (itemRect.top < contRect.top) {
-            var desiredScrollY = this.scrollContainerRef.current.scrollTop + itemRect.top - contRect.top - itemHeight / 2;
+            desiredScrollY = this.scrollContainerRef.current.scrollTop + itemRect.top - contRect.top - itemHeight / 2;
             if (desiredScrollY < 0) {
                 desiredScrollY = 0;
             }
@@ -169,11 +170,26 @@ class RegionTree extends React.Component {
             desiredScrollY = this.scrollContainerRef.current.scrollTop + itemRect.bottom - contRect.height + itemHeight / 2;
         }
 
-        if (desiredScrollY) {
-            this.scrollContainerRef.current.scrollTo({
-                top: desiredScrollY,
-                behavior: 'smooth'
-            });
+        var desiredScrollX = null;
+        if (itemRect.left < contRect.left) {
+            desiredScrollX = this.scrollContainerRef.current.scrollLeft + itemRect.left - contRect.left;
+            if (desiredScrollX < 0) {
+                desiredScrollX = 0;
+            }
+        } else if (itemRect.right > contRect.width) {
+            desiredScrollX = this.scrollContainerRef.current.scrollLeft + itemRect.left - contRect.left;
+        }
+
+        if (desiredScrollY || desiredScrollX) {
+            var scrollArg = { behavior: 'smooth' };
+            if (desiredScrollY) {
+                scrollArg.top = desiredScrollY;
+            }
+            if (desiredScrollX) {
+                scrollArg.left = desiredScrollX;
+            }
+
+            this.scrollContainerRef.current.scrollTo(scrollArg);
         }
 
     }
@@ -221,6 +237,17 @@ class RegionTreeSearch extends React.Component {
 
 }
 
+class RegionTreeStatus extends React.Component {
+    render() {
+        return (
+            <div
+                className="zav-TreeStatus"
+                style={{ position: "absolute", height: 20 }}>
+            </div>
+        );
+    }
+}
+
 class RegionTreePanel extends React.Component {
 
     constructor(props) {
@@ -234,6 +261,7 @@ class RegionTreePanel extends React.Component {
                 <div style={{ height: "100%", width: "100%", overflow: "hidden", backgroundColor: "#e1e1e1" }}>
                     <RegionTreeSearch regionsStatus={this.props.regionsStatus} />
                     <RegionTree regionsStatus={this.props.regionsStatus} />
+                    <RegionTreeStatus regionsStatus={this.props.regionsStatus} />
                 </div>
             </div>
         );
