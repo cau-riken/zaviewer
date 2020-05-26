@@ -7,7 +7,7 @@
 }
 
 .zav-Drawer[data-isexpanded="false"] {
-    width: 13px;
+    width: 42px; 
 }
 
 .zav-Drawer_handle {
@@ -32,7 +32,7 @@
 }
 
 
-.zav-Drawer_cont {
+.zav-Drawer_expandedCont {
     margin-left: 16px;
     height: 100%;
     display: flex;  
@@ -40,7 +40,23 @@
     justify-content: space-evenly;
 }
 
-.zav-Drawer[data-isexpanded="false"] > .zav-Drawer_cont {
+.zav-Drawer[data-isexpanded="false"] > .zav-Drawer_expandedCont {
+    display: none;
+    width: 0;
+}
+
+.zav-Drawer_collapsedCont {
+    margin-left: 15px;
+    height: 100%;
+
+    width: 24px;
+
+    display: flex;  
+    flex-direction: column;
+    text-align: center;
+}
+
+.zav-Drawer[data-isexpanded="true"] > .zav-Drawer_collapsedCont {
     display: none;
     width: 0;
 }

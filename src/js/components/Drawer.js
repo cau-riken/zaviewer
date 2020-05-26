@@ -25,7 +25,10 @@ class Drawer extends React.Component {
                 >
                     <span>{this.state.isExpanded ? "⟫" : "⟪"}</span>
                 </div>
-                <div className="zav-Drawer_cont">
+                <div className="zav-Drawer_collapsedCont">
+                    {this.props.quickactions}
+                </div>
+                <div className="zav-Drawer_expandedCont">
                     {this.props.children}
                 </div>
             </div>

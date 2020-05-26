@@ -21,11 +21,14 @@ class App extends React.Component {
       <div className="App">
         <SplitterLayout primaryIndex={1} secondaryMinSize={5} secondaryInitialSize={350}>
           <div className="secondaryRegionTreePane" style={{ height: "100%", overflow: "hidden" }}>
-            <div id="zav_logo"/> 
+            <div id="zav_logo" />
             <RegionTreePanel regionsStatus={this.state.regionsStatus} />
           </div>
           <div className="primaryViewerPane" style={{ height: "100%" }}>
-            <ViewerComposed config={this.state.config} />
+            <ViewerComposed
+              config={this.state.config}
+              regionsStatus={this.state.regionsStatus}
+            />
           </div>
         </SplitterLayout>
       </div>
