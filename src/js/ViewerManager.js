@@ -90,13 +90,6 @@ class ViewerManager {
             /** currently selected coronal slice */
             coronalChosenSlice: this.config.initialSlice,
 
-
-            //TODO probably useless
-            isFullyLoaded: false,
-
-            //TODO probably useless
-            tileDrawnHandler: undefined,
-
         }
 
         this.viewer = OpenSeadragon({
@@ -248,47 +241,6 @@ class ViewerManager {
         this.resizeCanvas();
 
         //--------------------------------------------------
-        //TODO remove useless code 
-        //AW(2010/01/16): Added a tileDrawnHandler event to call updateFilters once the tiles have drawn properly
-        this.viewer.addHandler('tile-drawn', function (event) {
-            //var c=viewer.world.getItemCount();
-
-            //$.each(layers,function(key){
-            //	
-            //	if(layers[key].name.includes("nn_tracer")){
-            //		updateFilters();
-            //	}
-            //});
-            //if (c==5){
-            //	viewer.removeHandler('tile-drawn',G.tileDrawnHandler);
-            //	updateFilters();
-            //}
-        });
-
-
-        //TODO remove useless handler
-        this.viewer.world.addHandler('add-item', function (event) {
-            var tiledImage = event.item;
-            console.log("A");
-            tiledImage.addHandler('fully-loaded-change', function () {
-                var newFullyLoaded = that.areAllFullyLoaded();
-                if (newFullyLoaded !== that.status.isFullyLoaded) {
-                    that.status.isFullyLoaded = newFullyLoaded;
-                    // Raise event
-                    console.log("test");
-                }
-            });
-        });
-
-        //TODO remove useless code
-        $('#intensity_slider, #gamma_slider').change(that.updateFilters);
-        $('#intensity_value, #gamma_value').change(function () {
-            $("#gamma_value").val(parseFloat($("#gamma_value").val()).toFixed(1))
-            $("#intensity_slider").val($("#intensity_value").val())
-            $("#gamma_slider").val($("#gamma_value").val() * 10);
-            //	updateFilters();
-        });
-
 
         RegionsManager.addListeners(regionsStatus => {
             if (RegionsManager.getLastActionSource() != VIEWER_ACTIONSOURCEID) {
@@ -317,18 +269,13 @@ class ViewerManager {
             });
             //		console.log(nn_tracer_layer_ind);
             var processors = [];
-            //TODO remove useless code
-            //if($('#intensity_slider').val() != "0"){
-            //	processors.push(OpenSeadragon.Filters.BRIGHTNESS(parseFloat($('#intensity_slider').val())));
-            //}
-            //if($('#gamma_slider').val() != "10"){
-            //	processors.push(OpenSeadragon.Filters.GAMMA(parseFloat($('#gamma_slider').val())/10.0));
-            //}
+
+
             console.log(nn_tracer_layer_ind);
             var nn_layer = this.viewer.world.getItemAt(nn_tracer_layer_ind);
             console.log(nn_layer);
             if (nn_tracer_layer_ind != -1 && nn_layer !== undefined) {
-                //viewer.world.getItemAt(nn_tracer_layer_ind).addHandler('tile-loaded',fullyLoaded);
+
                 this.viewer.setFilterOptions({
                     filters: [{
                         items: this.viewer.world.getItemAt(nn_tracer_layer_ind),
@@ -342,9 +289,6 @@ class ViewerManager {
                 this.waitForNNLayer(nn_tracer_layer_ind);
             }
         }
-        //TODO remove useless code
-        //$("#intensity_value").val($("#intensity_slider").val());
-        //$("#gamma_value").val((parseFloat($("#gamma_slider").val()) / 10.0).toFixed(1));
     }
 
     static waitForNNLayer(nn_tracer_layer_ind) {
@@ -423,9 +367,18 @@ class ViewerManager {
                         newPathElt.click(function (e) {
                             const selectedRegion = this.attr("title");
                             that.unselectRegions();
+                            if (e.ctrlKey) {
+                                //when Ctrl key is pressed, allow multi-select or toogle of currently selected region 
+                                if (RegionsManager.isSelected(selectedRegion)) {
+                                    that.regionActionner.unSelect(selectedRegion);
+                                } else {
+                                    that.regionActionner.addToSelection(selectedRegion);
+                                }
+                            } else {
+                                that.regionActionner.replaceSelected(selectedRegion);
+                            }
                             that.status.userClickedRegion = true;
-                            that.selectRegions([selectedRegion])
-                            that.regionActionner.replaceSelected(selectedRegion);
+                            that.selectRegions(RegionsManager.getSelectedRegions());
                         });
                     }
 
@@ -799,7 +752,6 @@ class ViewerManager {
     //--------------------------------------------------
     // position
     static resizeCanvas() {
-        //TODO remove useless code
         $("#poscanvas").attr({
             'width': this.viewer.canvas.clientWidth,
             'height': this.viewer.canvas.clientHeight
