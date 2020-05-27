@@ -202,6 +202,7 @@ class RegionTreeSearch extends React.Component {
         super(props);
         this.state = { pattern: "" };
         this.onChange = this.onChange.bind(this);
+        this.searchPattern = this.searchPattern.bind(this);
 
         this.regionActionner = RegionsManager.getActionner(TREE_ACTIONSOURCEID);
     }
@@ -218,19 +219,27 @@ class RegionTreeSearch extends React.Component {
 
     render() {
         return (
-            <div style={{ borderBottom: "solid 2px #80808042", padding: 1, background: "#333" }}>
+            <div style={{ position: "relative", borderBottom: "solid 2px #80808042", padding: 1, background: "#333" }}>
                 <input
                     placeholder=" Region search "
                     type="text"
+                    style={{width:"80%", height: 24, marginLeft:5}}
                     value={this.state.pattern}
                     onChange={this.onChange}
                 />
+                <span 
+                    style={{ position: "absolute", left: "calc( 80% - 7px )", top: 3, padding: 1, background: "#FFF", cursor: "pointer", userSelect: "none" }}
+                    onClick={this.searchPattern.bind(this, "")}
+                >🗙</span>
             </div>
         );
     }
 
     onChange(event) {
-        const pattern = event.target.value;
+        this.searchPattern(event.target.value);
+    }
+
+    searchPattern(pattern) {
         this.setState({ pattern: pattern });
         this.regionActionner.higlightByName(pattern);
     }
