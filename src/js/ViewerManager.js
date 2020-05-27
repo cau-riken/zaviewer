@@ -11,6 +11,7 @@ export const CORONAL = 1;
 export const SAGITTAL = 2;
 
 const VIEWER_ACTIONSOURCEID = 'VIEWER';
+const BACKGROUND_PATHID = 'background';
 
 /** Class in charge of managing viewer's main display (OSD) and state of related elements */
 class ViewerManager {
@@ -64,6 +65,9 @@ class ViewerManager {
             /** set to true when user directly click region delineation on overlay (vs selecting it from region treeview) */
             userClickedRegion: false,
 
+            disableAutoPanZoom: true,
+
+            currentSliceRegions: new Map(),
 
             /** range pointer used to provide info for measuring line feature (image space coordinates) */
             position: [{ x: 0, y: 0, c: 0 }, { x: 0, y: 0 }, { x: 0, y: 0 }],
@@ -112,18 +116,18 @@ class ViewerManager {
         });
 
         this.viewer.scalebar({
-            type: OpenSeadragon.ScalebarType.MICROSCOPY,
+            type: OpenSeadragon.ScalebarType.MAP,
             pixelsPerMeter: 1000 / (this.getPointXY(0, this.config.imageSize / 2).x - this.getPointXY(this.config.imageSize, this.config.imageSize / 2).x) * this.config.imageSize,//37cm:1000px
             minWidth: "150px",
             location: OpenSeadragon.ScalebarLocation.BOTTOM_LEFT,
             xOffset: 5,
             yOffset: 10,
             stayInsideImage: false,
-            color: "rgb(255, 0, 0)",
+            color: "rgb(255, 0, 0, 0.65)",
             fontColor: "rgb(255,255,255)",
             backgroundColor: "rgba(100,100, 100, 0.25)",
-            fontSize: "small",
-            barThickness: 4
+            fontSize: "10px",
+            barThickness: 2
         });
 
 
@@ -325,26 +329,25 @@ class ViewerManager {
             success: function (html) {
                 strReturn = html;
                 var root = strReturn.getElementsByTagName('svg')[0];
-                //I can get the name and paths
                 var paths = root.getElementsByTagName('path');
+
+                that.status.currentSliceRegions.clear();
 
                 for (var i = 0; i < paths.length; i++) {
 
-                    const abbrev = paths[i].getAttribute('id').trim()
-                    //reset path id before importing path to avoid duplicates
-                    const newId = abbrev + '-' + i;
-                    paths[i].setAttribute('id', newId);
-
+                    const rawId = paths[i].getAttribute('id').trim();
+                    //append ordinal number to ensure unique id (case of non-contiguous regions)
+                    const pathId = rawId + "-" + i;
+                    paths[i].setAttribute('id', pathId);
                     var newPathElt = that.status.paper.importSVG(paths[i]);
-                    newPathElt.id = newId;
-                    newPathElt.attr("title", abbrev);
 
                     that.applyMouseOutPresentation(newPathElt);
 
-                    if (abbrev == "background") {
+                    if (rawId === BACKGROUND_PATHID) {
                         //background elements
-
+                        newPathElt.id = rawId;
                         newPathElt.attr("fill-opacity", 0.0);
+                        that.status.currentSliceRegions.set(rawId, rawId);
 
                         //unselect all when click on the background element
                         newPathElt.click(function (e) {
@@ -353,29 +356,41 @@ class ViewerManager {
                         });
 
                     } else {
+                        newPathElt.id = pathId;
+                        //extract region abbreviation from path id
+                        const suffix = rawId.substring(rawId.length -2);
+                        var side;
+                        if (suffix==="_L") {
+                            side = "(Left)";
+                        } else if (suffix==="_R") {
+                            side = "(Right)";
+                        }
+                        const abbrev = side ? rawId.substring(0, rawId.length -2) : rawId;
+                        newPathElt.attr("title", abbrev + " " + side);
+
+                        that.status.currentSliceRegions.set(pathId, abbrev);
 
                         newPathElt.mouseover(function (e) {
                             that.applyMouseOverPresentation(this);
                         });
 
                         newPathElt.mouseout(function (e) {
-                            if (!RegionsManager.isSelected(this.attr("title"))) {
+                            if (!RegionsManager.isSelected(abbrev)) {
                                 that.applyMouseOutPresentation(this);
                             }
                         });
 
                         newPathElt.click(function (e) {
-                            const selectedRegion = this.attr("title");
                             that.unselectRegions();
                             if (e.ctrlKey) {
                                 //when Ctrl key is pressed, allow multi-select or toogle of currently selected region 
-                                if (RegionsManager.isSelected(selectedRegion)) {
-                                    that.regionActionner.unSelect(selectedRegion);
+                                if (RegionsManager.isSelected(abbrev)) {
+                                    that.regionActionner.unSelect(abbrev);
                                 } else {
-                                    that.regionActionner.addToSelection(selectedRegion);
+                                    that.regionActionner.addToSelection(abbrev);
                                 }
                             } else {
-                                that.regionActionner.replaceSelected(selectedRegion);
+                                that.regionActionner.replaceSelected(abbrev);
                             }
                             that.status.userClickedRegion = true;
                             that.selectRegions(RegionsManager.getSelectedRegions());
@@ -493,7 +508,7 @@ class ViewerManager {
         if (this.status.set) {
             const that = this;
             this.status.set.forEach(function (el) {
-                if (el[0].attr("title") !== "background") {
+                if (el.id !== BACKGROUND_PATHID) {
                     that.applyUnselectedPresentation(el);
                 }
             });
@@ -510,14 +525,14 @@ class ViewerManager {
 
             // apply presentation for selected regions
             this.status.set.forEach(function (el) {
-                var abbrev = el[0].attr("title");
+                var abbrev = that.status.currentSliceRegions.get(el.id);
                 if (nameList.includes(abbrev)) {
                     that.applySelectedPresentation(el);
                 }
             });
 
             // perform pan & zoom 
-            if (!this.status.userClickedRegion) {
+            if (!this.status.disableAutoPanZoom && !this.status.userClickedRegion) {
                 const that = this;
                 //how to choose a center?
                 var newX = 0;
@@ -527,7 +542,7 @@ class ViewerManager {
                     //try to find the nodes -> slow way!
                     this.status.set.forEach(function (el) {
                         var subNode = el[0];
-                        if (el[0].attr("title") == nameList[k]) {
+                        if (that.status.currentSliceRegions.get(el.id) == nameList[k]) {
                             snCount++;
                             var bbox = subNode.getBBox();
                             newX += (bbox.x2 - bbox.width / 2) / that.config.dzWidth;
