@@ -358,14 +358,14 @@ class ViewerManager {
                     } else {
                         newPathElt.id = pathId;
                         //extract region abbreviation from path id
-                        const suffix = rawId.substring(rawId.length -2);
+                        const suffix = rawId.substring(rawId.length - 2);
                         var side;
-                        if (suffix==="_L") {
+                        if (suffix === "_L") {
                             side = "(Left)";
-                        } else if (suffix==="_R") {
+                        } else if (suffix === "_R") {
                             side = "(Right)";
                         }
-                        const abbrev = side ? rawId.substring(0, rawId.length -2) : rawId;
+                        const abbrev = side ? rawId.substring(0, rawId.length - 2) : rawId;
                         newPathElt.attr("title", abbrev + " " + side);
 
                         that.status.currentSliceRegions.set(pathId, abbrev);
@@ -409,9 +409,9 @@ class ViewerManager {
                     that.hideDelineation();
                 }
 
+                RegionsManager.setCurrentSliceRegions(Array.from(that.status.currentSliceRegions.values()))
             }
         });
-
 
 
     }

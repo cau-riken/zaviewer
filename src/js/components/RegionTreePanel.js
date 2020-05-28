@@ -1,5 +1,15 @@
 import React from 'react';
 
+import {
+    AnchorButton,
+    FormGroup,
+    InputGroup,
+    Popover,
+    PopoverInteractionKind,
+    Position,
+    Switch
+} from "@blueprintjs/core";
+
 import RegionsManager from '../RegionsManager.js'
 
 const TREE_ACTIONSOURCEID = 'TREE'
@@ -201,8 +211,9 @@ class RegionTreeSearch extends React.Component {
     constructor(props) {
         super(props);
         this.state = { pattern: "" };
-        this.onChange = this.onChange.bind(this);
+        this.onPatternChange = this.onPatternChange.bind(this);
         this.searchPattern = this.searchPattern.bind(this);
+        this.onOnlySlicesChange = this.onOnlySlicesChange.bind(this);
 
         this.regionActionner = RegionsManager.getActionner(TREE_ACTIONSOURCEID);
     }
@@ -219,23 +230,49 @@ class RegionTreeSearch extends React.Component {
 
     render() {
         return (
-            <div style={{ position: "relative", borderBottom: "solid 2px #80808042", padding: 1, background: "#333" }}>
-                <input
-                    placeholder=" Region search "
-                    type="text"
-                    style={{width:"80%", height: 24, marginLeft:5}}
-                    value={this.state.pattern}
-                    onChange={this.onChange}
-                />
-                <span 
-                    style={{ position: "absolute", left: "calc( 80% - 7px )", top: 3, padding: 1, background: "#FFF", cursor: "pointer", userSelect: "none" }}
-                    onClick={this.searchPattern.bind(this, "")}
-                >🗙</span>
+            <div className="zav-SearchBox">
+                <div style={{ marginLeft: 5, flexGrow: 1 }}>
+                    <FormGroup>
+                        <InputGroup
+
+                            placeholder=" Region search "
+                            disabled={RegionsManager.isAutoHighlightingOn()}
+                            inline
+                            value={this.state.pattern}
+                            onChange={this.onPatternChange}
+                            rightElement={
+                                <AnchorButton
+                                    icon="eraser"
+                                    minimal
+                                    onClick={this.searchPattern.bind(this, "")}
+                                    disabled={RegionsManager.isAutoHighlightingOn()}
+                                />}
+                        />
+                    </FormGroup>
+                </div>
+                <Popover
+                    interactionKind={PopoverInteractionKind.HOVER}
+                    popoverClassName="bp3-popover-content-sizing"
+                    position={Position.BOTTOM}
+                >
+                    <div style={{ marginLeft: 10, marginRight: 5 }}>
+                        <AnchorButton icon="cog" />
+                    </div>
+                    <div>
+                        <Switch
+                            label="List only the regions present in current slice"
+                            onChange={this.onOnlySlicesChange}
+                            checked={RegionsManager.isAutoHighlightingOn()}
+                        />
+
+                    </div>
+
+                </Popover>
             </div>
         );
     }
 
-    onChange(event) {
+    onPatternChange(event) {
         this.searchPattern(event.target.value);
     }
 
@@ -244,17 +281,36 @@ class RegionTreeSearch extends React.Component {
         this.regionActionner.higlightByName(pattern);
     }
 
+    onOnlySlicesChange(event) {
+        this.regionActionner.toggleAutoHighlighting();
+        this.forceUpdate();
+    }
+
 }
 
 class RegionTreeStatus extends React.Component {
+    constructor(props) {
+        super(props);
+    }
+
     render() {
+        var content;
+        if (RegionsManager.hasHighlighting()) {
+            content = <div
+                style={{ color: "#8b0000", fontSize: 12 }}
+                title="Number of highlighted regions"
+            >
+                {"(" + this.props.regionsStatus.highlighted.size + ")"}
+            </div>
+        }
         return (
-            <div
-                className="zav-TreeStatus"
-                style={{ position: "absolute", height: 20 }}>
+            <div className="zav-TreeStatus">
+                {content}
             </div>
         );
     }
+
+
 }
 
 class RegionTreePanel extends React.Component {

@@ -9,6 +9,7 @@
   "private": true,
   "dependencies": {
     "@babel/runtime": "^7.9.6",
+    "@blueprintjs/core": "^3.28.1",
     "react": "^16.13.1",
     "react-dom": "^16.13.1",
     "react-splitter-layout": "^4.0.0",

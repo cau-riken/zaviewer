@@ -41,9 +41,6 @@
 	display: none;
 }
 
-.zav-TreeItemCont[data-isexpanded="true"] > ul {
-}
-
 .zav-TreeItemLink {
 	display: inline-block;
 	height: 14px;
@@ -97,10 +94,22 @@
 }
 
 .zav-TreeItemLabelBullet {
-	padding-left: 16px;
+	display: inline-block;
+	height: 15px;
+	width: 15px;
+
+	position: relative;
+	top: 3px;
+
+	border: solid 2px transparent;
 	border-radius: 16px;
 	margin-right: 7px;
 }
+
+.zav-TreeItem[data-exists="false"] > .zav-TreeItemHeader .zav-TreeItemLabelBullet {
+	border-color: #fff;
+}
+
 
 .zav-TreeItemHandle {
 	cursor: pointer;
@@ -108,10 +117,9 @@
 	background-color: white;
 
 	position: relative;
-	top: -1px;
 
 	display: inline-block;
-	width: 11px;
+	width: 13px;
 	height: 13px;
 	text-align: center;
 	vertical-align: middle;
@@ -130,7 +138,7 @@
 }
 
 .zav-TreeItemHandleText {
-	top: -4px;
+	top: -5px;
 	position: relative;
 }
 
@@ -146,29 +154,27 @@
 }
 
 .zav-TreeStatus {
-	border-top: solid 2px #80808042;
+	position: absolute;
 	padding: 1px;
-	background-color: #e1e1e1;
+	width: calc(100% - 2px);
+	height: 20px;
+	bottom: 0px;
 	overflow: hidden;
+
+	border-top: solid 2px #80808042;
+	background-color: #e1e1e1;
+	position: absolute;
+
+	display: flex;
+	flex-direction: row;
+	justify-content: right;
 }
 
-/* ▼ ------ Search pane ------ */
+.zav-SearchBox {
+	background: #333;
+	border-bottom: solid 2px #80808042;
 
-div#region_search_label {
-	padding: 48px 0 0 10px;
-	white-space: nowrap;
-	text-align: justify;
-	font-size: 12px;
-	line-height: 16px;
-	font-weight: bold;
-	color: #ddd;
+	display: flex;
+	flex-direction: row;
+	justify-content: space-between;
 }
-
-input#region_search_form {
-	width: calc(100% - 28px);
-	max-width: 300px;
-	font-size: 13px;
-	margin: 3px 0 0 10px;
-}
-
-/* ▼ ------ Tree pane ------ */
