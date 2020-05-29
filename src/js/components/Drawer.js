@@ -1,5 +1,7 @@
 import React from 'react';
 
+import { Icon } from "@blueprintjs/core";
+
 export const LEFT = 'left';
 export const RIGHT = 'right';
 
@@ -19,7 +21,7 @@ export class DrawerHandle extends React.Component {
                 className="zav-Drawer_handle"
                 onClick={this.props.onClick}
             >
-                <span>{pointToRight ? "⟫" : "⟪"}</span>
+                <Icon icon={"caret-" + (pointToRight ? "right" : "left")} iconSize={16} />
             </div>
         );
     }

@@ -1,3 +1,7 @@
+$handle-width: 13px;
+$content-margin-left: 3px;
+$collapsed-content-width: 54px;
+
 .zav-Drawer {
     position: fixed;
     top: 0;
@@ -7,7 +11,7 @@
 }
 
 .zav-Drawer[data-isexpanded="false"] {
-    width: 42px; 
+    width: $handle-width + $content-margin-left + $collapsed-content-width;
 }
 
 .zav-Drawer_handle {
@@ -15,7 +19,7 @@
     top: 0;
     left: 0;
     bottom: 0;
-    width: 13px;
+    width: $handle-width;
     background: transparent;
     z-index: 100;
     font-weight: bold;
@@ -32,9 +36,9 @@
 }
 
 .zav-Drawer_expandedCont {
-    margin-left: 16px;
+    margin-left: $handle-width + $content-margin-left;
     height: 100%;
-    display: flex;  
+    display: flex;
     flex-direction: column;
     justify-content: space-evenly;
 }
@@ -45,14 +49,13 @@
 }
 
 .zav-Drawer_collapsedCont {
-    margin-left: 15px;
+    margin-left: $handle-width + $content-margin-left;
     height: 100%;
 
-    width: 24px;
+    width: $collapsed-content-width;
 
-    display: flex;  
+    display: flex;
     flex-direction: column;
-    text-align: center;
 }
 
 .zav-Drawer[data-isexpanded="true"] > .zav-Drawer_collapsedCont {

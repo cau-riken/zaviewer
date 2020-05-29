@@ -1,16 +1,9 @@
-.zav-MiniButton {
-    margin: 10px 0;
-    width: 22px;
-    height: 18px;
-    background: #b0b0b0;
-    cursor: pointer;
+.zav-ActionContainer {
+    margin: 5px 0;
     user-select: none;
-    border-radius: 3px;
-    border-style: solid;
-    border-width: 1px;
-    border-color: white gray gray white;
 }
 
-.zav-MiniButton:hover {
-    background: #cecece;
+
+.zav-Slider  .bp3-slider-progress {
+    background-color: silver;
 }
