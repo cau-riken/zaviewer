@@ -1,5 +1,30 @@
 import React from 'react';
 
+export const LEFT = 'left';
+export const RIGHT = 'right';
+
+export class DrawerHandle extends React.Component {
+
+    static get LEFT() {
+        return LEFT;
+    }
+    static get RIGHT() {
+        return RIGHT;
+    }
+
+    render() {
+        const pointToRight = (this.props.collapseDirection === RIGHT) ? this.props.isExpanded : !this.props.isExpanded;
+        return (
+            <div
+                className="zav-Drawer_handle"
+                onClick={this.props.onClick}
+            >
+                <span>{pointToRight ? "⟫" : "⟪"}</span>
+            </div>
+        );
+    }
+
+}
 
 class Drawer extends React.Component {
     constructor(props) {
@@ -10,21 +35,18 @@ class Drawer extends React.Component {
         this.handleClick = this.handleClick.bind(this);
     }
 
-
     render() {
-
         return (
             <div
                 ref={this.drawerRef}
                 className="zav-Drawer"
                 data-isexpanded={this.state.isExpanded}
             >
-                <div
-                    className="zav-Drawer_handle"
+                <DrawerHandle
+                    collapseDirection={DrawerHandle.RIGHT}
+                    isExpanded={this.state.isExpanded}
                     onClick={this.handleClick}
-                >
-                    <span>{this.state.isExpanded ? "⟫" : "⟪"}</span>
-                </div>
+                />
                 <div className="zav-Drawer_collapsedCont">
                     {this.props.quickactions}
                 </div>
@@ -40,6 +62,5 @@ class Drawer extends React.Component {
     }
 
 }
-
 
 export default Drawer;

@@ -12,7 +12,7 @@
     "@blueprintjs/core": "^3.28.1",
     "react": "^16.13.1",
     "react-dom": "^16.13.1",
-    "react-splitter-layout": "^4.0.0",
+    "react-split-pane": "^0.1.91",
     "underscore": "^1.10.2"
   },
   "devDependencies": {
