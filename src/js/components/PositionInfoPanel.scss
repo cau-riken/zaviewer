@@ -1,23 +1,11 @@
-.zav-positionInfoPanel_container {
 
-    font-size: 12px;
-    color: #ffffff;
-    z-index: 90;
 
-    -webkit-user-select: none; /* Safari・Chrome */
-	-moz-user-select: none; /* Firefox */
-	-ms-user-select: none; /* IE */
-	-o-user-select: none; /* Opera */
-    user-select: none;
-
-    background-color: rgba(100, 100, 100, 0.5);
-    border-style: solid;
-    border-width: 1px;
-    border-top-color: rgba(255, 255, 255, 0.5);
-    border-right-color: rgba(0, 0, 0, 0.6);
-    border-bottom-color: rgba(0, 0, 0, 0.6);
-    border-left-color: rgba(255, 255, 255, 0.5);
-    box-shadow: -1px -1px 1px rgba(0, 0, 0, 0.4) inset;
-
+.posLabel {
+	width: 0px;
+	white-space: nowrap;
+	padding-right: 4px;
 }
-
+.posValue {
+	text-align: right;
+	padding-left: 4px;
+}

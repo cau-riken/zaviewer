@@ -1,6 +1,5 @@
 import React from 'react';
 
-import ExpandablePanel from './ExpandablePanel.js';
 
 class MeasureInfoPanel extends React.Component {
 
@@ -22,14 +21,19 @@ class MeasureInfoPanel extends React.Component {
         }
 
         return (
-            <ExpandablePanel
-                header={<div style={this.props.posCount > 1 ? { color: "#fff" } : {}} id="posDis">Distance:<span id="posdistance">{distance}</span>(mm)</div>}
-            >
-                <div className="posTbl">
-                    <div style={this.props.posCount > 0 ? { color: this.props.markedPosColors[0] } : {}}><div>P1</div>&nbsp;(<div id="pos1x">{posx[0]}</div>,&nbsp;<div id="pos1y">{posy[0]}</div>)</div>
-                    <div style={this.props.posCount > 1 ? { color: this.props.markedPosColors[1] } : {}}><div>P2</div>&nbsp;(<div id="pos2x">{posx[1]}</div>,&nbsp;<div id="pos2y">{posy[1]}</div>)</div>
+            <React.Fragment>
+                <div className="distMeasure">
+                    <div
+                        className="posDis"
+                        style={this.props.posCount > 1 ? { color: "#fff" } : {}}
+                    >Distance:<span className="posdistance">{distance}</span>(mm)</div>
+                    <div className="posTbl">
+                        <div style={this.props.posCount > 0 ? { color: this.props.markedPosColors[0] } : {}}><div>P1</div>&nbsp;(<div id="pos1x">{posx[0]}</div>,&nbsp;<div id="pos1y">{posy[0]}</div>)</div>
+                        <div style={this.props.posCount > 1 ? { color: this.props.markedPosColors[1] } : {}}><div>P2</div>&nbsp;(<div id="pos2x">{posx[1]}</div>,&nbsp;<div id="pos2y">{posy[1]}</div>)</div>
+                    </div>
                 </div>
-            </ExpandablePanel>
+            </React.Fragment>
+
         );
     }
 }

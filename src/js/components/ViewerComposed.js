@@ -2,16 +2,28 @@ import React from 'react';
 
 import Drawer from './Drawer.js';
 
-
 import OSDMain from './OSDMain.js';
 import PositionInfoPanel from './PositionInfoPanel.js';
 import MeasureInfoPanel from './MeasureInfoPanel.js';
 import SubViewPanel from './SubViewPanel.js';
 import SliderNavigatorPanel from './SliderNavigatorPanel.js';
+import RegionOptions from './RegionOptions.js';
 
 import QuickActionButtons from './QuickActionButtons.js';
 
 import ViewerManager from '../ViewerManager.js'
+
+class TitledCard extends React.Component {
+
+    render() {
+        return (
+            <div className="zav-TitledCard">
+                <h5>{this.props.header}</h5>
+                {this.props.children}
+            </div>
+        );
+    }
+}
 
 class ViewerComposed extends React.Component {
 
@@ -44,23 +56,46 @@ class ViewerComposed extends React.Component {
                             coronalChosenSlice={this.state.coronalChosenSlice}
                             config={this.props.config} />
                     }>
-                    <PositionInfoPanel livePosition={this.state.livePosition} />
-                    <MeasureInfoPanel
-                        posCount={this.state.position ? this.state.position[0].c : 0}
-                        pos={this.state.pos} markedPos={this.state.markedPos}
-                        markedPosColors={this.state.markedPosColors}
-                    />
+                    <TitledCard header={"Global view"}>
+                        <div className="navigatorParentClass">
+                            <div id={ViewerManager.NAVIGATOR_ID} className="navigatorChildClass"></div>
+                        </div>
+                    </TitledCard>
 
-                    <SliderNavigatorPanel
-                        hasDelineation={this.props.config && this.props.config.hasDelineation}
-                        showRegions={this.state.showRegions}
-                        displaySettings={this.state.layerDisplaySettings} />
+                    <TitledCard header={"3D location"}>
+                        <PositionInfoPanel livePosition={this.state.livePosition} />
+                    </TitledCard>
 
-                    <SubViewPanel
-                        coronalChosenSlice={this.state.coronalChosenSlice}
-                        config={this.props.config}
-                        type="sagittal"
-                    />
+                    <TitledCard header={"Distance measurement"}>
+                        <MeasureInfoPanel
+                            posCount={this.state.position ? this.state.position[0].c : 0}
+                            pos={this.state.pos} markedPos={this.state.markedPos}
+                            markedPosColors={this.state.markedPosColors}
+                        />
+                    </TitledCard>
+
+                    <TitledCard header={"Layers control"}>
+                        <SliderNavigatorPanel
+                            hasDelineation={this.props.config && this.props.config.hasDelineation}
+                            displaySettings={this.state.layerDisplaySettings} />
+                    </TitledCard>
+
+                    {
+                        this.props.config && this.props.config.hasDelineation ?
+                            <TitledCard header={"Atlas regions"}>
+                                <RegionOptions showRegions={this.state.showRegions} />
+                            </TitledCard>
+                            : null
+                    }
+
+                    <TitledCard header={"Sagittal view"}>
+                        <SubViewPanel
+                            coronalChosenSlice={this.state.coronalChosenSlice}
+                            config={this.props.config}
+                            type="sagittal"
+                        />
+                    </TitledCard>
+
                 </Drawer>
 
             </div>

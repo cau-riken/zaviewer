@@ -58,7 +58,6 @@ class SliderNavigatorPanel extends React.Component {
 
     constructor(props) {
         super(props);
-        this.handleClickHideShow = this.handleClickHideShow.bind(this);
     }
 
     render() {
@@ -67,33 +66,23 @@ class SliderNavigatorPanel extends React.Component {
         if (this.props.displaySettings) {
             $.each(this.props.displaySettings, function (layerid, value) {
                 var params = { layerid: layerid, name: value.name, opacity: value.opacity, enabled: value.enabled };
-                layerSliders.push(<LayerSlider key={"slid_"+layerid}  {...params} />)
+                layerSliders.push(<LayerSlider key={"slid_" + layerid}  {...params} />)
             });
         }
-        var showRegionButton;
-        if (this.props.hasDelineation) {
-            showRegionButton= <button id="btnHideShow" onClick={this.handleClickHideShow}>
-                    {this.props.showRegions ? "Hide regions" : "Show regions"}</button>;
-        }
+        layerSliders.reverse();
 
         return (
-
-            <ExpandablePanel header={showRegionButton} >
-                <div className="navigatorParentClass">
-                    <div id={ViewerManager.NAVIGATOR_ID} className="navigatorChildClass"></div>
-                </div>
+            <React.Fragment>
                 <div className="sliderGroup">
                     <div id="sliderGroup1">
                         {layerSliders}
                     </div>
                 </div>
-            </ExpandablePanel>
+            </React.Fragment>
+
         );
     }
 
-    handleClickHideShow() {
-        ViewerManager.changeRegionsVisibility(!this.props.showRegions);
-    }
 }
 
 export default SliderNavigatorPanel;

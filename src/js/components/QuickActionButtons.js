@@ -91,6 +91,7 @@ class QuickActionButtons extends React.Component {
                             value={this.props.coronalChosenSlice}
                             showTrackFill={false}
                             vertical
+                            labelStepSize={this.props.config.coronalSlideCount - 1}
                             labelRenderer={(value) => value * this.props.config.coronalSliceStep}
                         />
                     </div>

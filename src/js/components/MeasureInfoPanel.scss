@@ -1,8 +1,7 @@
 /* Position-view panel */
 
 .posTbl {
-    display: table;
-    color: grey;
+	display: table;
 }
 .posTbl > div {
 	text-align: left;
@@ -11,44 +10,17 @@
 .posTbl > div > div {
 	display: table-cell;
 }
-#posviewPanel1 > div > div:first-child {
-	width: 0px;
-	white-space: nowrap;
-	padding-left: 2px;
-	padding-right: 2px;
-}
-#posviewPanel1 > div > div:last-child {
-	text-align: right;
-	padding-left: 2px;
-	padding-right: 4px;
+
+
+.distMeasure {
+	color: grey;
 }
 
-#posviewPanel2 {
-	text-align: left;
-	top: 2px;
-	position: relative;
-	overflow: hidden;
-}
-#posviewPanel2 > div {
-	position: absolute;
-	bottom: 0px;
-	width: 100%;
-}
-#posviewPanel2 .posTbl > div > div {
-	text-align: right;
-	padding-left: 1px;
-	padding-right: 1px;
-}
-#posviewPanel2 .posTbl > div > div:not(:first-child) {
-	width: 10px;
+.posDis {
+	margin-bottom: 2px;
 }
 
-#posDis {
-    margin-bottom: 2px;
-    color: grey;
-}
-
-#posdistance {
+.posdistance {
 	text-align: right;
 	padding-left: 5px;
 	min-width: 34px;

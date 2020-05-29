@@ -21,39 +21,26 @@
 	}
 }
 
+.zav-TitledCard {
+	min-width: 100px;
 
-/* ▼ -Absolute positioned panels ------ */
+	font-size: 12px;
+	color: #ffffff;
+	background-color: #66666680;
 
-/* Main of slider panel */
-.sliderPanel {
-	width: 230px;
-	right: 6px;
-	position: absolute;
-	top: 6px;
+	user-select: none;
+
+	padding: 4px 8px;
+	margin: 10px 4px 0 0;
+
+	border: solid 1px #9595955d;
+	border-radius: 4px;
 }
 
-/* Main of sub-view panel */
-.subviewPanel {
-	right: 6px;
-	bottom: 6px;
-	position: absolute;
-}
-
-#posviewPanel {
-	right: 242px;
-	top: 6px;
-	position: absolute;
-}
-
-.posviewPanel {
-	height: 62px;	
-	width: 210px;
-}
-
-#infoPanel {
-	margin-left: 10px;
-	width: 18vw;
-	left: 0px;
-	top: 6px;
-	position: absolute;
+.zav-TitledCard > h5 {
+	margin-top: 3px;
+	margin-bottom: 6px;
+	border-bottom: dotted 1px #c0c0c0b3;
+	font-variant: small-caps;
+	text-align: right;
 }

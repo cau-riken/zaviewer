@@ -1,5 +1,13 @@
 import React from 'react';
 
+import {
+    AnchorButton,
+    Icon,
+    Slider,
+    Switch
+} from "@blueprintjs/core";
+
+
 import ViewerManager from '../ViewerManager.js'
 import ExpandablePanel from './ExpandablePanel.js';
 
@@ -15,11 +23,10 @@ class SubViewPanel extends React.Component {
             sagittalHolderPaper: undefined,
             sagittalHolderPaperSet: undefined,
             sagittalRect: undefined,
-    
+
         };
 
-        this.handleClickUp = this.handleClickUp.bind(this);
-        this.handleClickDown = this.handleClickDown.bind(this);
+        this.onGoToSlice = this.onGoToSlice.bind(this);
     }
 
 
@@ -34,57 +41,41 @@ class SubViewPanel extends React.Component {
 
     render() {
         const currentSlice = this.props.coronalChosenSlice;
-        const maxSliceNum = this.props.config ? this.props.config.coronalSlideCount - 1 : "";
+        const maxSliceNum = this.props.config ? this.props.config.coronalSlideCount - 1 : 1000;
+        const sliceStep = this.props.config ? this.props.config.coronalSliceStep : 1;
         if (this.props.config) {
             this.config = this.props.config;
         }
 
         return (
-            <ExpandablePanel collapseToBottom
-                header={
-                    <div>
-                        <div id="sagittal_label" className="sagittalLabel" ></div>
-                        <div className="spinControl">
-                            <div id="sagittal_spinner" className="spinner">
-                                <input className="spinner-input" type="text" value={currentSlice} maxLength="3"
-
-                                    onKeyDown={(e) => {
-                                        var k = e.keyCode;
-                                        // 0~9,t0~t9,arrow,BS,DLL
-                                        if (!((k >= 48 && k <= 57) || (k >= 96 && k <= 105) || (k >= 37 && k <= 40) || k == 8 || k == 46)) {
-                                            return false;
-                                        }
-                                    }}
-                                    onKeyUp={(e) => {
-                                        //FIXME $(this).val($(this).val().replace(/[^\d]|^0+/g, ""));
-                                        if (e.which == 38) { // up-arrow
-                                            this.handleClickUp();
-                                        } else if (e.which == 40) { // down-arrow
-                                            this.handleClickDown();
-                                        }
-                                    }}
-
-                                ></input>
-                                <div className="spinner-button spinner-up" onClick={this.handleClickUp}><div></div></div>
-                                <div className="spinner-button spinner-down" onClick={this.handleClickDown}><div></div></div>
-                            </div>
-                            <div id="sagittal_spinner_max" className="spinner_max">{maxSliceNum}</div>
-                        </div>
-                    </ div>
-                }>
+            <React.Fragment>
+                <div>
+                    <div className="zav-SubViewSlider">
+                        <Slider
+                            className="zav-Slider"
+                            min={0}
+                            max={maxSliceNum}
+                            stepSize={1}
+                            labelStepSize={maxSliceNum}
+                            onChange={this.onGoToSlice}
+                            value={currentSlice}
+                            showTrackFill={false}
+                            labelRenderer={(value) => value * sliceStep}
+                        />
+                    </div>
+                </ div>
                 <div id="sagittal_holder" className="sagittalHolder" >
                     <img id="sagittal_image" alt="Sagittal view" width="200" height="200" />
                 </div>
-            </ExpandablePanel>
+            </React.Fragment>
+
         );
     }
 
-    handleClickUp() {
-        ViewerManager.goToSlice(ViewerManager.CORONAL, this.props.coronalChosenSlice + 1);
+    onGoToSlice(sliceNum) {
+        ViewerManager.goToSlice(ViewerManager.CORONAL, sliceNum);
     }
-    handleClickDown() {
-        ViewerManager.goToSlice(ViewerManager.CORONAL, this.props.coronalChosenSlice - 1);
-    }
+
 
     addSagittalSelectSection() {
         const that = this;
@@ -189,39 +180,39 @@ class SubViewPanel extends React.Component {
         //this.updateSubVLine(tmpCoronalSlide);
     }
 
-                        ///FIXME
-                        /*
-                        //$("#axial_holder").hide();
-                        //$("#coronal_holder").hide();
-                        if (that.config.coronalSlideCount == 0) { $("#sagittal_holder").hide(); }
-                        else if (that.config.coronalSlideCount == 1) {
-                            $("#sagittal_spinner").hide();
-                            $("#sagittal_spinner_max").hide();
-                        } else {
-                            $("#sagittal_spinner>input").val(that.config.coronalChosenSlice);
-                            $("#sagittal_spinner>input").attr('maxlength', ((String)(that.config.coronalSlideCount - 1)).length);
-                            $("#sagittal_spinner_max").html(that.config.coronalSlideCount - 1);
-                        }
-                        //$("#sagittal_spinner").hide();
-                        //$("#sagittal_spinner_max").hide();
+    ///FIXME
+    /*
+    //$("#axial_holder").hide();
+    //$("#coronal_holder").hide();
+    if (that.config.coronalSlideCount == 0) { $("#sagittal_holder").hide(); }
+    else if (that.config.coronalSlideCount == 1) {
+        $("#sagittal_spinner").hide();
+        $("#sagittal_spinner_max").hide();
+    } else {
+        $("#sagittal_spinner>input").val(that.config.coronalChosenSlice);
+        $("#sagittal_spinner>input").attr('maxlength', ((String)(that.config.coronalSlideCount - 1)).length);
+        $("#sagittal_spinner_max").html(that.config.coronalSlideCount - 1);
+    }
+    //$("#sagittal_spinner").hide();
+    //$("#sagittal_spinner_max").hide();
 
-                        if (response.bright) {
-                            $("#intensity_slider").val(response.bright);
-                        }
-                        if (response.gamma) {
-                            $("#gamma_slider").val(response.gamma);
-                        }
-                        if (response.bright || response.gamma) {
-                            //	updateFilters();
-                        }
+    if (response.bright) {
+        $("#intensity_slider").val(response.bright);
+    }
+    if (response.gamma) {
+        $("#gamma_slider").val(response.gamma);
+    }
+    if (response.bright || response.gamma) {
+        //	updateFilters();
+    }
 
-                        if (response.group_id || (response.data && Object.keys(response.data).length > 0)) {
-                            $("#GroupName").html(response.group_name);
-                            $("#editbtn").click(showImageList);
-                        } else {
-                            $("#editbtn").hide();
-                        }
-                        */
+    if (response.group_id || (response.data && Object.keys(response.data).length > 0)) {
+        $("#GroupName").html(response.group_name);
+        $("#editbtn").click(showImageList);
+    } else {
+        $("#editbtn").hide();
+    }
+    */
 
 
 }

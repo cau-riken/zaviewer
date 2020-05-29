@@ -16,21 +16,21 @@ class PositionInfoPanel extends React.Component {
             posX = posY = posZ = "-";
         }
         return (
-            <div id="posviewPanel1" className="posviewPanel posTbl zav-positionInfoPanel_container">
+            <div className="posviewPanel posTbl">
                 <div>
-                    <div>x ( - Left, + Right)</div>
+                    <div className="posLabel"> x ( - Left, + Right)</div>
                     <div>:</div>
-                    <div id="posX">{posX}</div>
+                    <div className="posValue">{posX}</div>
                 </div>
                 <div>
-                    <div>y ( - Posterior, + Anterior)</div>
+                    <div className="posLabel">y ( - Posterior, + Anterior)</div>
                     <div>:</div>
-                    <div id="posY">{posY}</div>
+                    <div className="posValue">{posY}</div>
                 </div>
                 <div>
-                    <div>z ( - Inferior, + Superior)</div>
+                    <div className="posLabel">z ( - Inferior, + Superior)</div>
                     <div>:</div>
-                    <div id="posZ">{posZ}</div>
+                    <div className="posValue">{posZ}</div>
                 </div>
             </div>
         );

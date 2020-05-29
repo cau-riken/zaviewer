@@ -322,7 +322,6 @@ class RegionTreePanel extends React.Component {
     render() {
         return (
             <div style={{ height: "100%", width: "100%" }}>
-
                 <div style={{ height: "100%", width: "100%", overflow: "hidden", backgroundColor: "#e1e1e1" }}>
                     <RegionTreeSearch regionsStatus={this.props.regionsStatus} />
                     <RegionTree regionsStatus={this.props.regionsStatus} />

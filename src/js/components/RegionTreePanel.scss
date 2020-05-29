@@ -1,7 +1,12 @@
+$bullet-size: 13px;
+$expand-handle-size: $bullet-size;
+
 .zav-Tree {
 	display: block;
 	margin: 0;
 	padding: 0;
+
+	box-sizing: content-box;
 	list-style-type: none;
 	list-style-image: none;
 	background-color: #e1e1e1;
@@ -27,9 +32,6 @@
 	font-size: 13px;
 	line-height: 22px;
 	margin-top: 2px;
-}
-
-.zav-TreeItemCont {
 	border-left: dotted 1px grey;
 }
 
@@ -95,14 +97,14 @@
 
 .zav-TreeItemLabelBullet {
 	display: inline-block;
-	height: 15px;
-	width: 15px;
+	height: $bullet-size;
+	width: $bullet-size;
 
 	position: relative;
-	top: 3px;
+	top: 4px;
 
 	border: solid 2px transparent;
-	border-radius: 16px;
+	border-radius: $bullet-size;
 	margin-right: 7px;
 }
 
@@ -119,8 +121,8 @@
 	position: relative;
 
 	display: inline-block;
-	width: 13px;
-	height: 13px;
+	width: $expand-handle-size;
+	height: $expand-handle-size;
 	text-align: center;
 	vertical-align: middle;
 
