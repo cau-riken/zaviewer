@@ -108,10 +108,9 @@ $expand-handle-size: $bullet-size;
 	margin-right: 7px;
 }
 
-.zav-TreeItem[data-exists="false"] > .zav-TreeItemHeader .zav-TreeItemLabelBullet {
+.zav-TreeItemLabelBullet[data-exists="false"] {
 	border-color: #fff;
 }
-
 
 .zav-TreeItemHandle {
 	cursor: pointer;
@@ -157,16 +156,18 @@ $expand-handle-size: $bullet-size;
 
 .zav-TreeStatus {
 	position: absolute;
-	padding: 1px;
-	width: calc(100% - 2px);
+	width: 100%;
 	height: 20px;
 	bottom: 0px;
+
 	overflow: hidden;
 
 	border-top: solid 2px #80808042;
 	background-color: #e1e1e1;
-	position: absolute;
+}
 
+.zav-TreeStatusContent {
+	padding: 1px;
 	display: flex;
 	flex-direction: row;
 	justify-content: right;
@@ -180,3 +181,17 @@ $expand-handle-size: $bullet-size;
 	flex-direction: row;
 	justify-content: space-between;
 }
+
+.zav-RegionDetail .bp3-popover-content {
+	padding: 4px !important;
+}
+
+.zav-RegionDetail .bp3-popover-arrow {
+	display: none;
+}
+
+.zav-RegionDetailContent {
+	background-color: #e1e1e1;
+	padding: 10px;
+}
+
