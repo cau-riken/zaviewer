@@ -59,6 +59,9 @@ class ViewerManager {
             /** Main Raphael object used to handle region delineations */
             paper: undefined,
 
+            /** url of the last requested regions area SVG file */
+            currentSVGName: undefined,
+
             /** 2D context of canvas used to draw measuring tape */
             ctx: null,
 
@@ -225,7 +228,7 @@ class ViewerManager {
                         index: 0
                     };
                     that.viewer.navigator.addTiledImage(options);
-                } else if (that.viewer.navigator.world.getItemCount()>1) {
+                } else if (that.viewer.navigator.world.getItemCount() > 1) {
                     //remove any extra items from the navigator
                     that.viewer.navigator.world.removeItem(that.viewer.navigator.world.getItemAt(1));
                 }
@@ -359,6 +362,7 @@ class ViewerManager {
         this.status.set.remove();
         //load from a file
         var strReturn = "";
+        this.status.currentSVGName = svgName;
         console.log("svg " + svgName);
 
         const that = this;
@@ -367,89 +371,93 @@ class ViewerManager {
             url: svgName,
             async: true,
             success: function (html) {
-                strReturn = html;
-                var root = strReturn.getElementsByTagName('svg')[0];
-                var paths = root.getElementsByTagName('path');
+                // process retrieved data only if it's the last one requested to ensure current slice SVG is loaded
+                if (svgName === that.status.currentSVGName) {
 
-                that.status.currentSliceRegions.clear();
+                    strReturn = html;
+                    var root = strReturn.getElementsByTagName('svg')[0];
+                    var paths = root.getElementsByTagName('path');
 
-                for (var i = 0; i < paths.length; i++) {
+                    that.status.currentSliceRegions.clear();
 
-                    const rawId = paths[i].getAttribute('id').trim();
-                    //append ordinal number to ensure unique id (case of non-contiguous regions)
-                    const pathId = rawId + "-" + i;
-                    paths[i].setAttribute('id', pathId);
-                    var newPathElt = that.status.paper.importSVG(paths[i]);
+                    for (var i = 0; i < paths.length; i++) {
 
-                    that.applyMouseOutPresentation(newPathElt);
+                        const rawId = paths[i].getAttribute('id').trim();
+                        //append ordinal number to ensure unique id (case of non-contiguous regions)
+                        const pathId = rawId + "-" + i;
+                        paths[i].setAttribute('id', pathId);
+                        var newPathElt = that.status.paper.importSVG(paths[i]);
 
-                    if (rawId === BACKGROUND_PATHID) {
-                        //background elements
-                        newPathElt.id = rawId;
-                        newPathElt.attr("fill-opacity", 0.0);
-                        that.status.currentSliceRegions.set(rawId, rawId);
+                        that.applyMouseOutPresentation(newPathElt);
 
-                        //unselect all when click on the background element
-                        newPathElt.click(function (e) {
-                            that.unselectRegions();
-                            that.regionActionner.unSelectAll();
-                        });
+                        if (rawId === BACKGROUND_PATHID) {
+                            //background elements
+                            newPathElt.id = rawId;
+                            newPathElt.attr("fill-opacity", 0.0);
+                            that.status.currentSliceRegions.set(rawId, rawId);
 
-                    } else {
-                        newPathElt.id = pathId;
-                        //extract region abbreviation from path id
-                        const suffix = rawId.substring(rawId.length - 2);
-                        var side;
-                        if (suffix === "_L") {
-                            side = "(Left)";
-                        } else if (suffix === "_R") {
-                            side = "(Right)";
-                        }
-                        const abbrev = side ? rawId.substring(0, rawId.length - 2) : rawId;
-                        newPathElt.attr("title", abbrev + " " + side);
+                            //unselect all when click on the background element
+                            newPathElt.click(function (e) {
+                                that.unselectRegions();
+                                that.regionActionner.unSelectAll();
+                            });
 
-                        that.status.currentSliceRegions.set(pathId, abbrev);
-
-                        newPathElt.mouseover(function (e) {
-                            that.applyMouseOverPresentation(this);
-                        });
-
-                        newPathElt.mouseout(function (e) {
-                            if (!RegionsManager.isSelected(abbrev)) {
-                                that.applyMouseOutPresentation(this);
+                        } else {
+                            newPathElt.id = pathId;
+                            //extract region abbreviation from path id
+                            const suffix = rawId.substring(rawId.length - 2);
+                            var side;
+                            if (suffix === "_L") {
+                                side = "(Left)";
+                            } else if (suffix === "_R") {
+                                side = "(Right)";
                             }
-                        });
+                            const abbrev = side ? rawId.substring(0, rawId.length - 2) : rawId;
+                            newPathElt.attr("title", abbrev + " " + side);
 
-                        newPathElt.click(function (e) {
-                            that.unselectRegions();
-                            if (e.ctrlKey) {
-                                //when Ctrl key is pressed, allow multi-select or toogle of currently selected region 
-                                if (RegionsManager.isSelected(abbrev)) {
-                                    that.regionActionner.unSelect(abbrev);
-                                } else {
-                                    that.regionActionner.addToSelection(abbrev);
+                            that.status.currentSliceRegions.set(pathId, abbrev);
+
+                            newPathElt.mouseover(function (e) {
+                                that.applyMouseOverPresentation(this);
+                            });
+
+                            newPathElt.mouseout(function (e) {
+                                if (!RegionsManager.isSelected(abbrev)) {
+                                    that.applyMouseOutPresentation(this);
                                 }
-                            } else {
-                                that.regionActionner.replaceSelected(abbrev);
-                            }
-                            that.status.userClickedRegion = true;
-                            that.selectRegions(RegionsManager.getSelectedRegions());
-                        });
+                            });
+
+                            newPathElt.click(function (e) {
+                                that.unselectRegions();
+                                if (e.ctrlKey) {
+                                    //when Ctrl key is pressed, allow multi-select or toogle of currently selected region 
+                                    if (RegionsManager.isSelected(abbrev)) {
+                                        that.regionActionner.unSelect(abbrev);
+                                    } else {
+                                        that.regionActionner.addToSelection(abbrev);
+                                    }
+                                } else {
+                                    that.regionActionner.replaceSelected(abbrev);
+                                }
+                                that.status.userClickedRegion = true;
+                                that.selectRegions(RegionsManager.getSelectedRegions());
+                            });
+                        }
+
+                        that.status.set.push(newPathElt);
                     }
 
-                    that.status.set.push(newPathElt);
+                    that.adjustResizeRegionsOverlay(that.status.set);
+
+                    //restore presentation of regions selected in previous slice
+                    that.selectRegions(RegionsManager.getSelectedRegions());
+
+                    if (!that.status.showRegions) {
+                        that.hideDelineation();
+                    }
+
+                    RegionsManager.setCurrentSliceRegions(Array.from(that.status.currentSliceRegions.values()))
                 }
-
-                that.adjustResizeRegionsOverlay(that.status.set);
-
-                //restore presentation of regions selected in previous slice
-                that.selectRegions(RegionsManager.getSelectedRegions());
-
-                if (!that.status.showRegions) {
-                    that.hideDelineation();
-                }
-
-                RegionsManager.setCurrentSliceRegions(Array.from(that.status.currentSliceRegions.values()))
             }
         });
 
@@ -460,19 +468,22 @@ class ViewerManager {
      * @private
     */
     static adjustResizeRegionsOverlay(el) {
-        var zoom = this.viewer.world.getItemAt(0).viewportToImageZoom(this.viewer.viewport.getZoom(true));
-        //offset based on (8000-5420)/2
-        //original method (slow)
-        // el.transform('s' + zoom + ',' + zoom + ',0,0t0,1290');
-        //fast method
-        //https://www.circuitlab.com/blog/2012/07/25/tuning-raphaeljs-for-high-performance-svg-interfaces/
-        /*
-        One caveat here is that the changes we applied only operate within the SVG module of Raphael. Since CircuitLab doesn't currently support Internet Explorer, this isn't a concern for us, however if you rely on Raphael for IE support you will also have to implement the setTransform() method appropriately in the VML module. Here is a link to the change set that shows the changes discussed in this post.*/
-        //NOTE: we should set translate appropriately to the size of the SVG
-        this.status.paper.setTransform(' scale(' + zoom + ',' + zoom + ') translate(0,' + this.config.dzDiff + ')');//translate(0,1290)');
-        //console.log('S' + zoom + ',' + zoom + ',0,0');
+        if (this.viewer.world.getItemCount()) {
 
-        this.displayMeasureLine();
+            var zoom = this.viewer.world.getItemAt(0).viewportToImageZoom(this.viewer.viewport.getZoom(true));
+            //offset based on (8000-5420)/2
+            //original method (slow)
+            // el.transform('s' + zoom + ',' + zoom + ',0,0t0,1290');
+            //fast method
+            //https://www.circuitlab.com/blog/2012/07/25/tuning-raphaeljs-for-high-performance-svg-interfaces/
+            /*
+            One caveat here is that the changes we applied only operate within the SVG module of Raphael. Since CircuitLab doesn't currently support Internet Explorer, this isn't a concern for us, however if you rely on Raphael for IE support you will also have to implement the setTransform() method appropriately in the VML module. Here is a link to the change set that shows the changes discussed in this post.*/
+            //NOTE: we should set translate appropriately to the size of the SVG
+            this.status.paper.setTransform(' scale(' + zoom + ',' + zoom + ') translate(0,' + this.config.dzDiff + ')');//translate(0,1290)');
+            //console.log('S' + zoom + ',' + zoom + ',0,0');
+
+            this.displayMeasureLine();
+        }
     }
 
     /**  
@@ -800,13 +811,12 @@ class ViewerManager {
         };
 
         const that = this;
-        const addLayerHandler = function (event) {
-            that.viewer.world.removeHandler("add-item", addLayerHandler);
+        this.viewer.world.addOnceHandler("add-item", (event) => {
             that.config.layers[key].name = name;
 
             that.updateFilters();
-        };
-        this.viewer.world.addHandler("add-item", addLayerHandler);
+        });
+
         this.viewer.addTiledImage(options);
 
     }
