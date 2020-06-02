@@ -92,8 +92,9 @@ class RegionsManager {
         addTrailToRegion(this.regionsData.root, []);
 
 
-        /** init all node to collapsed */
+        /** only first level expanded at startup */
         this._collapseAll();
+        this._setExpanded(this.status.lastActionSource, this.regionsData.root, true);
     }
 
     /** @private */
