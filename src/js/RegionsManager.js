@@ -48,7 +48,7 @@ class RegionsManager {
 
         //load regions related data
         $.ajax({
-            url: Utils.makePath(config.PUBLISH_PATH, config.treeUrlPath, "regionTree.json"),
+            url: Utils.makePath(config.PUBLISH_PATH, config.treeUrlPath, "regionTree_"+ config.paramId +".json"),
             type: "POST",
             async: true,
             dataType: 'json',
