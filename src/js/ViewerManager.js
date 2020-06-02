@@ -100,6 +100,7 @@ class ViewerManager {
             /** currently selected coronal slice */
             coronalChosenSlice: this.config.initialSlice,
 
+            measureModeOn: false,
         }
 
         this.viewer = OpenSeadragon({
@@ -515,6 +516,7 @@ class ViewerManager {
                     $("#poscanvas").show();
                 });
             } else {
+                this.setMeasureMode(false);
                 this.status.set.forEach(function (el) {
                     el.show();
                     $("#poscanvas").hide();
@@ -887,31 +889,36 @@ class ViewerManager {
             this.status.pointerdownpos.y > event.clientY + 5 || this.status.pointerdownpos.y < event.clientY - 5) {
             return;
         }
-        //already 2 points recorded, reset measuring line
-        if (this.status.position[0].c == 2) {
-            this.resetPositionview();
-            this.viewer.drawer.clear();
-            this.viewer.world.draw();
-            this.displayMeasureLine();
-            return;
+
+        if (this.status.measureModeOn) {
+            //already 2 points recorded, reset measuring line
+            if (this.status.position[0].c == 2) {
+                this.resetPositionview();
+                this.viewer.drawer.clear();
+                this.viewer.world.draw();
+                this.displayMeasureLine();
+                return;
+            }
+
+            var orig = this.viewer.viewport.pixelFromPoint(new OpenSeadragon.Point(0, 0), true);
+            var rect = this.viewer.canvas.getBoundingClientRect();
+            //var zoom = viewer.viewport.getZoom(true);
+            var zoom = this.viewer.viewport.getZoom(true) * (this.viewer.canvas.clientWidth / this.config.imageSize);
+
+            //record next point for measuring line feature
+            var x = (event.clientX - orig.x - rect.left) / zoom;
+            var y = (event.clientY - orig.y - rect.top) / zoom;
+            this.status.position[0].c++
+            this.status.position[this.status.position[0].c].x = x;
+            this.status.position[this.status.position[0].c].y = y;
         }
-
-        var orig = this.viewer.viewport.pixelFromPoint(new OpenSeadragon.Point(0, 0), true);
-        var rect = this.viewer.canvas.getBoundingClientRect();
-        //var zoom = viewer.viewport.getZoom(true);
-        var zoom = this.viewer.viewport.getZoom(true) * (this.viewer.canvas.clientWidth / this.config.imageSize);
-
-        //record next point for measuring line feature
-        var x = (event.clientX - orig.x - rect.left) / zoom;
-        var y = (event.clientY - orig.y - rect.top) / zoom;
-        this.status.position[0].c++
-        this.status.position[this.status.position[0].c].x = x;
-        this.status.position[this.status.position[0].c].y = y;
 
         this.setPosition();
 
         // show canvas
         this.displayMeasureLine();
+
+        this.signalStatusChanged(this.status);
     };
 
 
@@ -921,8 +928,9 @@ class ViewerManager {
         if (this.status.ctx == null) {
             this.status.ctx = $("#poscanvas")[0].getContext('2d');
         }
-
+        
         this.status.ctx.clearRect(0, 0, $("#poscanvas")[0].width, $("#poscanvas")[0].height);
+        if (!this.status.measureModeOn) { return; }
 
         var orig = this.viewer.viewport.pixelFromPoint(new OpenSeadragon.Point(0, 0), true);
         var rect = this.viewer.canvas.getBoundingClientRect();
@@ -994,6 +1002,16 @@ class ViewerManager {
     static setPosition() {
         this.status.markedPos = [this.getPointXY(this.status.position[1].x, this.status.position[1].y), this.getPointXY(this.status.position[2].x, this.status.position[2].y)];
         this.signalStatusChanged(this.status);
+    }
+
+    static setMeasureMode(active) {
+        this.claerPosition();
+        this.status.measureModeOn = active;
+        this.signalStatusChanged(this.status);
+    }
+
+    static isMeasureModeOn() {
+        return this.status && this.status.measureModeOn;
     }
 
     static areAllFullyLoaded() {

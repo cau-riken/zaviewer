@@ -1,10 +1,16 @@
 import React from 'react';
 
+import {
+    AnchorButton,
+    Icon
+} from "@blueprintjs/core";
+import ViewerManager from '../ViewerManager.js'
 
 class MeasureInfoPanel extends React.Component {
 
     constructor(props) {
         super(props);
+        this.handleClick = this.handleClick.bind(this);
     }
 
     render() {
@@ -26,7 +32,17 @@ class MeasureInfoPanel extends React.Component {
                     <div
                         className="posDis"
                         style={this.props.posCount > 1 ? { color: "#fff" } : {}}
-                    >Distance:<span className="posdistance">{distance}</span>&nbsp;(mm)</div>
+                    >
+                        <AnchorButton
+                            title={(ViewerManager.isMeasureModeOn() ? "de-": "") + "activate measurement mode"}
+                            small
+                            icon="flows"
+                            intent={ViewerManager.isMeasureModeOn() ? "primary" : "none"}
+                            onClick={this.handleClick}
+                            disabled={this.props.showRegions}
+                        />
+                        <span style={{ marginLeft: 26 }} >Distance:<span className="posdistance">{distance}</span>&nbsp;(mm)</span>
+                    </div>
                     <div className="posPoints">
                         <div style={this.props.posCount > 0 ? { color: this.props.markedPosColors[0] } : {}}>
                             <span>P1</span>&nbsp;(<span>{posx[0]}</span>,&nbsp;<span>{posy[0]}</span>)
@@ -39,6 +55,10 @@ class MeasureInfoPanel extends React.Component {
             </React.Fragment>
 
         );
+    }
+
+    handleClick(event) {
+        ViewerManager.setMeasureMode(!ViewerManager.isMeasureModeOn());
     }
 }
 

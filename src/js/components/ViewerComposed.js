@@ -72,6 +72,7 @@ class ViewerComposed extends React.Component {
                             posCount={this.state.position ? this.state.position[0].c : 0}
                             pos={this.state.pos} markedPos={this.state.markedPos}
                             markedPosColors={this.state.markedPosColors}
+                            showRegions={this.state.showRegions}
                         />
                     </TitledCard>
 
