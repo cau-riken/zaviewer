@@ -1,4 +1,16 @@
 
+.posTbl {
+	display: table;
+}
+.posTbl > div {
+	text-align: left;
+	display: table-row;
+}
+.posTbl > div > div {
+	display: table-cell;
+}
+
+
 
 .posLabel {
 	width: 0px;

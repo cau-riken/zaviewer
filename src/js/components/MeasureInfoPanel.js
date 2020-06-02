@@ -26,10 +26,14 @@ class MeasureInfoPanel extends React.Component {
                     <div
                         className="posDis"
                         style={this.props.posCount > 1 ? { color: "#fff" } : {}}
-                    >Distance:<span className="posdistance">{distance}</span>(mm)</div>
-                    <div className="posTbl">
-                        <div style={this.props.posCount > 0 ? { color: this.props.markedPosColors[0] } : {}}><div>P1</div>&nbsp;(<div id="pos1x">{posx[0]}</div>,&nbsp;<div id="pos1y">{posy[0]}</div>)</div>
-                        <div style={this.props.posCount > 1 ? { color: this.props.markedPosColors[1] } : {}}><div>P2</div>&nbsp;(<div id="pos2x">{posx[1]}</div>,&nbsp;<div id="pos2y">{posy[1]}</div>)</div>
+                    >Distance:<span className="posdistance">{distance}</span>&nbsp;(mm)</div>
+                    <div className="posPoints">
+                        <div style={this.props.posCount > 0 ? { color: this.props.markedPosColors[0] } : {}}>
+                            <span>P1</span>&nbsp;(<span>{posx[0]}</span>,&nbsp;<span>{posy[0]}</span>)
+                        </div>
+                        <div style={this.props.posCount > 1 ? { color: this.props.markedPosColors[1] } : {}}>
+                            <span>P2</span>&nbsp;(<span>{posx[1]}</span>,&nbsp;<span>{posy[1]}</span>)
+                            </div>
                     </div>
                 </div>
             </React.Fragment>

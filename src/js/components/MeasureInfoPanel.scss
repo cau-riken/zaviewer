@@ -1,16 +1,5 @@
 /* Position-view panel */
 
-.posTbl {
-	display: table;
-}
-.posTbl > div {
-	text-align: left;
-	display: table-row;
-}
-.posTbl > div > div {
-	display: table-cell;
-}
-
 
 .distMeasure {
 	color: grey;
@@ -25,4 +14,10 @@
 	padding-left: 5px;
 	min-width: 34px;
 	display: inline-block;
+}
+
+.posPoints {
+	display: flex;
+	flex-direction: row;
+	justify-content: space-between;
 }
