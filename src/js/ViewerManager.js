@@ -1,3 +1,5 @@
+import _ from 'underscore';
+
 import Utils from './Utils.js';
 
 import RegionsManager from './RegionsManager.js'
@@ -213,11 +215,13 @@ class ViewerManager {
         //--------------------------------------------------
         //TODO replace by fixed image
         /** set image displayed in navigator as the one loaded in first layer */
-        this.viewer.addOnceHandler("open", function (event) {
+        this.viewer.addHandler("open", function (event) {
 
-            // items are autmoatically added to navigator when layers are added to viewer
-            that.viewer.navigator.world.addHandler("add-item", function (event) {
-                if (that.viewer.navigator.world.getItemCount() == 1) {
+            // items are automatically added to navigator when layers are added to viewer,
+            // but only first layer at 100% opacity is needed
+            const navItemReplaceHnd = function (event) {
+                if (that.viewer.navigator.world.getItemCount() == 1 && event.userData.replaced == 0) {
+
                     var tiledImage = that.viewer.navigator.world.getItemAt(0);
                     //replace first item in navigator view by a clone with forced 100% opacity
                     var options = {
@@ -227,14 +231,27 @@ class ViewerManager {
                         replace: true,
                         index: 0
                     };
+                    event.userData.replaced = 1;
                     that.viewer.navigator.addTiledImage(options);
-                } else if (that.viewer.navigator.world.getItemCount() > 1) {
-                    //remove any extra items from the navigator
-                    that.viewer.navigator.world.removeItem(that.viewer.navigator.world.getItemAt(1));
-                }
-            });
 
+                } else if (that.viewer.navigator.world.getItemCount() > 1) {
+
+                    //remove any extra items from the navigator
+                    event.userData.removed += 1;
+                    that.viewer.navigator.world.removeItem(that.viewer.navigator.world.getItemAt(that.viewer.navigator.world.getItemCount() - 1));
+                }
+
+                //
+                if (event.userData.replaced == 1 && event.userData.removed == _.size(that.config.layers) - 1) {
+
+                    //remove current handler once replacement/removal has been performed
+                    that.viewer.navigator.world.removeHandler("add-item", navItemReplaceHnd);
+                }
+            }
+
+            that.viewer.navigator.world.addHandler("add-item", navItemReplaceHnd, { replaced: 0, removed: 0 });
         });
+
 
         this.viewer.addViewerInputHook({
             hooks: [
@@ -780,8 +797,15 @@ class ViewerManager {
     static setLayerOpacity(key) {
         if (this.config.layers[key]) {
             var opacity = this.getLayerOpacity(key);
-            if (this.viewer.world.getItemAt(this.config.layers[key].index)) {
-                this.viewer.world.getItemAt(this.config.layers[key].index).setOpacity(opacity);
+            const layerIndex = this.config.layers[key].index;
+            const viewerLayer = this.viewer.world.getItemAt(layerIndex);
+            if (viewerLayer) {
+                viewerLayer.setOpacity(opacity);
+                //since changing opacity on the viewer automatically spreads to the navigator, explicit reset to 100% opacity in the navigator is required 
+                const navigatorLayer = this.viewer.navigator.world.getItemAt(layerIndex);
+                if (navigatorLayer) {
+                    navigatorLayer.setOpacity(1);
+                }
             }
         }
     }
