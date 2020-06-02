@@ -207,6 +207,32 @@ class ViewerManager {
             that.viewer.viewport.fitBounds(uncoveredBounds);
         });
 
+        //--------------------------------------------------
+        //TODO replace by fixed image
+        /** set image displayed in navigator as the one loaded in first layer */
+        this.viewer.addOnceHandler("open", function (event) {
+
+            // items are autmoatically added to navigator when layers are added to viewer
+            that.viewer.navigator.world.addHandler("add-item", function (event) {
+                if (that.viewer.navigator.world.getItemCount() == 1) {
+                    var tiledImage = that.viewer.navigator.world.getItemAt(0);
+                    //replace first item in navigator view by a clone with forced 100% opacity
+                    var options = {
+                        tileSource: event.item.source,
+                        originalTiledImage: tiledImage,
+                        opacity: 1,
+                        replace: true,
+                        index: 0
+                    };
+                    that.viewer.navigator.addTiledImage(options);
+                } else if (that.viewer.navigator.world.getItemCount()>1) {
+                    //remove any extra items from the navigator
+                    that.viewer.navigator.world.removeItem(that.viewer.navigator.world.getItemAt(1));
+                }
+            });
+
+        });
+
         this.viewer.addViewerInputHook({
             hooks: [
                 { tracker: 'viewer', handler: 'scrollHandler', hookHandler: this.onViewerScroll },
