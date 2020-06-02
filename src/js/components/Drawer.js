@@ -40,6 +40,7 @@ class Drawer extends React.Component {
     render() {
         return (
             <div
+                id={this.props.id}
                 ref={this.drawerRef}
                 className="zav-Drawer"
                 data-isexpanded={this.state.isExpanded}

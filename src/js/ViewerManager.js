@@ -194,6 +194,19 @@ class ViewerManager {
             $(that.viewer.canvas).on('mousemove.posview', that.mousemoveHandler.bind(that));
         });
 
+
+        //--------------------------------------------------
+        /** quickfix: ensure that whole image is visible at startup */
+        this.viewer.addOnceHandler('open', function () {
+            const containerSize = that.viewer.viewport.getContainerSize();
+            //FIXME id is a  constant
+            const rightPanelWidth = document.getElementById("ZAV-rightPanel").getBoundingClientRect().width;
+
+            const coveredPart = rightPanelWidth / containerSize.x;
+            const uncoveredBounds = new OpenSeadragon.Rect(0, 0, 1 + coveredPart + 0.05, 1);
+            that.viewer.viewport.fitBounds(uncoveredBounds);
+        });
+
         this.viewer.addViewerInputHook({
             hooks: [
                 { tracker: 'viewer', handler: 'scrollHandler', hookHandler: this.onViewerScroll },
