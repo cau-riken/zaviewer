@@ -1,10 +1,7 @@
 import React from 'react';
 
 import {
-    AnchorButton,
-    Icon,
-    Slider,
-    Switch
+    Slider
 } from "@blueprintjs/core";
 
 

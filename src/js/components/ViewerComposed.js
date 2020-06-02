@@ -48,6 +48,7 @@ class ViewerComposed extends React.Component {
                 <OSDMain />
 
                 <Drawer
+                    id="ZAV-rightPanel"
                     width={222}
                     quickactions={
                         <QuickActionButtons
@@ -56,7 +57,7 @@ class ViewerComposed extends React.Component {
                             coronalChosenSlice={this.state.coronalChosenSlice}
                             config={this.props.config} />
                     }>
-                    <TitledCard header={"Global view"}>
+                    <TitledCard header={(this.props.config ? this.props.config.paramId + " — " : "") + "Global view"}>
                         <div className="navigatorParentClass">
                             <div id={ViewerManager.NAVIGATOR_ID} className="navigatorChildClass"></div>
                         </div>
@@ -83,12 +84,15 @@ class ViewerComposed extends React.Component {
                     {
                         this.props.config && this.props.config.hasDelineation ?
                             <TitledCard header={"Atlas regions"}>
-                                <RegionOptions showRegions={this.state.showRegions} />
+                                <RegionOptions
+                                    showRegions={this.state.showRegions}
+                                    regionsOpacity={this.state.regionsOpacity}
+                                />
                             </TitledCard>
                             : null
                     }
 
-                    <TitledCard header={"Sagittal view"}>
+                    <TitledCard header={"Slices navigation — Sagittal view"}>
                         <SubViewPanel
                             coronalChosenSlice={this.state.coronalChosenSlice}
                             config={this.props.config}

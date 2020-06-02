@@ -83,7 +83,7 @@ class QuickActionButtons extends React.Component {
                         title={"slice #" + (this.props.coronalChosenSlice * this.props.config.coronalSliceStep) + " of " + (this.props.config.coronalSliceStep * (this.props.config.coronalSlideCount - 1))}
                     >
                         <Slider
-                            className="zav-Slider"
+                            className="zav-Slider zav-QActSliceSlider"
                             min={0}
                             max={this.props.config.coronalSlideCount - 1}
                             stepSize={1}

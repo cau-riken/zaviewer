@@ -88,6 +88,7 @@ class ViewerManager {
 
             /** visibility of region delineations */
             showRegions: !this.config.bHideDelineation,
+            regionsOpacity: 0.4,
 
             currentAxis: this.CORONAL,
 
@@ -256,7 +257,7 @@ class ViewerManager {
     }
     // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
 
-
+    //TODO check if can be replaced by fully-loaded-change
     static updateFilters() {
         const that = this;
 
@@ -466,24 +467,42 @@ class ViewerManager {
         });
     }
 
+    static changeRegionsOpacity(opacity) {
+        this.status.regionsOpacity = opacity;
+        if (this.status.set) {
+            const selectedRegions = RegionsManager.getSelectedRegions();
+            const that = this;
+            this.status.set.forEach(function (el) {
+                if (el.id !== BACKGROUND_PATHID) {
+                    var abbrev = that.status.currentSliceRegions.get(el.id);
+                    if (selectedRegions.includes(abbrev)) {
+                        that.applySelectedPresentation(el);
+                    } else {
+                        that.applyUnselectedPresentation(el);
+                    }
+                }
+            });
+        }
+        this.signalStatusChanged(this.status);
+    }
 
     static applyMouseOverPresentation(element) {
         element.attr({
-            "fill-opacity": 0.8,
+            "fill-opacity": this.status.regionsOpacity + (this.status.regionsOpacity > 0.6 ? -0.4 : 0.4),
             "stroke-opacity": 1
         });
     }
 
     static applyMouseOutPresentation(element) {
         element.attr({
-            "fill-opacity": 0.4,
+            "fill-opacity": this.status.regionsOpacity,
             "stroke-opacity": 1
         });
     }
 
     static applySelectedPresentation(element) {
         element.attr({
-            "fill-opacity": 0.8,
+            "fill-opacity": this.status.regionsOpacity + (this.status.regionsOpacity > 0.6 ? -0.4 : 0.4),
             "stroke-opacity": 1,
             "stroke-width": 20,
             "stroke": "#0000ff"
@@ -492,7 +511,7 @@ class ViewerManager {
 
     static applyUnselectedPresentation(element) {
         element.attr({
-            "fill-opacity": 0.4,
+            "fill-opacity": this.status.regionsOpacity,
             "stroke-opacity": 0,
             "stroke-width": 0,
             "stroke": "#000000"
