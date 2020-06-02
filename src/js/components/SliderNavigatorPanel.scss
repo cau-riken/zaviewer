@@ -1,12 +1,5 @@
 /* ▼ ------ Slider panel ------ */
 
-/* Main of slider group */
-.sliderGroup {
-	margin: 10px 0 0 10px;
-	width: 210px;
-	z-index: 80;
-	display: inline-block;
-}
 
 /* Display navigation */
 .navigatorParentClass {
@@ -75,14 +68,6 @@
 }
 
 /* sliderGroup */
-/*input[type='range'] { //add checkbox
-			width: calc( 100% - 40px ); 
-			width: calc( 100% - 60px );
-		}*/
-
-div.sliderGroup span {
-	-ms-word-wrap: break-word;
-}
 
 
 #sliderGroup1 {
@@ -135,3 +120,7 @@ div.sliderGroup span {
 	line-height: normal;
 }
 
+
+.zav-OpacitySlider .bp3-slider-label {
+	font-size: 10px;
+}
