@@ -1,7 +1,5 @@
 import _ from 'underscore';
 
-import Utils from './Utils.js';
-
 import RegionsManager from './RegionsManager.js'
 
 import CustomFilters from './CustomFilters.js';
@@ -45,6 +43,8 @@ class ViewerManager {
         this.config = config;
         this.signalStatusChanged = callbackWhenStatusChanged;
         this.regionActionner = RegionsManager.getActionner(VIEWER_ACTIONSOURCEID);
+        /** viewer specific event bus */
+        this.eventSource = new OpenSeadragon.EventSource();
         const that = this;
 
         //layers initial display values
@@ -464,6 +464,7 @@ class ViewerManager {
 
                         that.status.set.push(newPathElt);
                     }
+                    that.eventSource.raiseEvent('zav-regions-created', { svgUrl: svgName })
 
                     that.adjustResizeRegionsOverlay(that.status.set);
 
@@ -556,6 +557,10 @@ class ViewerManager {
     static changeRegionsOpacity(opacity) {
         this.status.regionsOpacity = opacity;
         this.updateRegionAreasPresentation();
+    }
+
+    static isShowingRegions() {
+        return this.status.showRegions;
     }
 
     static hideRegions() {
@@ -652,34 +657,42 @@ class ViewerManager {
 
             // perform pan & zoom 
             if (!this.status.disableAutoPanZoom && !this.status.userClickedRegion) {
-                const that = this;
-                //how to choose a center?
-                var newX = 0;
-                var newY = 0;
-                var snCount = 0;
-                for (var k = 0; k < nameList.length; k++) {
-                    //try to find the nodes -> slow way!
-                    this.status.set.forEach(function (el) {
-                        var subNode = el[0];
-                        if (that.status.currentSliceRegions.get(el.id) == nameList[k]) {
-                            snCount++;
-                            var bbox = subNode.getBBox();
-                            newX += (bbox.x2 - bbox.width / 2) / that.config.dzWidth;
-                            newY += (that.config.dzDiff + bbox.y2 - bbox.height / 2) / that.config.dzHeight;
-                        }
-                    });
-                }
-                if (snCount > 0) {
-                    newX /= snCount;
-                    newY /= snCount;
-                    var windowPoint = new OpenSeadragon.Point(newX, newY);
-                    this.viewer.viewport.panTo(windowPoint);
-                    this.viewer.viewport.zoomTo(1.1);
-                }
+                this.centerOnRegions(nameList);
             }
             this.status.userClickedRegion = false;
         }
 
+    }
+
+    static centerOnRegions(nameList) {
+        const that = this;
+        //how to choose a center?
+        var newX = 0;
+        var newY = 0;
+        var snCount = 0;
+        for (var k = 0; k < nameList.length; k++) {
+            //try to find the nodes -> slow way!
+            this.status.set.forEach(function (el) {
+                var subNode = el[0];
+                if (that.status.currentSliceRegions.get(el.id) == nameList[k]) {
+                    snCount++;
+                    var bbox = subNode.getBBox();
+                    newX += (bbox.x2 - bbox.width / 2) / that.config.dzWidth;
+                    newY += (that.config.dzDiff + bbox.y2 - bbox.height / 2) / that.config.dzHeight;
+                }
+            });
+        }
+        if (snCount > 0) {
+            newX /= snCount;
+            newY /= snCount;
+            var windowPoint = new OpenSeadragon.Point(newX, newY);
+            this.viewer.viewport.panTo(windowPoint);
+            this.viewer.viewport.zoomTo(1.1);
+        }
+    }
+
+    static centerOnSelectedRegions() {
+        this.centerOnRegions(RegionsManager.getSelectedRegions());
     }
 
     //TODO remove useless code
@@ -750,17 +763,25 @@ class ViewerManager {
     /**  
     * @public
     */
-    static goToSlice(axis, chosenSlice) {
+    static goToSlice(axis, chosenSlice, regionsToCenterOn) {
         //TODO use axis 
-
-        if (chosenSlice > (this.config.coronalSlideCount - 1)) {
-            chosenSlice = this.config.coronalSlideCount - 1;
-        } else if (chosenSlice < 0) {
-            chosenSlice = 0;
+        if (this.status.coronalChosenSlice != chosenSlice) {
+            if (chosenSlice > (this.config.coronalSlideCount - 1)) {
+                chosenSlice = this.config.coronalSlideCount - 1;
+            } else if (chosenSlice < 0) {
+                chosenSlice = 0;
+            }
+            this.status.coronalChosenSlice = chosenSlice;
+            //asynchronous focus the view on specified regions of interest 
+            if (regionsToCenterOn) {
+                const that = this;
+                this.eventSource.addOnceHandler('zav-regions-created', (event) => {
+                    that.centerOnRegions(regionsToCenterOn);
+                });
+            }
+            this.viewer.goToPage(this.config.coronalFirstIndex + this.status.coronalChosenSlice);
+            this.signalStatusChanged(this.status);
         }
-        this.status.coronalChosenSlice = chosenSlice;
-        this.viewer.goToPage(this.config.coronalFirstIndex + this.status.coronalChosenSlice);
-        this.signalStatusChanged(this.status);
     }
 
 
@@ -962,14 +983,14 @@ class ViewerManager {
         }
 
         this.status.ctx.clearRect(0, 0, $("#poscanvas")[0].width, $("#poscanvas")[0].height);
-        
+
         var orig = this.viewer.viewport.pixelFromPoint(new OpenSeadragon.Point(0, 0), true);
         var rect = this.viewer.canvas.getBoundingClientRect();
-        
+
         var zoom = this.viewer.viewport.getZoom(true) * (this.viewer.canvas.clientWidth / this.config.imageSize);
         var x = (this.status.position[0].x - orig.x - rect.left) / zoom;
         var y = (this.status.position[0].y - orig.y - rect.top) / zoom;
-        
+
         this.status.livePosition = this.getPoint(x, y);
         this.signalStatusChanged(this.status);
         if (!this.status.measureModeOn) { return; }
@@ -1041,7 +1062,7 @@ class ViewerManager {
         if (active) {
             //measurement mode and display of regions are mutually exclusive
             this.hideRegions();
-        } 
+        }
         this.status.measureModeOn = active;
         this.signalStatusChanged(this.status);
     }

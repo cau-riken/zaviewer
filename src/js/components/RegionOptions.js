@@ -1,6 +1,3 @@
-
-
-
 import React from 'react';
 
 import {
@@ -8,7 +5,6 @@ import {
     Switch
 } from "@blueprintjs/core";
 
-import RegionsManager from '../RegionsManager.js'
 import ViewerManager from '../ViewerManager.js'
 
 

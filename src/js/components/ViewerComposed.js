@@ -3,12 +3,10 @@ import React from 'react';
 import Drawer from './Drawer.js';
 
 import OSDMain from './OSDMain.js';
-import PositionInfoPanel from './PositionInfoPanel.js';
 import MeasureInfoPanel from './MeasureInfoPanel.js';
 import SubViewPanel from './SubViewPanel.js';
 import SliderNavigatorPanel from './SliderNavigatorPanel.js';
 import RegionOptions from './RegionOptions.js';
-
 import QuickActionButtons from './QuickActionButtons.js';
 
 import ViewerManager from '../ViewerManager.js'
@@ -69,7 +67,6 @@ class ViewerComposed extends React.Component {
                             posCount={this.state.position ? this.state.position[0].c : 0}
                             pos={this.state.pos} markedPos={this.state.markedPos}
                             markedPosColors={this.state.markedPosColors}
-                            showRegions={this.state.showRegions}
                         />
                     </TitledCard>
 

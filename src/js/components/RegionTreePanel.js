@@ -8,13 +8,18 @@ import {
     Popover,
     PopoverInteractionKind,
     Position,
-    Switch
+    Switch,
+    Toaster
 } from "@blueprintjs/core";
 
 import RegionsManager from '../RegionsManager.js'
 import ViewerManager from '../ViewerManager.js'
 
 const TREE_ACTIONSOURCEID = 'TREE'
+const RegionDetailToaster = Toaster.create({
+    className: "zav-RegionToaster",
+    position: Position.TOP,
+});
 
 class RegionItemLabel extends React.Component {
     render() {
@@ -156,10 +161,10 @@ class RegionItem extends React.Component {
 }
 
 class RegionDetail extends React.Component {
-
     constructor(props) {
         super(props);
         this.goToSlice = this.goToSlice.bind(this);
+        this.showRegions = this.showRegions.bind(this);
     }
 
     render() {
@@ -178,25 +183,58 @@ class RegionDetail extends React.Component {
                 <div style={{ marginTop: 8 }}>
                     <RegionItemLabel region={region} />
                 </div>
-                {region.centerSlice
-                    ? <div
-                        style={{ marginTop: 8, textAlign: "right" }}
-                    >
-                        <AnchorButton
-                            icon="compass"
-                            title={"go to slice containing region center"}
-                            minimal
-                            onClick={this.goToSlice.bind(this, region.centerSlice)}
-                        />
-                    </div>
-                    : null
-                }
+                <div
+                    style={{ marginTop: 12, marginLeft: 10 }}
+                >
+                    {region.centerSlice
+                        ?
+                        (<React.Fragment>
+                            <div>
+                                <AnchorButton
+                                    icon="compass"
+                                    minimal
+                                    fill
+                                    onClick={this.goToSlice.bind(this, region.centerSlice, false)}
+                                >Go to slice containing region center</AnchorButton>
+                            </div>
+                            <div>
+                                <AnchorButton
+                                    icon="locate"
+                                    minimal
+                                    fill
+                                    onClick={this.goToSlice.bind(this, region.centerSlice, true)}
+                                >Go to slice and focus on region center</AnchorButton>
+                            </div>
+                        </React.Fragment>)
+                        :
+                        (region.exists
+                            ?
+                            null
+                            :
+                            <span style={{ fontStyle: "italic" }}>This region has not been identified in this dataset</span>)
+                    }
+                </div>
             </div>
         );
     }
 
-    goToSlice(sliceNum) {
-        ViewerManager.goToSlice(ViewerManager.CORONAL, sliceNum);
+    goToSlice(sliceNum, centerOnRegion) {
+        const regionsToCenterOn = centerOnRegion ? [this.props.regionId] : null;
+        ViewerManager.goToSlice(ViewerManager.CORONAL, sliceNum, regionsToCenterOn);
+        if (!ViewerManager.isShowingRegions()) {
+            RegionDetailToaster.show({
+                message: "Do you want to show Atlas regions?",
+                action: {
+                    text: "show",
+                    icon: "flash",
+                    onClick: this.showRegions
+                }
+            });
+        }
+    }
+
+    showRegions() {
+        ViewerManager.toggleAreaDisplay();
     }
 
 }
