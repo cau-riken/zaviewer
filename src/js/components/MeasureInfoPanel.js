@@ -39,7 +39,6 @@ class MeasureInfoPanel extends React.Component {
                             icon="flows"
                             intent={ViewerManager.isMeasureModeOn() ? "primary" : "none"}
                             onClick={this.handleClick}
-                            disabled={this.props.showRegions}
                         />
                         <span style={{ marginLeft: 26 }} >Distance:<span className="posdistance">{distance}</span>&nbsp;(mm)</span>
                     </div>

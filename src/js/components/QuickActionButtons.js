@@ -121,7 +121,11 @@ class QuickActionButtons extends React.Component {
     }
 
     handleClickHideShow() {
-        ViewerManager.changeRegionsVisibility(!this.props.showRegions);
+        if (this.props.showRegions) {
+            ViewerManager.hideRegions();
+        } else {
+            ViewerManager.toggleAreaDisplay();
+        }
     }
 
     onShiftToSlice(increment) {

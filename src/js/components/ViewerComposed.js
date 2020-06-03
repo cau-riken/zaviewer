@@ -63,9 +63,6 @@ class ViewerComposed extends React.Component {
                         </div>
                     </TitledCard>
 
-                    <TitledCard header={"3D location"}>
-                        <PositionInfoPanel livePosition={this.state.livePosition} />
-                    </TitledCard>
 
                     <TitledCard header={"Distance measurement"}>
                         <MeasureInfoPanel
@@ -88,6 +85,8 @@ class ViewerComposed extends React.Component {
                                 <RegionOptions
                                     showRegions={this.state.showRegions}
                                     regionsOpacity={this.state.regionsOpacity}
+                                    displayAreas={this.state.displayAreas}
+                                    displayBorders={this.state.displayBorders}
                                 />
                             </TitledCard>
                             : null

@@ -93,7 +93,9 @@ class ViewerManager {
 
             /** visibility of region delineations */
             showRegions: !this.config.bHideDelineation,
+            displayAreas: !this.config.bHideDelineation,
             regionsOpacity: 0.4,
+            displayBorders: false,
 
             currentAxis: this.CORONAL,
 
@@ -406,7 +408,7 @@ class ViewerManager {
                         paths[i].setAttribute('id', pathId);
                         var newPathElt = that.status.paper.importSVG(paths[i]);
 
-                        that.applyMouseOutPresentation(newPathElt);
+                        that.applyMouseOutPresentation(newPathElt, false);
 
                         if (rawId === BACKGROUND_PATHID) {
                             //background elements
@@ -440,9 +442,7 @@ class ViewerManager {
                             });
 
                             newPathElt.mouseout(function (e) {
-                                if (!RegionsManager.isSelected(abbrev)) {
-                                    that.applyMouseOutPresentation(this);
-                                }
+                                that.applyMouseOutPresentation(this, RegionsManager.isSelected(abbrev));
                             });
 
                             newPathElt.click(function (e) {
@@ -474,7 +474,9 @@ class ViewerManager {
                         that.hideDelineation();
                     }
 
-                    RegionsManager.setCurrentSliceRegions(Array.from(that.status.currentSliceRegions.values()))
+                    RegionsManager.setCurrentSliceRegions(Array.from(that.status.currentSliceRegions.values()));
+
+                    that.signalStatusChanged(this.status);
                 }
             }
         });
@@ -505,10 +507,9 @@ class ViewerManager {
     }
 
     /**  
-     * @public
+     * @private
     */
-    static changeRegionsVisibility(visible) {
-        this.status.showRegions = visible;
+    static updateRegionsVisibility() {
         if (this.status.set) {
             if (!this.status.showRegions) {
                 this.status.set.forEach(function (el) {
@@ -516,14 +517,12 @@ class ViewerManager {
                     $("#poscanvas").show();
                 });
             } else {
-                this.setMeasureMode(false);
                 this.status.set.forEach(function (el) {
                     el.show();
                     $("#poscanvas").hide();
                 });
             }
         }
-        this.signalStatusChanged(this.status);
     }
 
     /** 
@@ -536,8 +535,7 @@ class ViewerManager {
         });
     }
 
-    static changeRegionsOpacity(opacity) {
-        this.status.regionsOpacity = opacity;
+    static updateRegionAreasPresentation() {
         if (this.status.set) {
             const selectedRegions = RegionsManager.getSelectedRegions();
             const that = this;
@@ -555,35 +553,68 @@ class ViewerManager {
         this.signalStatusChanged(this.status);
     }
 
+    static changeRegionsOpacity(opacity) {
+        this.status.regionsOpacity = opacity;
+        this.updateRegionAreasPresentation();
+    }
+
+    static hideRegions() {
+        this.status.displayAreas = false;
+        this.status.displayBorders = false;
+        this.status.showRegions = false;
+        this.updateRegionsVisibility();
+        this.updateRegionAreasPresentation();
+    }
+
+    static toggleAreaDisplay() {
+        this.status.displayAreas = !this.status.displayAreas;
+        this.status.showRegions = this.status.displayBorders || this.status.displayAreas;
+        if (this.status.showRegions) {
+            this.setMeasureMode(false);
+        }
+        this.updateRegionsVisibility();
+        this.updateRegionAreasPresentation();
+    }
+
+    static toggleBorderDisplay() {
+        this.status.displayBorders = !this.status.displayBorders;
+        this.status.showRegions = this.status.displayBorders || this.status.displayAreas;
+        if (this.status.showRegions) {
+            this.setMeasureMode(false);
+        }
+        this.updateRegionsVisibility();
+        this.updateRegionAreasPresentation();
+    }
+
     static applyMouseOverPresentation(element) {
         element.attr({
-            "fill-opacity": this.status.regionsOpacity + (this.status.regionsOpacity > 0.6 ? -0.4 : 0.4),
-            "stroke-opacity": 1
+            "fill-opacity": (!this.status.displayAreas || this.status.regionsOpacity < 0.05) ? 0 : this.status.regionsOpacity + (this.status.regionsOpacity > 0.6 ? -0.4 : 0.4),
+            "stroke-opacity": this.status.displayBorders ? 0.7 : 0,
+            "stroke-width": 34,
         });
     }
 
-    static applyMouseOutPresentation(element) {
-        element.attr({
-            "fill-opacity": this.status.regionsOpacity,
-            "stroke-opacity": 1
-        });
+    static applyMouseOutPresentation(element, isSelected) {
+        if (isSelected) {
+            this.applySelectedPresentation(element);
+        } else {
+            this.applyUnselectedPresentation(element);
+        }
     }
 
     static applySelectedPresentation(element) {
         element.attr({
-            "fill-opacity": this.status.regionsOpacity + (this.status.regionsOpacity > 0.6 ? -0.4 : 0.4),
-            "stroke-opacity": 1,
-            "stroke-width": 20,
-            "stroke": "#0000ff"
+            "fill-opacity": (!this.status.displayAreas || this.status.regionsOpacity < 0.05) ? 0 : this.status.regionsOpacity + (this.status.regionsOpacity > 0.6 ? -0.4 : 0.4),
+            "stroke-opacity": 0.7,
+            "stroke-width": 30,
         });
     }
 
     static applyUnselectedPresentation(element) {
         element.attr({
-            "fill-opacity": this.status.regionsOpacity,
-            "stroke-opacity": 0,
-            "stroke-width": 0,
-            "stroke": "#000000"
+            "fill-opacity": this.status.displayAreas ? this.status.regionsOpacity : 0,
+            "stroke-opacity": this.status.displayBorders ? 0.5 : 0,
+            "stroke-width": 10,
         });
     }
 
@@ -729,6 +760,7 @@ class ViewerManager {
         }
         this.status.coronalChosenSlice = chosenSlice;
         this.viewer.goToPage(this.config.coronalFirstIndex + this.status.coronalChosenSlice);
+        this.signalStatusChanged(this.status);
     }
 
 
@@ -928,19 +960,19 @@ class ViewerManager {
         if (this.status.ctx == null) {
             this.status.ctx = $("#poscanvas")[0].getContext('2d');
         }
-        
-        this.status.ctx.clearRect(0, 0, $("#poscanvas")[0].width, $("#poscanvas")[0].height);
-        if (!this.status.measureModeOn) { return; }
 
+        this.status.ctx.clearRect(0, 0, $("#poscanvas")[0].width, $("#poscanvas")[0].height);
+        
         var orig = this.viewer.viewport.pixelFromPoint(new OpenSeadragon.Point(0, 0), true);
         var rect = this.viewer.canvas.getBoundingClientRect();
-
+        
         var zoom = this.viewer.viewport.getZoom(true) * (this.viewer.canvas.clientWidth / this.config.imageSize);
         var x = (this.status.position[0].x - orig.x - rect.left) / zoom;
         var y = (this.status.position[0].y - orig.y - rect.top) / zoom;
-
+        
         this.status.livePosition = this.getPoint(x, y);
         this.signalStatusChanged(this.status);
+        if (!this.status.measureModeOn) { return; }
 
         // distance line
         if (this.status.position[0].c == 2) {
@@ -1006,6 +1038,10 @@ class ViewerManager {
 
     static setMeasureMode(active) {
         this.claerPosition();
+        if (active) {
+            //measurement mode and display of regions are mutually exclusive
+            this.hideRegions();
+        } 
         this.status.measureModeOn = active;
         this.signalStatusChanged(this.status);
     }
