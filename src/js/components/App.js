@@ -38,10 +38,12 @@ class App extends React.Component {
               isExpanded={this.state.isTreeExpanded}
               onClick={this.handleClick}
             />
-            <ViewerComposed
-              config={this.state.config}
-              regionsStatus={this.state.regionsStatus}
-            />
+            <div style={{ position: "absolute", left: 13, width:"calc( 100% - 13px )", height: "100%" }}>
+              <ViewerComposed
+                config={this.state.config}
+                regionsStatus={this.state.regionsStatus}
+              />
+            </div>
           </div>
         </SplitPane>
       </div >
