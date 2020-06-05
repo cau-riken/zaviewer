@@ -97,6 +97,9 @@ class ViewerManager {
             regionsOpacity: 0.4,
             displayBorders: false,
 
+            hoveredRegion: null,
+            hoveredRegionSide: null,
+
             currentAxis: this.CORONAL,
 
             /** currently selected coronal slice */
@@ -305,6 +308,7 @@ class ViewerManager {
             cnv.style.display = "none";
         }
         this.viewer.canvas.appendChild(cnv);
+        this.setMeasureMode(this.status.measureModeOn);
         this.resizeCanvas();
 
         //--------------------------------------------------
@@ -418,47 +422,60 @@ class ViewerManager {
 
                             //unselect all when click on the background element
                             newPathElt.click(function (e) {
-                                that.unselectRegions();
-                                that.regionActionner.unSelectAll();
+                                if (that.status.showRegions) {
+                                    that.unselectRegions();
+                                    that.regionActionner.unSelectAll();
+                                }
                             });
 
                         } else {
                             newPathElt.id = pathId;
                             //extract region abbreviation from path id
                             const suffix = rawId.substring(rawId.length - 2);
-                            var side;
-                            if (suffix === "_L") {
-                                side = "(Left)";
-                            } else if (suffix === "_R") {
-                                side = "(Right)";
-                            }
+                            const side = (suffix === "_L") ? "(left)" : (suffix === "_R") ? "(right)" : "";
                             const abbrev = side ? rawId.substring(0, rawId.length - 2) : rawId;
-                            newPathElt.attr("title", abbrev + " " + side);
 
                             that.status.currentSliceRegions.set(pathId, abbrev);
 
                             newPathElt.mouseover(function (e) {
-                                that.applyMouseOverPresentation(this);
+                                if (that.status.showRegions) {
+                                    that.applyMouseOverPresentation(this);
+                                }
+                                that.status.hoveredRegion = abbrev;
+                                that.status.hoveredRegionSide = side;
+                                that.signalStatusChanged(this.status);
                             });
 
                             newPathElt.mouseout(function (e) {
-                                that.applyMouseOutPresentation(this, RegionsManager.isSelected(abbrev));
+                                if (that.status.showRegions) {
+                                    that.applyMouseOutPresentation(this, RegionsManager.isSelected(abbrev));
+                                }
+                                that.status.hoveredRegion = null;
+                                that.status.hoveredRegionSide = null;
+                                that.signalStatusChanged(this.status);
                             });
 
                             newPathElt.click(function (e) {
-                                that.unselectRegions();
-                                if (e.ctrlKey) {
-                                    //when Ctrl key is pressed, allow multi-select or toogle of currently selected region 
-                                    if (RegionsManager.isSelected(abbrev)) {
-                                        that.regionActionner.unSelect(abbrev);
+                                if (that.status.showRegions) {
+                                    that.unselectRegions();
+                                    if (e.ctrlKey) {
+                                        //when Ctrl key is pressed, allow multi-select or toogle of currently selected region 
+                                        if (RegionsManager.isSelected(abbrev)) {
+                                            that.regionActionner.unSelect(abbrev);
+                                        } else {
+                                            that.regionActionner.addToSelection(abbrev);
+                                        }
                                     } else {
-                                        that.regionActionner.addToSelection(abbrev);
+                                        that.regionActionner.replaceSelected(abbrev);
                                     }
-                                } else {
-                                    that.regionActionner.replaceSelected(abbrev);
+                                    that.status.userClickedRegion = true;
+                                    that.selectRegions(RegionsManager.getSelectedRegions());
+
+                                } else if (e.shiftKey) {
+
+                                    that.applyMouseOverPresentation(this, true);
+                                    setTimeout(() => that.applyUnselectedPresentation(this), 2500);
                                 }
-                                that.status.userClickedRegion = true;
-                                that.selectRegions(RegionsManager.getSelectedRegions());
                             });
                         }
 
@@ -514,14 +531,14 @@ class ViewerManager {
         if (this.status.set) {
             if (!this.status.showRegions) {
                 this.status.set.forEach(function (el) {
-                    el.hide();
-                    $("#poscanvas").show();
-                });
+                    this.applyHiddenPresentation(el);
+                }.bind(this));
             } else {
                 this.status.set.forEach(function (el) {
-                    el.show();
-                    $("#poscanvas").hide();
-                });
+                    if (el.id !== BACKGROUND_PATHID) {
+                        this.applyUnselectedPresentation(el);
+                    }
+                }.bind(this));
             }
         }
     }
@@ -532,8 +549,8 @@ class ViewerManager {
     */
     static hideDelineation() {
         this.status.set.forEach(function (el) {
-            el.hide();
-        });
+            this.applyHiddenPresentation(el);
+        }.bind(this));
     }
 
     static updateRegionAreasPresentation() {
@@ -591,11 +608,14 @@ class ViewerManager {
         this.updateRegionAreasPresentation();
     }
 
-    static applyMouseOverPresentation(element) {
+    static applyMouseOverPresentation(element, forcedBorder = false) {
+        const el = element.length ? element[0] : element;
+        const color = el.node.getAttribute("fill");
         element.attr({
             "fill-opacity": (!this.status.displayAreas || this.status.regionsOpacity < 0.05) ? 0 : this.status.regionsOpacity + (this.status.regionsOpacity > 0.6 ? -0.4 : 0.4),
-            "stroke-opacity": this.status.displayBorders ? 0.7 : 0,
-            "stroke-width": 34,
+            "stroke-opacity": forcedBorder || this.status.displayBorders ? 1 : 0,
+            "stroke-width": 30,
+            "stroke": color,
         });
     }
 
@@ -610,19 +630,29 @@ class ViewerManager {
     static applySelectedPresentation(element) {
         element.attr({
             "fill-opacity": (!this.status.displayAreas || this.status.regionsOpacity < 0.05) ? 0 : this.status.regionsOpacity + (this.status.regionsOpacity > 0.6 ? -0.4 : 0.4),
-            "stroke-opacity": 0.7,
-            "stroke-width": 30,
+            "stroke-opacity": this.status.displayBorders ? 0.7 : 0,
+            "stroke-width": 20,
+            "stroke": "#0000ff",
         });
     }
 
     static applyUnselectedPresentation(element) {
+        const el = element.length ? element[0] : element;
+        const color = el.node.getAttribute("fill");
         element.attr({
             "fill-opacity": this.status.displayAreas ? this.status.regionsOpacity : 0,
             "stroke-opacity": this.status.displayBorders ? 0.5 : 0,
             "stroke-width": 10,
+            "stroke": color,
         });
     }
 
+    static applyHiddenPresentation(element) {
+        element.attr({
+            "fill-opacity": 0,
+            "stroke-opacity": 0,
+        });
+    }
 
     /** 
      * Reset all regions visual presentation to unselected state
@@ -1064,6 +1094,11 @@ class ViewerManager {
             this.hideRegions();
         }
         this.status.measureModeOn = active;
+        if (this.status.measureModeOn) {
+            $("#poscanvas").show();
+        } else {
+            $("#poscanvas").hide();
+        }
         this.signalStatusChanged(this.status);
     }
 

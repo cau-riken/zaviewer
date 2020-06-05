@@ -44,3 +44,25 @@
 	font-variant: small-caps;
 	text-align: right;
 }
+
+
+.zav-StatusBar  {
+	position: absolute;
+	z-index: 150;
+	bottom: 10px;
+	width: 100%;
+}
+
+.zav-StatusBarContent {
+	margin: auto;
+	width: 50%;
+	background-color: #1835798f;
+	color: #fff;
+	font-size: 10px;
+	
+	border-radius: 2px;
+	text-align: center;
+	display: flex;
+	flex-direction: row;
+	justify-content: space-evenly;
+}

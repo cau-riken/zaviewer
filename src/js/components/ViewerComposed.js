@@ -10,6 +10,8 @@ import RegionOptions from './RegionOptions.js';
 import QuickActionButtons from './QuickActionButtons.js';
 
 import ViewerManager from '../ViewerManager.js'
+import RegionsManager from '../RegionsManager.js'
+
 
 class TitledCard extends React.Component {
 
@@ -37,12 +39,30 @@ class ViewerComposed extends React.Component {
             ViewerManager.init(this.props.config, (osdstatus) => {
                 this.setState(state => ({ ...osdstatus }));
             });
-            console.info('Initializing OSD');
             this.initialized = true;
         }
 
+
+        const region = this.state.hoveredRegion ? RegionsManager.getRegion(this.state.hoveredRegion) : null;
+        const regionName = region ? region.name : "";
         return (
             <div style={{ height: "100%" }}>
+                <div className="zav-StatusBar">
+                    <div className="zav-StatusBarContent">
+                        {
+                            this.state.hoveredRegion
+                                ? <React.Fragment>
+                                    <span><b>{this.state.hoveredRegion}</b>{" "}{regionName}{" "}{this.state.hoveredRegionSide}</span>
+                                    {this.state.showRegions
+                                        ? null
+                                        : <span style={{ color: "#dbdbff", fontSize: 9, marginLeft: 10 }}>[Shift]+Click on the image to reveal the border</span>
+                                    }
+                                </React.Fragment>
+                                : null
+                        }
+                    </div>
+                </div>
+
                 <OSDMain />
 
                 <Drawer
