@@ -24,9 +24,64 @@
 	</head>
 
 	<body>
-		<noscript>You need to enable JavaScript to run this app.</noscript>
+		<noscript>
+			<div class="nosupport">
+				<h1>Sorry, JavaScript must be enabled to run this app.</h1>
+				<h3>You can contact us at <a href="https://www.brainminds.riken.jp/contact-us">www.brainminds.riken.jp</a></h3>
+			</div>	
+		</noscript>
+		<script type="text/javascript">
+			function get_browser() {
+				var ua = navigator.userAgent, tem, M = ua.match(/(opera|chrome|safari|firefox|msie|trident(?=\/))\/?\s*(\d+)/i) || [];
+				if (/trident/i.test(M[1])) {
+					tem = /\brv[ :]+(\d+)/g.exec(ua) || [];
+					return { name: 'IE', version: (tem[1] || '') };
+				}
+				if (M[1] === 'Chrome') {
+					tem = ua.match(/\bOPR\/(\d+)/);
+					if (tem != null) { return { name: 'Opera', version: tem[1] }; }
+				}
+				if (window.navigator.userAgent.indexOf("Edge") > -1) {
+					tem = ua.match(/\Edge\/(\d+)/);
+					if (tem != null) { return { name: 'Edge', version: tem[1] }; }
+				}
+				M = M[2] ? [M[1], M[2]] : [navigator.appName, navigator.appVersion, '-?'];
+				if ((tem = ua.match(/version\/(\d+)/i)) != null) { M.splice(1, 1, tem[1]); }
+				return {
+					name: M[0],
+					version: +M[1]
+				};
+			}
+
+			var browser = get_browser()
+			var isSupported = isSupported(browser);
+
+			function isSupported(browser) {
+				var supported = false;
+				//end of 2016 versions
+				if (browser.name === "Chrome" && browser.version >= 55) {
+					supported = true;
+				} else if (browser.name === "Firefox" && browser.version >= 50) {
+					supported = true;
+				} else if (browser.name === "Safari" && browser.version >= 10) {
+					supported = true;
+				} else if (browser.name === "Edge" && browser.version >= 16) {
+					supported = true;
+				} else if ((browser.name === "MSIE" || browser.name === "IE")) {
+					supported = false;
+				}
+				return supported;
+			}
+
+			if (isSupported) {
+				var appscript = document.createElement('script');
+				appscript.setAttribute('src', "./assets/js/main.js");
+				document.body.appendChild(appscript);
+			} else {
+				document.write('<div class="nosupport"><h1>Sorry, your web browser doesn&apos;t seem to be supported...</h1><h3>You can contact us at <a href="https://www.brainminds.riken.jp/contact-us">www.brainminds.riken.jp</a></h3><code>' + navigator.userAgent + '</code></div>');
+			}
+		</script>
 		<div id="root"></div>
-		<script src="./assets/js/main.js"></script>
 	</body>
 
 </html>
