@@ -630,7 +630,7 @@ class ViewerManager {
     static applySelectedPresentation(element) {
         element.attr({
             "fill-opacity": (!this.status.displayAreas || this.status.regionsOpacity < 0.05) ? 0 : this.status.regionsOpacity + (this.status.regionsOpacity > 0.6 ? -0.4 : 0.4),
-            "stroke-opacity": this.status.displayBorders ? 0.7 : 0,
+            "stroke-opacity": this.status.showRegions ? 0.7 : 0,
             "stroke-width": 20,
             "stroke": "#0000ff",
         });
