@@ -49,8 +49,17 @@ class ViewerManager {
 
         //layers initial display values
         const initLayerDisplaySettings = {};
+        var i = 0;
         $.each(that.config.data, function (key, value) {
-            initLayerDisplaySettings[key] = { enabled: true, opacity: parseInt(value.opacity), name: value.metadata };
+            initLayerDisplaySettings[key] = {
+                key: key,
+                enabled: true,
+                opacity: parseInt(value.opacity),
+                name: value.metadata,
+                index: i++,
+                //FIXME should use another method than name to identify tracer signal layer
+                isTracer: value.metadata.includes("nn_tracer")
+            };
         });
 
         /** dynamic state of the viewer */
@@ -258,7 +267,46 @@ class ViewerManager {
             that.viewer.navigator.world.addHandler("add-item", navItemReplaceHnd, { replaced: 0, removed: 0 });
         });
 
+        //--------------------------------------------------
+        //Apply filter on tracer signal once it is fully loaded
 
+        this.viewer.world.addHandler('add-item', (addItemEvent) => {
+            const tiledImage = addItemEvent.item;
+            //retrieve layer info associated to added tiled image
+            for (var i = 0; i < that.viewer.world.getItemCount(); i++) {
+                if (that.viewer.world.getItemAt(i) === tiledImage) {
+                    const layer = _.findWhere(that.status.layerDisplaySettings, { index: i });
+
+                    //if this tiled imaged correspond to tracer signal
+                    if (layer && layer.isTracer) {
+                        //handler to set filter on once the image is fully loaded
+                        const hnd = (fullyLoadedChangeEvent) => {
+                            //this handler is called anytime the fullyLoaded status changes
+                            if (fullyLoadedChangeEvent.fullyLoaded) {
+
+                                //restore opacity once it is fully loaded
+                                that.setLayerOpacity(layer.key);
+                                // apply filter
+                                that.viewer.setFilterOptions({
+                                    filters: [{
+                                        items: tiledImage,
+                                        processors: [
+                                            CustomFilters.INTENSITYALPHA()
+                                        ]
+                                    }]
+                                });
+                                //
+                                tiledImage.removeHandler('fully-loaded-change', hnd);
+                            }
+                        };
+                        tiledImage.addHandler('fully-loaded-change', hnd);
+                    }
+                    break;
+                }
+            }
+        });
+
+        //--------------------------------------------------
         this.viewer.addViewerInputHook({
             hooks: [
                 { tracker: 'viewer', handler: 'scrollHandler', hookHandler: this.onViewerScroll },
@@ -322,55 +370,6 @@ class ViewerManager {
 
     }
     // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
-
-    //TODO check if can be replaced by fully-loaded-change
-    static updateFilters() {
-        const that = this;
-
-        if (this.viewer) {
-            var nn_tracer_layer_ind = -1;
-            var count = 0;
-            $.each(this.config.layers, function (key) {
-                //console.log(key);
-                if (that.config.layers[key].name.includes("nn_tracer")) {
-                    //				console.log("FOUND");
-                    nn_tracer_layer_ind = count;
-                }
-                count++;
-            });
-            //		console.log(nn_tracer_layer_ind);
-            var processors = [];
-
-
-            console.log(nn_tracer_layer_ind);
-            var nn_layer = this.viewer.world.getItemAt(nn_tracer_layer_ind);
-            console.log(nn_layer);
-            if (nn_tracer_layer_ind != -1 && nn_layer !== undefined) {
-
-                this.viewer.setFilterOptions({
-                    filters: [{
-                        items: this.viewer.world.getItemAt(nn_tracer_layer_ind),
-                        processors: [
-                            CustomFilters.INTENSITYALPHA()
-                        ]
-                    }]
-                });
-            }
-            else if (nn_tracer_layer_ind != -1 && nn_layer === undefined) {
-                this.waitForNNLayer(nn_tracer_layer_ind);
-            }
-        }
-    }
-
-    static waitForNNLayer(nn_tracer_layer_ind) {
-        var nn_layer = this.viewer.world.getItemAt(nn_tracer_layer_ind);
-        if (nn_layer === undefined) {
-            const that = this;
-            setTimeout(function () { that.waitForNNLayer(nn_tracer_layer_ind) }, 100);
-        } else {
-            this.updateFilters();
-        }
-    };
 
     /** Add region delineations to specified overlay  
      * 
@@ -897,6 +896,11 @@ class ViewerManager {
 
 
     static addLayer(key, name, ext) {
+        
+        //load tracer signal layer with opacity set to 0 to avoid seeing it before filter is applied
+        const isTracer = this.status.layerDisplaySettings[key].isTracer;
+        const loadingOpacity = isTracer ? 0.01 : this.getLayerOpacity(key);
+
         var options = {
             /*tileSource: {
                 //these must be set correctly otherwise there will be incorrect sizing!
@@ -916,15 +920,11 @@ class ViewerManager {
             //tileSource:dataRootPath + "/" + layerName + "/coronal/" + this.viewer.currentPage() +".dzi",
             tileSource: this.config.IIPSERVER_PATH + key + "/" + this.viewer.currentPage() + ext + this.config.TILE_EXTENSION,// +  TILE_EXTENSION,
 
-            opacity: this.getLayerOpacity(key),
+            //
+            opacity: loadingOpacity,
+            //force loading tracer signal whose opacity has been set to 0 to avoid display glitches
+            preload: isTracer && this.getLayerOpacity(key)!=0,
         };
-
-        const that = this;
-        this.viewer.world.addOnceHandler("add-item", (event) => {
-            that.config.layers[key].name = name;
-
-            that.updateFilters();
-        });
 
         this.viewer.addTiledImage(options);
 
