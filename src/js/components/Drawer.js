@@ -21,7 +21,7 @@ export class DrawerHandle extends React.Component {
                 className="zav-Drawer_handle"
                 onClick={this.props.onClick}
             >
-                <Icon icon={"caret-" + (pointToRight ? "right" : "left")} iconSize={16} />
+                <Icon icon={"caret-" + (pointToRight ? "right" : "left")} iconSize={22} />
             </div>
         );
     }
@@ -31,7 +31,7 @@ export class DrawerHandle extends React.Component {
 class Drawer extends React.Component {
     constructor(props) {
         super(props);
-        this.state = { isExpanded: true };
+        this.state = { isExpanded: this.props.initExpanded };
         this.drawerRef = React.createRef();
 
         this.handleClick = this.handleClick.bind(this);
@@ -54,7 +54,9 @@ class Drawer extends React.Component {
                     {this.props.quickactions}
                 </div>
                 <div className="zav-Drawer_expandedCont">
-                    {this.props.children}
+                    <div className="zav-Drawer_expandedContWrapper">
+                        {this.props.children}
+                    </div>
                 </div>
             </div>
         );

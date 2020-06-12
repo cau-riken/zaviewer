@@ -67,7 +67,7 @@ class ViewerComposed extends React.Component {
 
                 <Drawer
                     id="ZAV-rightPanel"
-                    width={222}
+                    initExpanded={false}
                     quickactions={
                         <QuickActionButtons
                             hasDelineation={this.props.config && this.props.config.hasDelineation}

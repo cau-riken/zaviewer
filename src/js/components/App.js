@@ -14,7 +14,7 @@ class App extends React.Component {
 
   constructor(props) {
     super(props);
-    this.state = { configId: undefined, config: undefined, isTreeExpanded: true, splitSize: 350 };
+    this.state = { configId: undefined, config: undefined, isTreeExpanded: false, splitSize: 350 };
     this.handleClick = this.handleClick.bind(this);
     this.onSplitSizeChange = this.onSplitSizeChange.bind(this);
   }
