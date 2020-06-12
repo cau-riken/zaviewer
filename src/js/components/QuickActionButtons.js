@@ -5,6 +5,9 @@ import _ from 'underscore';
 import {
     AnchorButton,
     Icon,
+    Popover,
+    PopoverInteractionKind,
+    Position,
     Slider,
     Switch
 } from "@blueprintjs/core";
@@ -61,7 +64,7 @@ class QuickActionButtons extends React.Component {
 
                 <div className="zav-ActionContainer">
                     <AnchorButton
-                        icon="double-chevron-up"
+                        icon="double-chevron-right"
                         small
                         title="go to 10 slices forward"
                         onClick={this.onShiftToSlice.bind(this, 10)}
@@ -69,7 +72,7 @@ class QuickActionButtons extends React.Component {
                 </div>
                 <div className="zav-ActionContainer">
                     <AnchorButton
-                        icon="chevron-up"
+                        icon="chevron-right"
                         small
                         title="go to next slice"
                         onClick={this.onShiftToSlice.bind(this, 1)}
@@ -79,21 +82,30 @@ class QuickActionButtons extends React.Component {
                 {this.props.config ?
                     <div
                         className="zav-ActionContainer"
-                        style={{margin: "10px 0"}}
+                        style={{ margin: "10px 0" }}
                         title={"slice #" + (this.props.coronalChosenSlice * this.props.config.coronalSliceStep) + " of " + (this.props.config.coronalSliceStep * (this.props.config.coronalSlideCount - 1))}
                     >
-                        <Slider
-                            className="zav-Slider zav-QActSliceSlider"
-                            min={0}
-                            max={this.props.config.coronalSlideCount - 1}
-                            stepSize={1}
-                            onChange={this.onGoToSlice}
-                            value={this.props.coronalChosenSlice}
-                            showTrackFill={false}
-                            vertical
-                            labelStepSize={this.props.config.coronalSlideCount - 1}
-                            labelRenderer={(value) => value * this.props.config.coronalSliceStep}
-                        />
+
+                        <Popover
+                            interactionKind={PopoverInteractionKind.HOVER}
+                            position={Position.LEFT}
+                            boundary="window"
+                            popoverClassName="bp3-popover-content-sizing"
+                            lazy
+                        >
+                            <AnchorButton icon="multi-select" small/>
+                            <Slider
+                                className="zav-Slider zav-QActSliceSlider"
+                                min={0}
+                                max={this.props.config.coronalSlideCount - 1}
+                                stepSize={1}
+                                onChange={this.onGoToSlice}
+                                value={this.props.coronalChosenSlice}
+                                showTrackFill={false}
+                                labelStepSize={this.props.config.coronalSlideCount - 1}
+                                labelRenderer={(value) => value * this.props.config.coronalSliceStep}
+                            />
+                        </Popover>
                     </div>
 
                     :
@@ -102,7 +114,7 @@ class QuickActionButtons extends React.Component {
 
                 <div className="zav-ActionContainer">
                     <AnchorButton
-                        icon="chevron-down"
+                        icon="chevron-left"
                         small
                         title="go to previous slice"
                         onClick={this.onShiftToSlice.bind(this, -1)}
@@ -110,7 +122,7 @@ class QuickActionButtons extends React.Component {
                 </div>
                 <div className="zav-ActionContainer">
                     <AnchorButton
-                        icon="double-chevron-down"
+                        icon="double-chevron-left"
                         small
                         title="go to 10 slices backward"
                         onClick={this.onShiftToSlice.bind(this, -10)}
