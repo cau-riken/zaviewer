@@ -1,6 +1,7 @@
 import React from 'react';
 
 import {
+    Icon,
     Slider
 } from "@blueprintjs/core";
 
@@ -48,17 +49,31 @@ class SubViewPanel extends React.Component {
             <React.Fragment>
                 <div>
                     <div className="zav-SubViewSlider">
-                        <Slider
-                            className="zav-Slider"
-                            min={0}
-                            max={maxSliceNum}
-                            stepSize={1}
-                            labelStepSize={maxSliceNum}
-                            onChange={this.onGoToSlice}
-                            value={currentSlice}
-                            showTrackFill={false}
-                            labelRenderer={(value) => value * sliceStep}
-                        />
+                        
+                            <Icon
+                                icon="chevron-left"
+                                title="go to previous slice"
+                                style={{marginLeft: -16, verticalAlign: "top"}}
+                                onClick={this.onGoToSlice.bind(this, currentSlice - 1)}
+                            />
+                            <Slider
+                                className="zav-Slider zav-SubVSliceSlider"
+                                min={0}
+                                max={maxSliceNum}
+                                stepSize={1}
+                                labelStepSize={maxSliceNum}
+                                onChange={this.onGoToSlice}
+                                value={currentSlice}
+                                showTrackFill={false}
+                                labelRenderer={(value) => value * sliceStep}
+                            />
+                            <Icon
+                                icon="chevron-right"
+                                title="go to next slice"
+                                style={{marginRight: -16, verticalAlign: "top"}}
+                                onClick={this.onGoToSlice.bind(this, currentSlice + 1)}
+                            />
+                        
                     </div>
                 </ div>
                 <div id="sagittal_holder" className="sagittalHolder" >
