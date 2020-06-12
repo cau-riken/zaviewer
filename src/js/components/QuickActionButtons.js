@@ -37,11 +37,8 @@ class QuickActionButtons extends React.Component {
     }
 
     render() {
-        /*
-        const regionId = RegionsManager.getLastSelected();
-        const region = regionId ? RegionsManager.getRegion(regionId) : null;
-        */
 
+        const tracerLayer = _.findWhere(this.props.displaySettings, { isTracer: true });
 
 
         return (
@@ -82,7 +79,6 @@ class QuickActionButtons extends React.Component {
                 {this.props.config ?
                     <div
                         className="zav-ActionContainer"
-                        style={{ margin: "10px 0" }}
                         title={"slice #" + (this.props.coronalChosenSlice * this.props.config.coronalSliceStep) + " of " + (this.props.config.coronalSliceStep * (this.props.config.coronalSlideCount - 1))}
                     >
 
@@ -93,7 +89,7 @@ class QuickActionButtons extends React.Component {
                             popoverClassName="bp3-popover-content-sizing"
                             lazy
                         >
-                            <AnchorButton icon="multi-select" small/>
+                            <AnchorButton icon="multi-select" small />
                             <Slider
                                 className="zav-Slider zav-QActSliceSlider"
                                 min={0}
@@ -128,6 +124,24 @@ class QuickActionButtons extends React.Component {
                         onClick={this.onShiftToSlice.bind(this, -10)}
                     />
                 </div>
+
+                {
+                    tracerLayer
+                        ?
+                        <div
+                            className="zav-ActionContainer"
+                            title="toggle tracer mask visibility"
+                            style={{ margin: "20px 0 10px 0" }}
+                        >
+                            <Switch
+                                checked={tracerLayer.enabled}
+                                onChange={this.handleLayerEnabledChange.bind(this, tracerLayer.key, tracerLayer.opacity)}
+                            />
+                        </div>
+                        :
+                        null
+                }
+
             </React.Fragment>
         );
     }
@@ -138,6 +152,10 @@ class QuickActionButtons extends React.Component {
         } else {
             ViewerManager.toggleAreaDisplay();
         }
+    }
+
+    handleLayerEnabledChange(layerid, opacity, event) {
+        ViewerManager.changeLayerOpacity(layerid, event.target.checked, opacity);
     }
 
     onShiftToSlice(increment) {

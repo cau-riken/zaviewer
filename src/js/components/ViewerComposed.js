@@ -71,6 +71,7 @@ class ViewerComposed extends React.Component {
                     quickactions={
                         <QuickActionButtons
                             hasDelineation={this.props.config && this.props.config.hasDelineation}
+                            displaySettings={this.state.layerDisplaySettings}
                             showRegions={this.state.showRegions}
                             coronalChosenSlice={this.state.coronalChosenSlice}
                             config={this.props.config} />
