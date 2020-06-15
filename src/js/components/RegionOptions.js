@@ -1,9 +1,10 @@
 import React from 'react';
 
 import {
-    Slider,
     Switch
 } from "@blueprintjs/core";
+
+import ParamAdjusterLabel from './ParamAdjusterLabel.js';
 
 import ViewerManager from '../ViewerManager.js'
 
@@ -22,14 +23,28 @@ class RegionOptions extends React.Component {
             <div
                 style={{ width: 196, marginLeft: 10 }}
             >
-                <span title="toggle display of regions' area">
-                    <Switch
-                        checked={this.props.displayAreas}
-                        onChange={this.handleClickHideShow}
-                        inline
-                        label="areas"
+
+                <div title="adjust regions' area opacity">
+                    <span title="toggle display of regions' area">
+                        <Switch
+                            checked={this.props.displayAreas}
+                            onChange={this.handleClickHideShow}
+                            inline
+                            label="areas"
+                        />
+                    </span>
+                    <ParamAdjusterLabel
+                        icon="eye-open"
+                        label="Opacity"
+                        min={5}
+                        max={100}
+                        stepSize={1}
+                        onChange={this.handleOpacityChange}
+                        value={Math.round(this.props.regionsOpacity * 100)}
+                        labelRenderer={(value) => <span>{value}<span style={{ fontSize: 8 }}>&nbsp;%</span></span>}
+                        enabled={this.props.displayAreas}
                     />
-                </span>
+                </div>
                 <span title="toggle display of regions' border">
                     <Switch
                         checked={this.props.displayBorders}
@@ -38,20 +53,6 @@ class RegionOptions extends React.Component {
                         label="borders"
                     />
                 </span>
-                <div title="adjust regions' area opacity">
-                    <Slider
-                        className="zav-Slider zav-OpacitySlider"
-                        min={5}
-                        max={100}
-                        stepSize={1}
-                        labelStepSize={95}
-                        onChange={this.handleOpacityChange}
-                        value={Math.round(this.props.regionsOpacity * 100)}
-                        showTrackFill={false}
-                        labelRenderer={(value) => value + "%"}
-                        disabled={!this.props.displayAreas}
-                    />
-                </div>
             </div>
         );
     }

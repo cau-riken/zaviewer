@@ -1,6 +1,5 @@
 /* ▼ ------ Slider panel ------ */
 
-
 /* Display navigation */
 .navigatorParentClass {
 	margin: 10px 0 0 10px;
@@ -69,7 +68,6 @@
 
 /* sliderGroup */
 
-
 #sliderGroup1 {
 	padding-bottom: 2px;
 	max-height: calc(100vh - 300px);
@@ -120,7 +118,16 @@
 	line-height: normal;
 }
 
+.zav-OpacitySlider {
+	display: inline-block;
+	width: 200px;
+	margin: auto;
+}
 
 .zav-OpacitySlider .bp3-slider-label {
 	font-size: 10px;
+}
+
+.zav-AdjusterItem .bp3-control {
+	margin-bottom: 4px;
 }

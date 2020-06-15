@@ -1,0 +1,19 @@
+.zav-AdjusterLabel {
+	display: inline-block;
+
+	min-width: 70px;
+	margin-top: 6px;
+	padding-top: 1px;
+	padding-left: 6px;
+
+	font-size: 10px;
+	border: solid 1px silver;
+	border-radius: 3px;
+}
+
+.zav-AdjusterLabel[data-disabled="true"] {
+	border-style: dotted;
+	border-color: #8f8c8c;
+	color: #a0a0a0;
+	cursor: not-allowed;
+}

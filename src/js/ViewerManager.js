@@ -51,6 +51,7 @@ class ViewerManager {
         const initLayerDisplaySettings = {};
         var i = 0;
         $.each(that.config.data, function (key, value) {
+            const isTracer = value.metadata.includes("nn_tracer");
             initLayerDisplaySettings[key] = {
                 key: key,
                 enabled: true,
@@ -58,7 +59,14 @@ class ViewerManager {
                 name: value.metadata,
                 index: i++,
                 //FIXME should use another method than name to identify tracer signal layer
-                isTracer: value.metadata.includes("nn_tracer")
+                isTracer: isTracer,
+                enhanceSignal: false,
+                dilation: 0,
+
+                contrastEnabled: false,
+                contrast: 1,
+                gammaEnabled: false,
+                gamma: 1,
             };
         });
 
@@ -287,14 +295,8 @@ class ViewerManager {
                                 //restore opacity once it is fully loaded
                                 that.setLayerOpacity(layer.key);
                                 // apply filter
-                                that.viewer.setFilterOptions({
-                                    filters: [{
-                                        items: tiledImage,
-                                        processors: [
-                                            CustomFilters.INTENSITYALPHA()
-                                        ]
-                                    }]
-                                });
+                                that.setAllFilters();
+
                                 //
                                 tiledImage.removeHandler('fully-loaded-change', hnd);
                             }
@@ -304,6 +306,11 @@ class ViewerManager {
                     break;
                 }
             }
+        });
+
+        this.viewer.addHandler('zoom', (zoomEvent) => {
+            //some filter might need to be adjusted after zoom changed
+            that.adjustFiltersAfterZoom(zoomEvent.zoom);
         });
 
         //--------------------------------------------------
@@ -896,7 +903,6 @@ class ViewerManager {
 
 
     static addLayer(key, name, ext) {
-        
         //load tracer signal layer with opacity set to 0 to avoid seeing it before filter is applied
         const isTracer = this.status.layerDisplaySettings[key].isTracer;
         const loadingOpacity = isTracer ? 0.01 : this.getLayerOpacity(key);
@@ -923,7 +929,9 @@ class ViewerManager {
             //
             opacity: loadingOpacity,
             //force loading tracer signal whose opacity has been set to 0 to avoid display glitches
-            preload: isTracer && this.getLayerOpacity(key)!=0,
+            preload: isTracer && this.getLayerOpacity(key) != 0,
+
+            success: (event) => this.setAllFilters()
         };
 
         this.viewer.addTiledImage(options);
@@ -940,6 +948,84 @@ class ViewerManager {
         }
     }
 
+    /** adjust filters to the new zoom factor */
+    static adjustFiltersAfterZoom(zoom) {
+        const tracerLayer = _.findWhere(this.status.layerDisplaySettings, { isTracer: true });
+        const newDilationSize = zoom > 2.5 ? 0 : zoom > 1.5 ? 3 : zoom > 0.3 ? 5 : 7;
+        //change filters only if dilation kernel size changed
+        if (newDilationSize != tracerLayer.dilation) {
+            tracerLayer.dilation = newDilationSize;
+            if (tracerLayer.enhanceSignal) {
+                this.setAllFilters();
+            }
+        }
+    }
+
+    /** reset filters : the plugin API allows only to set all processors for all tiled images at once  */
+    static setAllFilters() {
+
+        const filters = [];
+        _.each(this.status.layerDisplaySettings, (layer, key) => {
+            const processors = [];
+
+            if (layer.isTracer) {
+                //change filters only if dilation kernel size changed
+                if (layer.enhanceSignal && layer.dilation > 0) {
+                    processors.push(OpenSeadragon.Filters.MORPHOLOGICAL_OPERATION(layer.dilation, Math.max));
+                }
+                processors.push(CustomFilters.INTENSITYALPHA());
+
+            } else {
+
+                if (layer.contrastEnabled) {
+                    processors.push(OpenSeadragon.Filters.CONTRAST(layer.contrast));
+                }
+                if (layer.gammaEnabled) {
+                    processors.push(OpenSeadragon.Filters.GAMMA(layer.gamma));
+                }
+            }
+
+            if (processors.length) {
+                const tiledImage = this.viewer.world.getItemAt(layer.index);
+                filters.push({
+                    items: tiledImage,
+                    processors: processors
+                });
+            }
+
+        });
+        this.viewer.setFilterOptions({
+            filters: filters
+        });
+
+    }
+
+
+    static changeLayerContrast(layerid, enabled, contrast) {
+        if (this.config.layers[layerid]) {
+            this.status.layerDisplaySettings[layerid].contrastEnabled = enabled;
+            this.status.layerDisplaySettings[layerid].contrast = contrast;
+            this.setAllFilters();
+            this.signalStatusChanged(this.status);
+        }
+    }
+
+    static changeLayerGamma(layerid, enabled, gamma) {
+        if (this.config.layers[layerid]) {
+            this.status.layerDisplaySettings[layerid].gammaEnabled = enabled;
+            this.status.layerDisplaySettings[layerid].gamma = gamma;
+            this.setAllFilters();
+            this.signalStatusChanged(this.status);
+        }
+    }
+
+    static changeLayerEnhancer(layerid, enabled) {
+        if (this.config.layers[layerid]) {
+            this.status.layerDisplaySettings[layerid].enhanceSignal = enabled;
+            this.setAllFilters();
+            this.signalStatusChanged(this.status);
+        }
+    }
 
     //--------------------------------------------------
     // position

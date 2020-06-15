@@ -1,13 +1,14 @@
 import React from 'react';
 
+import _ from 'underscore';
+
 import {
-    AnchorButton,
-    Icon,
-    Slider,
     Switch
 } from "@blueprintjs/core";
 
-import ViewerManager from '../ViewerManager.js'
+import ParamAdjusterLabel from './ParamAdjusterLabel.js';
+
+import ViewerManager from '../ViewerManager.js';
 
 class LayerSlider extends React.Component {
     constructor(props) {
@@ -18,34 +19,105 @@ class LayerSlider extends React.Component {
         this.handleClickName = this.handleClickName.bind(this);
     }
     render() {
-        const { layerid, name, opacity, enabled } = this.props;
+        const { layerid, name, opacity, enabled, isTracer, contrast, contrastEnabled, gamma, gammaEnabled, enhanceSignal, dilation } = this.props;
 
         return (
             <div
                 style={{ width: 196, marginLeft: 10 }}
             >
-                <div title="toggle layer's visibility">
-                    <Switch
-                        checked={enabled}
-                        onChange={this.handleCheckedChange.bind(this, layerid, opacity)}
-                        label={name}
-                    />
-                </div>
 
-                <div title="adjust layer's opacity">
-                    <Slider
-                        className="zav-Slider zav-OpacitySlider"
+                <div>{name}</div>
+                <div className="zav-AdjusterItem">
+                    <span title="toggle layer's visibility">
+                        <Switch
+                            checked={enabled}
+                            onChange={this.handleCheckedChange.bind(this, layerid, opacity)}
+                            inline
+                        />
+                    </span>
+                    <ParamAdjusterLabel
+                        icon="eye-open"
+                        label="Opacity"
                         min={0}
                         max={100}
                         stepSize={1}
-                        labelStepSize={100}
                         onChange={this.handleOpacityChange.bind(this, layerid, enabled)}
                         value={opacity}
-                        showTrackFill={false}
-                        labelRenderer={(value) => value + "%"}
-                        disabled={!enabled}
+                        labelRenderer={(value) => <span>{value}<span style={{ fontSize: 8 }}>&nbsp;%</span></span>}
+                        enabled={enabled}
                     />
                 </div>
+
+                {isTracer
+                    ?
+                    <div className="zav-AdjusterItem">
+                        <span title="toggle Tracer mask enhancer">
+                            <Switch
+                                checked={enhanceSignal}
+                                onChange={this.handleEnhanceCheck.bind(this, layerid)}
+                                inline
+                                disabled={!enabled}
+                            />
+                        </span>
+
+                        <ParamAdjusterLabel
+                            icon="heatmap"
+                            noAdjust={true}
+                            value={dilation}
+                            enabled={enabled && enhanceSignal}
+                        />
+
+                    </div>
+
+                    :
+                    <React.Fragment>
+                        <div className="zav-AdjusterItem">
+                            <span title="toggle layer's contrast correction">
+                                <Switch
+                                    checked={contrastEnabled}
+                                    onChange={this.handleContrastCheck.bind(this, layerid, contrast)}
+                                    inline
+                                    disabled={!enabled}
+                                />
+                            </span>
+
+                            <ParamAdjusterLabel
+                                icon="contrast"
+                                label="Contrast"
+                                min={0}
+                                max={4.5}
+                                stepSize={0.01}
+                                onChange={this.handleContrastChange.bind(this, layerid, contrastEnabled)}
+                                value={contrast}
+                                enabled={enabled && contrastEnabled}
+                            />
+                        </div>
+
+                        <div className="zav-AdjusterItem">
+                            <span title="toggle layer's gamma correction">
+                                <Switch
+                                    checked={gammaEnabled}
+                                    onChange={this.handleGammaCheck.bind(this, layerid, gamma)}
+                                    inline
+                                    disabled={!enabled}
+                                />
+                            </span>
+
+                            <ParamAdjusterLabel
+                                icon={<span className="bp3-icon" style={{ display: "inline-block", width: 16, marginRight: 10, texAlign: "right" }}>𝛄</span>}
+                                label="Gamma"
+                                min={0}
+                                max={4.5}
+                                stepSize={0.01}
+                                onChange={this.handleGammaChange.bind(this, layerid, gammaEnabled)}
+                                value={gamma}
+                                enabled={enabled && gammaEnabled}
+                            />
+                        </div>
+
+                    </React.Fragment>
+                }
+
             </div>
 
         );
@@ -54,10 +126,30 @@ class LayerSlider extends React.Component {
     handleOpacityChange(layerid, enabled, value) {
         ViewerManager.changeLayerOpacity(layerid, enabled, value);
     }
-
     handleCheckedChange(layerid, opacity, event) {
         ViewerManager.changeLayerOpacity(layerid, event.target.checked, opacity);
     }
+
+    handleContrastChange(layerid, enabled, value) {
+        ViewerManager.changeLayerContrast(layerid, enabled, Math.round(value * 100) / 100);
+    }
+    handleContrastCheck(layerid, contrast, event) {
+        ViewerManager.changeLayerContrast(layerid, event.target.checked, contrast);
+    }
+
+    handleGammaChange(layerid, enabled, value) {
+        ViewerManager.changeLayerGamma(layerid, enabled, Math.round(value * 100) / 100);
+    }
+    handleGammaCheck(layerid, gamma, event) {
+        ViewerManager.changeLayerGamma(layerid, event.target.checked, gamma);
+    }
+
+    handleEnhanceCheck(layerid, event) {
+        ViewerManager.changeLayerEnhancer(layerid, event.target.checked);
+    }
+
+
+
 
     handleClickName(layerid) {
         //FIXME showInfoText & addClass("selected") to layer label
@@ -76,9 +168,9 @@ class SliderNavigatorPanel extends React.Component {
         const layerSliders = [];
         if (this.props.displaySettings) {
             $.each(this.props.displaySettings, function (layerid, value) {
-                var params = { layerid: layerid, name: value.name, opacity: value.opacity, enabled: value.enabled };
+                var params = _.extend(value, { layerid: layerid });
                 layerSliders.push(<LayerSlider key={"slid_" + layerid}  {...params} />);
-                layerSliders.push(<div key={"sepslid_" + layerid} style={{ borderBottom: "dotted 1px #8a8a8a", marginBottom: 3 }} />);
+                layerSliders.push(<div key={"sepslid_" + layerid} style={{ borderBottom: "dotted 1px #8a8a8a", margin: "3px 0" }} />);
             });
         }
         layerSliders.reverse();
