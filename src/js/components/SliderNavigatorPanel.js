@@ -50,7 +50,7 @@ class LayerSlider extends React.Component {
 
                 {isTracer
                     ?
-                    <div className="zav-AdjusterItem">
+                    <div className="zav-AdjusterItem" style={{marginLeft: 6}}>
                         <span title="toggle Tracer mask enhancer">
                             <Switch
                                 checked={enhanceSignal}
@@ -71,7 +71,7 @@ class LayerSlider extends React.Component {
 
                     :
                     <React.Fragment>
-                        <div className="zav-AdjusterItem">
+                        <div className="zav-AdjusterItem" style={{marginLeft: 6}}>
                             <span title="toggle layer's contrast correction">
                                 <Switch
                                     checked={contrastEnabled}
@@ -93,7 +93,7 @@ class LayerSlider extends React.Component {
                             />
                         </div>
 
-                        <div className="zav-AdjusterItem">
+                        <div className="zav-AdjusterItem" style={{marginLeft: 6}}>
                             <span title="toggle layer's gamma correction">
                                 <Switch
                                     checked={gammaEnabled}

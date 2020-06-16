@@ -1,3 +1,4 @@
+import _ from 'underscore';
 import Utils from './Utils.js';
 
 /** Class in charge of retrieving and holding configuration associated to a dataset */
@@ -77,8 +78,12 @@ class ZAVConfig {
             /** Path to the tree region data */
             treeUrlPath: undefined,
 
+            /** raw configuration data for layers */
             data: undefined,
 
+            //FIXME retrieve from config stored on server
+            /** url of the tracer signal on the flatmap */
+            fmTracerSignalImgUrl: "https://www.brainminds.riken.jp/injections/" + configId + ".png",
 
         };
 
@@ -219,6 +224,28 @@ class ZAVConfig {
                         }
                     }//success
                 });
+
+
+                /** retrieve extra info for dataset from flatmap backend */
+                $.ajax({
+                    //FIXME retrieve url from server config
+                    url: "https://www.brainminds.riken.jp/wp-json/bmind/p3/get_dataset/",
+                    type: "GET",
+                    async: true,
+                    dataType: 'json',
+                    success: function (data) {
+                        const dataset_info = _.findWhere(data, { marmoset_id: that.config.paramId });
+                        if (dataset_info) {
+                            that.config.dataset_info = dataset_info;
+                        } else {
+                            console.warn("Missing info for dataset ", that.config.paramId);
+                        }
+                    },
+                    error: function (jqXHR, textStatus, errorThrown) {
+                        console.warn(errorThrown);
+                    }
+                });
+
 
                 //search
                 $.ajax({
