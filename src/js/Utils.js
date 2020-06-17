@@ -1,3 +1,8 @@
+import _ from 'underscore';
+
+import { createPath, parsePath } from 'history';
+import qs from 'qs';
+
 class Utils {
 
 	//Finds y value of given object
@@ -25,6 +30,23 @@ class Utils {
 
 	static makePath(...args) {
 		return args.reduce((acc, frag) => acc + (acc.endsWith("/") || frag.startsWith("/") ? "" : "/") + frag);
+	}
+
+	static getCleanHash(hash) {
+		return hash.startsWith("#") ? hash.substring(1) : hash;
+	}
+
+	static getConfigFromLocation(location) {
+		return qs.parse(this.getCleanHash(location.hash));
+	}
+
+	static pushHistoryStep(history, newParams) {
+		const currentParams = this.getConfigFromLocation(history.location);
+		const updStrParams = qs.stringify(_.extend(currentParams, newParams));
+		const updatedPath = createPath(_.extend(_.clone(history.location), { hash: updStrParams }));
+		if (updStrParams != this.getCleanHash(history.location.hash)) {
+			history.push(updatedPath);
+		}
 	}
 
 }

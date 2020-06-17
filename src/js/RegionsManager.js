@@ -134,11 +134,11 @@ class RegionsManager {
 
 
     static getRoot() {
-        return this.regionsData.root;
+        return this.regionsData ? this.regionsData.root : null;
     }
 
     static getRegion(regionId) {
-        return this.regionsData.byId.get(regionId);
+        return this.regionsData ? this.regionsData.byId.get(regionId) : null;
     }
 
     static isSelected(regionId) {
@@ -212,7 +212,9 @@ class RegionsManager {
     }
 
     static _collapseAll() {
-        this.regionsData.byId.forEach((region, regionId) => this.status.expanded.set(regionId, false));
+        if (this.regionsData) {
+            this.regionsData.byId.forEach((region, regionId) => this.status.expanded.set(regionId, false));
+        }
     }
 
     static isLastVisibleChild(regionId) {

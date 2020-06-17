@@ -1,5 +1,7 @@
 import _ from 'underscore';
 
+import Utils from './Utils.js';
+
 import RegionsManager from './RegionsManager.js'
 
 import CustomFilters from './CustomFilters.js';
@@ -38,9 +40,23 @@ class ViewerManager {
      * Create ViewManager from the specified config and setup underlying OpenSeaDragon and related components
      * @param {object} config - configuration used as blueprint to setup the viewer
      * @param {function} callbackWhenReady - function repeatidly invoked whenever viewer's status has changed
+     * @param {object} history - browser's history
      */
-    static init(config, callbackWhenStatusChanged) {
+    static init(config, callbackWhenStatusChanged, history) {
         this.config = config;
+
+        this.history = history;
+        //some continuous operations must not be recorded immediately in history (e.g. zooming, paning)
+        this.makeHistoryStep = _.debounce(this.makeActualHistoryStep, 500);
+
+        this.history.listen((location, action) => {
+            //reset viewer only when navigating the history with Back and Forth buttons
+            if (action === "POP") {
+                const locParams = this.getParamsFromLocation(location);
+                this.applyChangeFromHistory(locParams);
+            }
+        });
+
         this.signalStatusChanged = callbackWhenStatusChanged;
         this.regionActionner = RegionsManager.getActionner(VIEWER_ACTIONSOURCEID);
         /** viewer specific event bus */
@@ -51,6 +67,7 @@ class ViewerManager {
         const initLayerDisplaySettings = {};
         var i = 0;
         $.each(that.config.data, function (key, value) {
+            //FIXME should use another method than name to identify tracer signal layer
             const isTracer = value.metadata.includes("nn_tracer");
             initLayerDisplaySettings[key] = {
                 key: key,
@@ -58,7 +75,6 @@ class ViewerManager {
                 opacity: parseInt(value.opacity),
                 name: value.metadata,
                 index: i++,
-                //FIXME should use another method than name to identify tracer signal layer
                 isTracer: isTracer,
                 enhanceSignal: false,
                 dilation: 0,
@@ -69,6 +85,9 @@ class ViewerManager {
                 gamma: 1,
             };
         });
+
+        //params retrieved from initial location
+        const overridingConf = this.getParamsFromCurrLocation();
 
         /** dynamic state of the viewer */
         this.status = {
@@ -120,7 +139,7 @@ class ViewerManager {
             currentAxis: this.CORONAL,
 
             /** currently selected coronal slice */
-            coronalChosenSlice: this.config.initialSlice,
+            coronalChosenSlice: overridingConf.sliceNum || this.config.initialSlice,
 
             measureModeOn: false,
         }
@@ -128,7 +147,7 @@ class ViewerManager {
         this.viewer = OpenSeadragon({
             id: VIEWER_ID,
             tileSources: this.config.tileSources,
-            initialPage: this.config.initialSlice,
+            initialPage: this.status.coronalChosenSlice,
             minZoomLevel: 0,
             minZoomImageRatio: 0.5,
             maxZoomLevel: 16,
@@ -233,6 +252,9 @@ class ViewerManager {
             const coveredPart = rightPanelWidth / containerSize.x;
             const uncoveredBounds = new OpenSeadragon.Rect(0, 0, 1 + coveredPart + 0.05, 1);
             that.viewer.viewport.fitBounds(uncoveredBounds);
+
+            //restore state according to history provided at init
+            that.applyChangeFromHistory(overridingConf);
         });
 
         //--------------------------------------------------
@@ -309,10 +331,17 @@ class ViewerManager {
         });
 
         this.viewer.addHandler('zoom', (zoomEvent) => {
+            //change must be recorded in browser's history
+            that.makeHistoryStep();
+
             //some filter might need to be adjusted after zoom changed
             that.adjustFiltersAfterZoom(zoomEvent.zoom);
         });
 
+        this.viewer.addHandler('pan', (panEvent) => {
+            //change must be recorded in browser's history
+            that.makeHistoryStep();
+        });
         //--------------------------------------------------
         this.viewer.addViewerInputHook({
             hooks: [
@@ -815,7 +844,12 @@ class ViewerManager {
                     that.centerOnRegions(regionsToCenterOn);
                 });
             }
-            this.viewer.goToPage(this.config.coronalFirstIndex + this.status.coronalChosenSlice);
+            const sliceNum = this.config.coronalFirstIndex + this.status.coronalChosenSlice;
+            this.viewer.goToPage(sliceNum);
+
+            //change must be recorded (immediately) in browser's history
+            this.makeActualHistoryStep({ s: sliceNum, a: CORONAL });
+
             this.signalStatusChanged(this.status);
         }
     }
@@ -1192,19 +1226,79 @@ class ViewerManager {
         return this.status && this.status.measureModeOn;
     }
 
-    static areAllFullyLoaded() {
-        var tiledImage;
-        var count = this.viewer.world.getItemCount();
-        for (var i = 0; i < count; i++) {
-            tiledImage = this.viewer.world.getItemAt(i);
-            if (!tiledImage.getFullyLoaded()) {
-                return false;
-            }
+
+    //record current viewer state in browser history
+    static makeActualHistoryStep(explicitParams) {
+        let stepParams;
+        //explicitely specified params override live values
+        if (explicitParams) {
+            stepParams = explicitParams;
+        } else {
+            //get live values (Beware, OSD must not be transitioning)
+            const imageZoom = this.viewer.viewport.viewportToImageZoom(this.viewer.viewport.getZoom());
+            const center = this.viewer.viewport.viewportToImageCoordinates(this.viewer.viewport.getCenter());
+            const sliceNum = this.config.coronalFirstIndex + this.status.coronalChosenSlice;
+
+            stepParams = {
+                z: imageZoom.toFixed(3),
+                x: Math.round(center.x), y: Math.round(center.y),
+                s: sliceNum, a: CORONAL
+            };
         }
-        return true;
+        Utils.pushHistoryStep(this.history, stepParams);
     }
 
+    static getParamsFromCurrLocation() {
+        return this.getParamsFromLocation(this.history.location);
+    }
 
+    /** get params from location and check that they are well-formed  */
+    static getParamsFromLocation(location) {
+        const confParams = {};
+        const confFromPath = Utils.getConfigFromLocation(location);
+        if (confFromPath.s) {
+            const sliceNum = parseInt(confFromPath.s, 10);
+            if (!isNaN(sliceNum)) {
+                if (sliceNum >= 0
+                    && sliceNum <= (this.config.coronalSlideCount - 1)) {
+                    confParams.sliceNum = sliceNum;
+                }
+            }
+        }
+        if (confFromPath.z) {
+            const imageZoom = Number(confFromPath.z);
+            if (!isNaN(imageZoom)) {
+                if (imageZoom >= 0.036 && imageZoom <= 1.557) {
+                    confParams.imageZoom = imageZoom;
+                }
+            }
+        }
+        if (confFromPath.x && confFromPath.y) {
+            const x = parseInt(confFromPath.x, 10);
+            const y = parseInt(confFromPath.y, 10);
+            if (!isNaN(x) && !isNaN(y)) {
+                if (x >= 0 && y >= 0) {
+                    confParams.center = new OpenSeadragon.Point(x, y);
+                }
+            }
+        }
+        return confParams;
+    }
+
+    static applyChangeFromHistory(params) {
+        if (params.imageZoom) {
+            const viewportZoom = this.viewer.viewport.imageToViewportZoom(params.imageZoom);
+            this.viewer.viewport.zoomTo(viewportZoom);
+        }
+        if (params.center) {
+            const refPoint = this.viewer.viewport.imageToViewportCoordinates(params.center);
+            this.viewer.viewport.panTo(refPoint);
+        }
+        if (params.sliceNum && params.sliceNum != (this.config.coronalFirstIndex + this.status.coronalChosenSlice)) {
+            this.status.coronalChosenSlice = params.sliceNum - this.config.coronalFirstIndex;
+            this.viewer.goToPage(params.sliceNum);
+        }
+    }
 }
 
 export default ViewerManager;

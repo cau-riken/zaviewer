@@ -1,5 +1,7 @@
 import React from 'react';
 
+import { createBrowserHistory } from 'history';
+
 import SplitPane from 'react-split-pane';
 
 
@@ -14,9 +16,11 @@ class App extends React.Component {
 
   constructor(props) {
     super(props);
-    this.state = { configId: undefined, config: undefined, isTreeExpanded: false, splitSize: 350 };
+    this.state = { configId: undefined, config: undefined, isRegionPanelExpanded: false, splitSize: 350 };
     this.handleClick = this.handleClick.bind(this);
     this.onSplitSizeChange = this.onSplitSizeChange.bind(this);
+
+    this.history = createBrowserHistory();
   }
 
   render() {
@@ -25,7 +29,7 @@ class App extends React.Component {
         <SplitPane
           split="vertical"
           defaultSize={350}
-          size={this.state.isTreeExpanded ? this.state.splitSize : 0}
+          size={this.state.isRegionPanelExpanded ? this.state.splitSize : 0}
           onChange={this.onSplitSizeChange}
         >
           <div className="secondaryRegionTreePane" style={{ height: "100%", overflow: "hidden" }}>
@@ -35,13 +39,14 @@ class App extends React.Component {
           <div className="primaryViewerPane" style={{ height: "100%" }}>
             <DrawerHandle
               collapseDirection={DrawerHandle.LEFT}
-              isExpanded={this.state.isTreeExpanded}
+              isExpanded={this.state.isRegionPanelExpanded}
               onClick={this.handleClick}
             />
-            <div style={{ position: "absolute", left: 13, width:"calc( 100% - 13px )", height: "100%" }}>
+            <div style={{ position: "absolute", left: 13, width: "calc( 100% - 13px )", height: "100%" }}>
               <ViewerComposed
                 config={this.state.config}
                 regionsStatus={this.state.regionsStatus}
+                history={this.history}
               />
             </div>
           </div>
@@ -87,11 +92,11 @@ class App extends React.Component {
   }
 
   handleClick() {
-    this.setState(state => ({ isTreeExpanded: !state.isTreeExpanded }));
+    this.setState(state => ({ isRegionPanelExpanded: !state.isRegionPanelExpanded }));
   }
 
   onSplitSizeChange(size) {
-    if (this.state.isTreeExpanded) {
+    if (this.state.isRegionPanelExpanded) {
       this.setState(state => ({ splitSize: size }))
     }
   }

@@ -46,7 +46,8 @@ class ViewerComposed extends React.Component {
         if (this.props.config && !this.initialized) {
             ViewerManager.init(this.props.config, (osdstatus) => {
                 this.setState(state => ({ ...osdstatus }));
-            });
+            },
+                this.props.history);
             this.initialized = true;
         }
 
