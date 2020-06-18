@@ -18,23 +18,6 @@
 	border-bottom: 1px solid rgba(255, 255, 255, 0.4);
 }
 
-/* Hide button */
-.hidebtn {
-	margin: 0;
-	display: block;
-	min-height: 36px;
-}
-.hidebtn button {
-	margin: 10px 0 8px 10px;
-	font-size: 13px;
-	color: #333;
-	width: 130px;
-	cursor: pointer;
-}
-.hidebtn #editbtn {
-	width: 150px;
-	margin-left: 4px;
-}
 
 /* Set of data name +  slider + transparency BOX */
 .dataset:first-child {
