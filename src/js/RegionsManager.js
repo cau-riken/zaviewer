@@ -179,7 +179,7 @@ class RegionsManager {
 
     static _unSelect(actionGroupId, regionId) {
         this.status.selected.delete(regionId);
-        this.status.lastSelected = null;
+        this.status.lastSelected = Array.from(this.status.selected).pop();
         this._setLastActionSource(actionGroupId);
         this.signalListeners();
     }

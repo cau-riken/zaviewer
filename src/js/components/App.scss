@@ -1,3 +1,6 @@
+@import "./variables";
+
+
 body {
 	margin: 0;
 	background-color: #000;
@@ -18,7 +21,7 @@ body {
 }
 
 div#zav_logo {
-	height: 50px;
+	height: $zavlogo-height;
 	background-image: url("../img/logo.png");
 	background-repeat: no-repeat;
 	background-position: 6px 12px;

@@ -51,7 +51,6 @@ class RegionItem extends React.Component {
         this.state = { isHovered: false };
 
         this.selectRegionClick = function (event) { this.regionClick(event, false) }.bind(this);
-        this.selectRegionBulletClick = this.selectRegionBulletClick.bind(this);
         this.expandCollapseClick = this.expandCollapseClick.bind(this);
 
         this.regionActionner = RegionsManager.getActionner(TREE_ACTIONSOURCEID);
@@ -73,7 +72,6 @@ class RegionItem extends React.Component {
                     regionsStatus={this.props.regionsStatus}
                     regionId={childId}
                     requestScrollIntoView={this.props.requestScrollIntoView}
-                    requestRegionDetails={this.props.requestRegionDetails}
                 />
             ))
             subregions =
@@ -127,7 +125,6 @@ class RegionItem extends React.Component {
                             //to trigger visually highlighting of region and its descendants 
                             onBulletMouseEnter={(e) => this.setState(state => ({ isHovered: true }))}
                             onBulletMouseLeave={(e) => this.setState(state => ({ isHovered: false }))}
-                            onBulletClick={this.selectRegionBulletClick}
                         />
                     </span>
                 </div>
@@ -148,10 +145,6 @@ class RegionItem extends React.Component {
             this.regionActionner.replaceSelected(this.props.regionId, includeChildren);
         }
 
-    }
-
-    selectRegionBulletClick(event) {
-        this.props.requestRegionDetails(this.props.regionId);
     }
 
     expandCollapseClick(event) {
@@ -246,54 +239,30 @@ class RegionTree extends React.Component {
         super(props);
         this.scrollContainerRef = React.createRef();
 
-        this.state = { showRegionDetail: false, reqRegionId: null };
+        this.state = { showRegionDetail: false };
 
         this.onRequestScrollIntoView = this.onRequestScrollIntoView.bind(this);
-        this.onRequestRegionDetails = this.onRequestRegionDetails.bind(this);
     }
     render() {
         return (
-            <React.Fragment>
-                <div style={{ position: "absolute", top: 0, left: 26 }}>
-                    <Popover
-                        interactionKind={PopoverInteractionKind.CLICK}
-                        position={Position.bottom}
-                        boundary="window"
-
-                        popoverClassName="bp3-popover-content-sizing zav-RegionDetail"
-
-                        isOpen={this.state.showRegionDetail}
-                        onInteraction={(state) => this.handleInteraction(state)}
-                        lazy
-
-                    >
-                        <div>&nbsp;</div>
-                        {this.state.reqRegionId
-                            ? <RegionDetail regionId={this.state.reqRegionId} />
-                            : null
-                        }
-                    </Popover>
-                </div>
-                <div
-                    ref={this.scrollContainerRef}
-                    className="zav-Tree"
-                    style={{ position: "absolute", top: (50 + 34), left: 0, bottom: (20 + 4), right: 0 }}
-                >
-                    <ul className="zav-TreeSubItems">
-                        {this.props.regionsStatus ?
-                            <RegionItem
-                                regionsStatus={this.props.regionsStatus}
-                                regionId={RegionsManager.getRoot()}
-                                lastChild={true}
-                                requestScrollIntoView={this.onRequestScrollIntoView}
-                                requestRegionDetails={this.onRequestRegionDetails}
-                            />
-                            :
-                            null
-                        }
-                    </ul>
-                </div>
-            </React.Fragment>
+            <div
+                ref={this.scrollContainerRef}
+                className="zav-Tree"
+                data-hasselectedregion={this.props.regionsStatus && this.props.regionsStatus.lastSelected!=null}
+            >
+                <ul className="zav-TreeSubItems">
+                    {this.props.regionsStatus ?
+                        <RegionItem
+                            regionsStatus={this.props.regionsStatus}
+                            regionId={RegionsManager.getRoot()}
+                            lastChild={true}
+                            requestScrollIntoView={this.onRequestScrollIntoView}
+                        />
+                        :
+                        null
+                    }
+                </ul>
+            </div>
         );
     }
 
@@ -301,13 +270,6 @@ class RegionTree extends React.Component {
         this.setState({ showRegionDetail: nextOpenState });
     }
 
-    onRequestRegionDetails(regionId) {
-        if (regionId === this.state.reqRegionId) {
-            this.setState({ reqRegionId: null, showRegionDetail: false });
-        } else {
-            this.setState({ reqRegionId: regionId, showRegionDetail: true });
-        }
-    }
 
     onRequestScrollIntoView(itemRect) {
         const itemHeight = 22;
@@ -458,6 +420,27 @@ class RegionTreeStatus extends React.Component {
 
 }
 
+class RegionDetailPane extends React.Component {
+
+    constructor(props) {
+        super(props);
+    }
+
+    render() {
+        return (
+            <div className="zav-RegionDetailPane">
+                {
+                    this.props.regionsStatus && this.props.regionsStatus.lastSelected
+                        ?
+                        <RegionDetail regionId={this.props.regionsStatus.lastSelected} />
+                        : null
+
+                }
+            </div >
+        );
+    }
+}
+
 class RegionTreePanel extends React.Component {
 
     constructor(props) {
@@ -470,6 +453,7 @@ class RegionTreePanel extends React.Component {
                 <div style={{ height: "100%", width: "100%", overflow: "hidden", backgroundColor: "#e1e1e1" }}>
                     <RegionTreeSearch regionsStatus={this.props.regionsStatus} />
                     <RegionTree regionsStatus={this.props.regionsStatus} />
+                    <RegionDetailPane regionsStatus={this.props.regionsStatus} />
                     <RegionTreeStatus regionsStatus={this.props.regionsStatus} />
                 </div>
             </div>
