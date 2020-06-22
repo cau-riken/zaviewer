@@ -5,7 +5,7 @@ $region-expand-handle-size: $region-bullet-size;
 $region-searchbox-height: 34px;
 $region-treestatus-height: 20px;
 $region-detailpane-height: 150px;
-					
+
 .zav-Tree {
 	position: absolute;
 	top: $zavlogo-height + $region-searchbox-height;
@@ -210,6 +210,15 @@ $region-detailpane-height: 150px;
 .zav-RegionDetailContent {
 	background-color: #e1e1e1;
 	padding: 8px;
+}
+
+.zav-RegionDetailGroupings {
+	padding: 2px 4px;
+	font-size: 13px;
+}
+
+.zav-RegionGrpngsTarget {
+	margin-left: 12px;
 }
 
 .zav-RegionToaster .bp3-toast {

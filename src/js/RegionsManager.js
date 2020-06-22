@@ -32,6 +32,9 @@ class RegionsManager {
             /** list of regions present in current slice */
             currentSliceRegions: [],
 
+            /** grouping scheme name which is currently highlighted */
+            highlightedGrouping: null,
+
             /** currently highlighted regions (i.e. result of text search) */
             highlighted: new Set(),
             /** parents region of highlighted regions, necessary to display tree */
@@ -48,7 +51,7 @@ class RegionsManager {
 
         //load regions related data
         $.ajax({
-            url: Utils.makePath(config.PUBLISH_PATH, config.treeUrlPath, "regionTree_"+ config.paramId +".json"),
+            url: Utils.makePath(config.PUBLISH_PATH, config.treeUrlPath, "regionTreeGroup_" + config.paramId + ".json"),
             type: "POST",
             async: true,
             dataType: 'json',
@@ -64,16 +67,22 @@ class RegionsManager {
     static prepareData(data) {
 
         this.regionsData = {
-            byId: new Map(data.map(r => [r.abb, r])),
+            regionById: new Map(data.regions.map(r => [r.abb, r])),
 
-            root: data.find(r => null === r.parent)['abb'],
+            root: data.regions.find(r => null === r.parent)['abb'],
 
+            groupsById: new Map(Object.entries(data.groupings).map(
+                ([k, v], i) => [k, {
+                    name: v.name,
+                    groups: new Map(v.groups.map(g => [g.id, g.name]))
+                }]
+            )),
         }
         this.regionsData.lineage = {}
 
         /** add trail of ancestors to each region */
         const addTrailToRegion = function (regionId, trail) {
-            const currRegion = this.regionsData.byId.get(regionId)
+            const currRegion = this.regionsData.regionById.get(regionId)
             currRegion.trail = Array.from(trail);
             if (currRegion.children && currRegion.children.length) {
                 trail.push(regionId);
@@ -84,7 +93,7 @@ class RegionsManager {
         }.bind(this);
 
 
-        this.regionsData.byId.forEach((region) => {
+        this.regionsData.regionById.forEach((region) => {
             region.nameupper = region.name.toUpperCase();
             region.abbupper = region.abb.toUpperCase();
         });
@@ -132,13 +141,25 @@ class RegionsManager {
         return this.getLastActionSource() && this.getLastActionSource() != actionGroupId;
     }
 
+    static getGroupings() {
+        return this.regionsData ? this.regionsData.groupsById : null;
+    }
+
+    static getGrouping(groupingScheme) {
+        return this.regionsData && this.regionsData.groupsById.has(groupingScheme) ? this.regionsData.groupsById.get(groupingScheme) : null;
+    }
+
+
+    static getGroupName(groupingScheme, groupId) {
+        return this.regionsData && this.regionsData.groupsById.has(groupingScheme) && this.regionsData.groupsById.get(groupingScheme).groups ? this.regionsData.groupsById.get(groupingScheme).groups.get(groupId) : null;
+    }
 
     static getRoot() {
         return this.regionsData ? this.regionsData.root : null;
     }
 
     static getRegion(regionId) {
-        return this.regionsData ? this.regionsData.byId.get(regionId) : null;
+        return this.regionsData ? this.regionsData.regionById.get(regionId) : null;
     }
 
     static isSelected(regionId) {
@@ -213,7 +234,7 @@ class RegionsManager {
 
     static _collapseAll() {
         if (this.regionsData) {
-            this.regionsData.byId.forEach((region, regionId) => this.status.expanded.set(regionId, false));
+            this.regionsData.regionById.forEach((region, regionId) => this.status.expanded.set(regionId, false));
         }
     }
 
@@ -284,7 +305,7 @@ class RegionsManager {
                 const patternupper = pattern.toUpperCase();
 
                 /** highlight regions that match the pattern */
-                this.regionsData.byId.forEach((region, regionId) => {
+                this.regionsData.regionById.forEach((region, regionId) => {
                     if (region.nameupper.includes(patternupper) || region.abbupper.includes(patternupper)) {
                         this.status.highlighted.add(region.abb);
                     }
@@ -292,7 +313,7 @@ class RegionsManager {
                 /** filtered region needed in the tree to display the highlighted ones */
                 this.status.highlighted.forEach(highId => {
                     //TODO optimize: iterate from leaf to root, stop as soon as a region is already filtered cos its ancestor are also
-                    this.regionsData.byId.get(highId).trail.forEach(regionId => {
+                    this.regionsData.regionById.get(highId).trail.forEach(regionId => {
                         if (!this.status.highlighted.has(regionId)) {
                             this.status.filtered.add(regionId);
                         }
@@ -301,12 +322,35 @@ class RegionsManager {
                 });
 
                 /** reset all node to expanded */
-                this.regionsData.byId.forEach((region, regionId) => this.status.expanded.set(regionId, true));
+                this.regionsData.regionById.forEach((region, regionId) => this.status.expanded.set(regionId, true));
 
                 this.isHighlightingOn = true;
             }
 
             this._setLastActionSource(actionGroupId);
+            this.signalListeners();
+        }
+    }
+
+    static getHighlightingGrouping() {
+        return this.status ? this.status.highlightedGrouping : null;
+    }
+
+    static _higlightByGrouping(actionGroupId, scheme, active) {
+        if (scheme && active) {
+            this._unlockHighlighting();
+            this.status.highlightedGrouping = scheme;
+            const regionInGrouping = [];
+            this.regionsData.regionById.forEach((region, regionId) => {
+                if (region.groups && region.groups[scheme]) {
+                    regionInGrouping.push(region.abb);
+                }
+            });
+            this._higlightRegionSet(actionGroupId, regionInGrouping, true);
+        } else {
+            this._unlockHighlighting();
+            this.status.highlightedGrouping = null;
+            this._clearHighlighting(actionGroupId);
             this.signalListeners();
         }
     }
@@ -340,7 +384,7 @@ class RegionsManager {
         }
     }
 
-    static _higlightRegionSet(actionGroupId, regions) {
+    static _higlightRegionSet(actionGroupId, regions, andLock) {
         if (!this.isHighlightingLocked()) {
 
             this._clearHighlighting(actionGroupId);
@@ -348,7 +392,7 @@ class RegionsManager {
             if (regions.length) {
 
                 regions.forEach(highId => {
-                    const region = this.regionsData.byId.get(highId);
+                    const region = this.regionsData.regionById.get(highId);
                     if (region) {
                         /** add specified regions to highlighted set */
                         this.status.highlighted.add(highId);
@@ -364,12 +408,15 @@ class RegionsManager {
 
 
                 /** reset all node to expanded */
-                this.regionsData.byId.forEach((region, regionId) => this.status.expanded.set(regionId, true));
+                this.regionsData.regionById.forEach((region, regionId) => this.status.expanded.set(regionId, true));
 
                 this.isHighlightingOn = true;
             }
 
             this._setLastActionSource(actionGroupId);
+            if (andLock) {
+                this._lockHighlighting();
+            }
             this.signalListeners();
         }
     }
@@ -417,9 +464,13 @@ class Actionner {
     }
 
     higlightByName(pattern) {
-        // even though actual process is debounced, change of Actionner must be recorded immediately that
+        // even though actual process is debounced, change of Actionner must be recorded immediately
         RegionsManager._setLastActionSource(this.actionGroupId);
         this.debouncedHiglightByName(this.actionGroupId, pattern);
+    }
+
+    higlightByGrouping(scheme, active) {
+        RegionsManager._higlightByGrouping(this.actionGroupId, scheme, active);
     }
 
     toggleAutoHighlighting() {

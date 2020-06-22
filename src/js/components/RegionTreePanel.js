@@ -1,5 +1,7 @@
 import React from 'react';
 
+import _ from 'underscore';
+
 import {
     AnchorButton,
     FormGroup,
@@ -162,15 +164,57 @@ class RegionDetail extends React.Component {
 
     render() {
         const region = RegionsManager.getRegion(this.props.regionId);
-        const crumbs = []
-        region.trail.forEach(rId => {
 
-            crumbs.push(<Icon style={{ color: "white" }} icon="slash" />);
-            crumbs.push(<span style={{ fontWeight: "bold" }}>{rId}</span>);
-        });
+        let grouping = null;
+        if (region.groups) {
+            const groupingInfo = [];
+            //Note: groups id are unique and can be found in several grouping schemes 
+            _.chain(region.groups)
+                .pairs()
+                .groupBy(sgPair => sgPair[1])
+                .each((sgPairs, groupid) => {
+                    const partOf = sgPairs.map(sgPair => RegionsManager.getGrouping(sgPair[0]).name).join(", ");
+                    const firstGrouping = sgPairs[0][0];
+                    groupingInfo.push(
+                        <div key={groupid} className="zav-RegionDetailGroupings">
+                            <div>
+                                <Icon icon="search-around"/>
+                                <span style={{ fontStyle: "italic", fontSize: 12, marginLeft: 16 }}>part of </span>
+                                <b>{RegionsManager.getGroupName(firstGrouping, groupid)}</b>
+                            </div>
+                            {"in grouping" + (sgPairs.length > 1 ? "s" : "") + " :"}
+                            <ul>
+                                {sgPairs.map(sgPair => <li>{RegionsManager.getGrouping(sgPair[0]).name}</li>)}
+                            </ul>
+                        </div>
+                    );
+                })
+            grouping = groupingInfo.length
+            ?
+                <Popover
+                interactionKind={PopoverInteractionKind.HOVER}
+                popoverClassName="bp3-popover-content-sizing"
+                position={Position.RIGHT}
+                boundary="window"
+                >
+                    <Icon icon="search-around"  iconSize={12} className="zav-RegionGrpngsTarget"/>
+                    <div>{groupingInfo}</div>
+                </Popover>
+                :
+                null
+                ;
+            }
 
-        const trail = <div style={{ fontSize: 10 }}>{crumbs}</div>;
-        return (
+            const crumbs = []
+            region.trail.forEach(rId => {
+    
+                crumbs.push(<Icon style={{ color: "white" }} icon="slash" />);
+                crumbs.push(<span style={{ fontWeight: "bold" }}>{rId}</span>);
+            });
+    
+            const trail = <div style={{ fontSize: 10 }}>{crumbs}{grouping}</div>;
+
+            return (
             <div className="zav-RegionDetailContent">
                 {trail}
                 <div style={{ marginTop: 8 }}>
@@ -248,7 +292,7 @@ class RegionTree extends React.Component {
             <div
                 ref={this.scrollContainerRef}
                 className="zav-Tree"
-                data-hasselectedregion={this.props.regionsStatus && this.props.regionsStatus.lastSelected!=null}
+                data-hasselectedregion={this.props.regionsStatus && this.props.regionsStatus.lastSelected != null}
             >
                 <ul className="zav-TreeSubItems">
                     {this.props.regionsStatus ?
@@ -335,6 +379,24 @@ class RegionTreeSearch extends React.Component {
     }
 
     render() {
+
+        const groupingSwitches = [];
+        const that = this;
+        if (RegionsManager.getGroupings()) {
+            RegionsManager.getGroupings().forEach(
+                (grouping, groupingId) => {
+                    groupingSwitches.push(
+                        <Switch
+                            label={<span>List only the regions present in "<span style={{ fontStyle: "italic" }}>{grouping.name}</span>"</span>}
+                            onChange={that.onOnlyGroupingChange.bind(that, groupingId)}
+                            checked={RegionsManager.getHighlightingGrouping() === groupingId}
+                            disabled={RegionsManager.isAutoHighlightingOn() || (RegionsManager.getHighlightingGrouping() != null && RegionsManager.getHighlightingGrouping() != groupingId)}
+                        />
+                    );
+                }
+            );
+        }
+
         return (
             <div className="zav-SearchBox">
                 <div style={{ marginLeft: 5, flexGrow: 1 }}>
@@ -342,7 +404,7 @@ class RegionTreeSearch extends React.Component {
                         <InputGroup
 
                             placeholder=" Region search "
-                            disabled={RegionsManager.isAutoHighlightingOn()}
+                            disabled={RegionsManager.isHighlightingLocked()}
                             inline
                             value={this.state.pattern}
                             onChange={this.onPatternChange}
@@ -351,7 +413,7 @@ class RegionTreeSearch extends React.Component {
                                     icon="eraser"
                                     minimal
                                     onClick={this.searchPattern.bind(this, "")}
-                                    disabled={RegionsManager.isAutoHighlightingOn()}
+                                    disabled={RegionsManager.isHighlightingLocked()}
                                 />}
                         />
                     </FormGroup>
@@ -369,7 +431,9 @@ class RegionTreeSearch extends React.Component {
                             label="List only the regions present in current slice"
                             onChange={this.onOnlySlicesChange}
                             checked={RegionsManager.isAutoHighlightingOn()}
+                            disabled={RegionsManager.getHighlightingGrouping()}
                         />
+                        {groupingSwitches}
                     </div>
 
                 </Popover>
@@ -388,6 +452,11 @@ class RegionTreeSearch extends React.Component {
 
     onOnlySlicesChange(event) {
         this.regionActionner.toggleAutoHighlighting();
+        this.forceUpdate();
+    }
+
+    onOnlyGroupingChange(scheme, event) {
+        this.regionActionner.higlightByGrouping(scheme, event.target.checked);
         this.forceUpdate();
     }
 
