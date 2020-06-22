@@ -33,7 +33,14 @@ class App extends React.Component {
           onChange={this.onSplitSizeChange}
         >
           <div className="secondaryRegionTreePane" style={{ height: "100%", overflow: "hidden" }}>
-            <div id="zav_logo" />
+            <div id="zav_logoPlaceHolder">
+              <div id="zav_logoContainer" draggable="false">
+                <a id="bm_logo" href="https://www.brainminds.riken.jp/"  >
+                  <img src="./assets/img/brain-minds_borderlogo.svg" height={32} />
+                </a>
+                <img id="zav_logo" src="./assets/img/logo.png" height={23} />
+              </div>
+            </div>
             <RegionTreePanel regionsStatus={this.state.regionsStatus} />
           </div>
           <div className="primaryViewerPane" style={{ height: "100%" }}>
