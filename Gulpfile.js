@@ -36,7 +36,7 @@ gulp.task('buildall', gulp.parallel('sass', 'build'), (done) => {
 });
 
 gulp.task('watch', function () {
-    gulp.watch('./src/js/**/*.js', gulp.series('buildall'));
+    gulp.watch(['./src/js/**/*.js', 'src/js/**/*.scss'], gulp.series('buildall'));
 });
 
 
