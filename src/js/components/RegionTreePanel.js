@@ -87,7 +87,9 @@ class RegionItem extends React.Component {
 
         // ensure visibility of last selected region when selection performed via other component (e.g. Viewer)
         if (RegionsManager.getLastSelected() === region.abb &&
-            this.regionActionner.lastActionInitiatedByOther()) {
+            this.regionActionner.lastActionInitiatedByOther()
+            //prevent scrolling if region is hidden due to filtering 
+            && RegionsManager.getHighlightStatus(region.abb)!=="0") {
             setTimeout(() => {
                 //20200518 FF76 : Can't directly use this.treeItemRef.current.scrollIntoView(), because can make above components dissappearing... 
                 this.props.requestScrollIntoView(this.treeItemRef.current.getBoundingClientRect());
