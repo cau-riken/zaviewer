@@ -54,6 +54,7 @@ class RegionItem extends React.Component {
 
         this.selectRegionClick = function (event) { this.regionClick(event, false) }.bind(this);
         this.expandCollapseClick = this.expandCollapseClick.bind(this);
+        this.expandCollapseDblClick = this.expandCollapseDblClick.bind(this);
 
         this.regionActionner = RegionsManager.getActionner(TREE_ACTIONSOURCEID);
     }
@@ -113,6 +114,7 @@ class RegionItem extends React.Component {
                         //append low opacity to specified region color for border 
                         style={{ borderColor: region.color ? region.color + "20" : "#80808024" }}
                         onClick={region.exists ? this.selectRegionClick : null}
+                        onDoubleClick={this.expandCollapseDblClick}
                     >
                         <span
                             className="zav-TreeItemHandle"
@@ -152,6 +154,11 @@ class RegionItem extends React.Component {
     expandCollapseClick(event) {
         event.stopPropagation();
         this.regionActionner.toogleExpanded(this.props.regionId);
+    }
+
+    expandCollapseDblClick(event) {
+        event.stopPropagation();
+        this.regionActionner.toogleExpandedAllFrom(this.props.regionId);
     }
 }
 

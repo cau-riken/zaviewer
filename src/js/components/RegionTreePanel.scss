@@ -85,6 +85,10 @@ $region-detailpane-height: 150px;
 	border-radius: 4px;
 	border-style: solid;
 	border-width: 1px;
+	-webkit-user-select: none; /* Safari・Chrome */
+	-moz-user-select: none; /* Firefox */
+	-ms-user-select: none; /* IE */
+	-o-user-select: none; /* Opera */
 }
 
 .zav-TreeItem[data-exists="false"] > .zav-TreeItemHeader {

@@ -28,7 +28,7 @@ node install
 * build bundles from sources :
 
 ```sh
-gulp buildall
+gulp builproddall
 ```
 
 `Javascript` and `css` bundles are produced in `assets/` subfolder

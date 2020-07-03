@@ -212,16 +212,16 @@ class RegionsManager {
         this.signalListeners();
     }
 
-    static _setExpanded(actionGroupId, regionId, expanded) {
+    static _setExpanded(actionGroupId, regionId, expanded, silent) {
         this.status.expanded.set(regionId, Boolean(expanded));
-        this._setLastActionSource(actionGroupId);
-        this.signalListeners();
+        if (!silent) {
+            this._setLastActionSource(actionGroupId);
+            this.signalListeners();
+        }
     }
 
     static _toogleExpanded(actionGroupId, regionId) {
-        this.status.expanded.set(regionId, !this.status.expanded.get(regionId));
-        this._setLastActionSource(actionGroupId);
-        this.signalListeners();
+        this._setExpanded(actionGroupId, regionId, !this.isExpanded(regionId));
     }
 
     static isExpanded(regionId) {
@@ -230,6 +230,21 @@ class RegionsManager {
 
     static _expandFromRootTo(regionId) {
         this.getRegion(regionId).trail.forEach(ancestorId => this.status.expanded.set(ancestorId, true));
+    }
+
+    static _expandCollapseAllFrom(actionGroupId, regionId, expanded, silent) {
+        const childrenRegions = this.getRegion(regionId).children;
+        if (childrenRegions) {
+            const that = this;
+            childrenRegions.forEach(
+                childId => that._expandCollapseAllFrom(actionGroupId, childId, expanded, true)
+            );
+        }
+        this._setExpanded(actionGroupId, regionId, expanded, true);
+        if (!silent) {
+            this._setLastActionSource(actionGroupId);
+            this.signalListeners();
+        }
     }
 
     static _collapseAll() {
@@ -453,6 +468,14 @@ class Actionner {
 
     toogleExpanded(regionId) {
         RegionsManager._toogleExpanded(this.actionGroupId, regionId);
+    }
+
+    toogleExpandedAllFrom(regionId) {
+        RegionsManager._expandCollapseAllFrom(this.actionGroupId, regionId, !RegionsManager.isExpanded(regionId));
+    }
+
+    expandCollapseAllFrom(regionId, expanded) {
+        RegionsManager._expandCollapseAllFrom(this.actionGroupId, regionId, expanded);
     }
 
     lockHighlighting() {
