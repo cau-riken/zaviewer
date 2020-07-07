@@ -89,8 +89,18 @@ class ViewerManager {
         //params retrieved from initial location
         const overridingConf = this.getParamsFromCurrLocation();
 
+        //compute tile sources for every slice of first layer 
+        const tileSources = [];
+        if (this.config.data) {
+            const flayer = _.findWhere(this.config.layers, { index: 0 });
+            for (var j = 0; j < this.config.coronalSlideCount; j++) {
+                tileSources.push(this.getTileSourceDef(j, flayer.key, flayer.ext) );
+            }
+        }
+
         /** dynamic state of the viewer */
         this.status = {
+            tileSources : tileSources,
 
             /** Raphael array-like object used to operate on region delineations */
             set: undefined,
@@ -146,7 +156,7 @@ class ViewerManager {
 
         this.viewer = OpenSeadragon({
             id: VIEWER_ID,
-            tileSources: this.config.tileSources,
+            tileSources: this.status.tileSources,
             initialPage: this.status.coronalChosenSlice,
             minZoomLevel: 0,
             minZoomImageRatio: 0.5,
@@ -936,31 +946,21 @@ class ViewerManager {
     }
 
 
+    static getTileSourceDef(slideNum, key, ext) {
+        return this.config.IIPSERVER_PATH + key + "/" + slideNum + ext + this.config.TILE_EXTENSION;
+    }
+
+    /**
+     * Called once 1rst layer is opened to add other layers
+     */
     static addLayer(key, name, ext) {
         //load tracer signal layer with opacity set to 0 to avoid seeing it before filter is applied
         const isTracer = this.status.layerDisplaySettings[key].isTracer;
         const loadingOpacity = isTracer ? 0.01 : this.getLayerOpacity(key);
-
         var options = {
-            /*tileSource: {
-                //these must be set correctly otherwise there will be incorrect sizing!
-                height: dzLayerWidth,
-                width: dzLayerHeight,
-                tileSize: 256,
-                overlap: 1,
-                //minLevel: 0,
-                //maxLevel: 10, //maxLevel should correspond to the depth of the number of folders in the dzi subdirectory
-                getTileUrl: function( level, x, y ){
-                    var currentpage = viewer.currentPage() - coronalFirstIndex;
-                    //return dataRootPath + "/" + layerName + "/coronal/" + layerName + "_Coronal_"+ currentpage +"_files/" + level + "/" + x + "_" + y + ".jpg";
-                    return dataRootPath + "/" + layerName + "/coronal/" + currentpage +"_files/" + level + "/" + x + "_" + y + ".jpg";
-                }
-            },*/
-            /*tileSource:"http://freasy.biz:8000/iipsrv/iipsrv.fcgi?IIIF=/0002.tif/info.json",*/
-            //tileSource:dataRootPath + "/" + layerName + "/coronal/" + this.viewer.currentPage() +".dzi",
-            tileSource: this.config.IIPSERVER_PATH + key + "/" + this.viewer.currentPage() + ext + this.config.TILE_EXTENSION,// +  TILE_EXTENSION,
+            
+            tileSource: this.getTileSourceDef(this.viewer.currentPage(), key, ext),
 
-            //
             opacity: loadingOpacity,
             //force loading tracer signal whose opacity has been set to 0 to avoid display glitches
             preload: isTracer && this.getLayerOpacity(key) != 0,

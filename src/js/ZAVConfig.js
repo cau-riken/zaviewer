@@ -57,7 +57,6 @@ class ZAVConfig {
             dzLayerWidth: 1000,
             dzLayerHeight: 1000,
 
-            tileSources: [],
             layers: {},
 
             THUMB_EXTENSION: "/full/250,/0/default.jpg", //".ptif/full/250,/0/default.jpg";
@@ -189,16 +188,10 @@ class ZAVConfig {
                                             that.config.infoText = "";
                                         }
                                     });
-
-                                    for (var j = 0; j < that.config.coronalSlideCount; j++) {
-                                        //that.config.tileSources.push(dataRootPath + "/" + key + "/coronal/" + key +"_Coronal_" + j +".dzi");
-                                        that.config.tileSources.push(that.config.IIPSERVER_PATH + key + "/" + j + "." + value.extension + that.config.TILE_EXTENSION);
-                                        //that.config.tileSources.push("http://210.230.211.213/iipsrv/iipsrv.fcgi?IIIF=/group3/ptiffs/red/" + j + ".ptif/info.json");
-                                    }
                                 }
                                 //dataset[key] = value.metadata;
                                 //datasetIndex[key] = i++;
-                                that.config.layers[key] = { "name": value.metadata, "ext": "." + value.extension, "index": i++ };
+                                that.config.layers[key] = { "name": value.metadata, "ext": "." + value.extension, "index": i++, "key": key, };
                             });
 
                         }
