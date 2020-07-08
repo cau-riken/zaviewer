@@ -90,17 +90,32 @@ class QuickActionButtons extends React.Component {
                             lazy
                         >
                             <AnchorButton icon="multi-select" small />
-                            <Slider
-                                className="zav-Slider zav-QActSliceSlider"
-                                min={0}
-                                max={this.props.config.coronalSlideCount - 1}
-                                stepSize={1}
-                                onChange={this.onGoToSlice}
-                                value={this.props.coronalChosenSlice}
-                                showTrackFill={false}
-                                labelStepSize={this.props.config.coronalSlideCount - 1}
-                                labelRenderer={(value) => value * this.props.config.coronalSliceStep}
-                            />
+
+                            <div>
+                                <Icon
+                                    icon="chevron-left"
+                                    title="go to previous slice"
+                                    style={{ paddingRight: 10, verticalAlign: "top" }}
+                                    onClick={this.onShiftToSlice.bind(this, -1)}
+                                />
+                                <Slider
+                                    className="zav-Slider zav-QActSliceSlider"
+                                    min={0}
+                                    max={this.props.config.coronalSlideCount - 1}
+                                    stepSize={1}
+                                    onChange={this.onGoToSlice}
+                                    value={this.props.coronalChosenSlice}
+                                    showTrackFill={false}
+                                    labelStepSize={this.props.config.coronalSlideCount - 1}
+                                    labelRenderer={(value) => value * this.props.config.coronalSliceStep}
+                                />
+                                <Icon
+                                    icon="chevron-right"
+                                    title="go to next slice"
+                                    style={{ paddingLeft: 10, verticalAlign: "top" }}
+                                    onClick={this.onShiftToSlice.bind(this, 1)}
+                                />
+                            </div>
                         </Popover>
                     </div>
 
