@@ -55,7 +55,7 @@ class ViewerComposed extends React.Component {
         const datasetInfo = this.props.config && this.props.config.fmTracerSignalImgUrl
             ?
             <Popover
-                interactionKind={PopoverInteractionKind.HOVER}
+                interactionKind={PopoverInteractionKind.CLICK_TARGET_ONLY}
                 position={Position.BOTTOM_RIGHT}
                 boundary="window"
                 popoverClassName="bp3-popover-content-sizing"
