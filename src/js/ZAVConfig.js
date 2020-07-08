@@ -81,8 +81,8 @@ class ZAVConfig {
             data: undefined,
 
             //FIXME retrieve from config stored on server
-            /** url of the tracer signal on the flatmap */
-            fmTracerSignalImgUrl: "https://www.brainminds.riken.jp/injections/" + configId + ".png",
+            /** url of the tracer signal (including injection point) on the flatmap */
+            fmTracerSignalImgUrl: "https://www.brainminds.riken.jp/injections_point/" + configId + ".png",
 
         };
 
