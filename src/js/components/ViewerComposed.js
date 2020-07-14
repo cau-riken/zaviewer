@@ -38,16 +38,17 @@ class ViewerComposed extends React.Component {
     constructor(props) {
         super(props);
         this.initialized = false;
-        this.state = { showRegions: undefined, pos: undefined };
+        this.state = { showRegions: undefined, pos: undefined, initExpanded: false, isToolbarExpanded: false };
     }
 
     render() {
 
         if (this.props.config && !this.initialized) {
-            ViewerManager.init(this.props.config, (osdstatus) => {
-                this.setState(state => ({ ...osdstatus }));
-            },
-                this.props.history);
+            ViewerManager.init(
+                this.props.config,
+                (osdstatus) => { this.setState(state => ({ ...osdstatus })); },
+                this.props.history
+            );
             this.initialized = true;
         }
 
@@ -57,6 +58,7 @@ class ViewerComposed extends React.Component {
             <Popover
                 interactionKind={PopoverInteractionKind.CLICK_TARGET_ONLY}
                 position={Position.BOTTOM_RIGHT}
+                disabled={!this.state.isToolbarExpanded}
                 boundary="window"
                 popoverClassName="bp3-popover-content-sizing"
                 lazy
@@ -110,7 +112,8 @@ class ViewerComposed extends React.Component {
 
                 <Drawer
                     id="ZAV-rightPanel"
-                    initExpanded={false}
+                    initExpanded={this.state.initExpanded}
+                    onExpandCollapse={ this.onToolbarExpandCollapse.bind(this)}
                     quickactions={
                         <QuickActionButtons
                             hasDelineation={this.props.config && this.props.config.hasDelineation}
@@ -166,6 +169,11 @@ class ViewerComposed extends React.Component {
             </div>
         );
     }
+
+    onToolbarExpandCollapse(isExpanded) {
+        this.setState(state => ({ isToolbarExpanded: isExpanded }));
+    }
+
 }
 
 export default ViewerComposed;

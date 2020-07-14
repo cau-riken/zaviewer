@@ -64,6 +64,7 @@ class Drawer extends React.Component {
 
     handleClick() {
         this.setState(state => ({ isExpanded: !state.isExpanded }));
+        this.props.onExpandCollapse &&  this.props.onExpandCollapse(!this.state.isExpanded);
     }
 
 }
