@@ -61,12 +61,11 @@ class ViewerManager {
         this.regionActionner = RegionsManager.getActionner(VIEWER_ACTIONSOURCEID);
         /** viewer specific event bus */
         this.eventSource = new OpenSeadragon.EventSource();
-        const that = this;
 
         //layers initial display values
         const initLayerDisplaySettings = {};
         var i = 0;
-        $.each(that.config.data, function (key, value) {
+        $.each(this.config.data, function (key, value) {
             //FIXME should use another method than name to identify tracer signal layer
             const isTracer = value.metadata.includes("nn_tracer");
             initLayerDisplaySettings[key] = {
@@ -89,18 +88,14 @@ class ViewerManager {
         //params retrieved from initial location
         const overridingConf = this.getParamsFromCurrLocation();
 
-        //compute tile sources for every slice of first layer 
-        const tileSources = [];
-        if (this.config.data) {
-            const flayer = _.findWhere(this.config.layers, { index: 0 });
-            for (var j = 0; j < this.config.coronalSlideCount; j++) {
-                tileSources.push(this.getTileSourceDef(j, flayer.key, flayer.ext) );
-            }
-        }
-
         /** dynamic state of the viewer */
         this.status = {
-            tileSources : tileSources,
+
+            //protocol used with image server 
+            useIIProtocol: overridingConf.protocol && "IIP" === overridingConf.protocol,
+
+            //tile sources for every slice of first layer 
+            tileSources: [],
 
             /** Raphael array-like object used to operate on region delineations */
             set: undefined,
@@ -152,7 +147,94 @@ class ViewerManager {
             coronalChosenSlice: overridingConf.sliceNum || this.config.initialSlice,
 
             measureModeOn: false,
+        };
+
+        this.setupTileSources(overridingConf);
+    }
+
+    static setupTileSources(overridingConf) {
+
+        if (this.config.data) {
+            //Internet Imaging Protocol (IIP)
+            if (this.status.useIIProtocol) {
+                const that = this;
+                const flayer = _.findWhere(this.config.layers, { index: 0 });
+                //prerequisite: all page have same image size and tile composition, so pyramidal infos for first image is reused for all
+                $.ajax({
+                    url: this.getIIIFTileSourceUrl(this.status.coronalChosenSlice, flayer.key, flayer.ext),
+                    async: true,
+                    success: (pyramidalImgInfo) => {
+                        const tileSources = [];
+
+                        that.status.IIPSVR_PATH = that.config.IIPSERVER_PATH.replace("\?IIIF=", "\?FIF=");
+
+                        const tileDef = pyramidalImgInfo.tiles[0];
+
+                        that.status.minLevel = 0;
+                        that.status.maxLevel = tileDef.scaleFactors.length - 1;
+                        that.status.levelScale = {};
+
+                        //at maxLevel, image is at full scale
+                        tileDef.scaleFactors.forEach(
+                            (scaleFact, level, factors) =>
+                                that.status.levelScale[level] = scaleFact / factors[that.status.maxLevel]
+                        );
+
+
+                        that.status.tileWidth = tileDef.width;
+                        that.status.tileHeight = tileDef.height;
+
+                        that.status.imageWidth = pyramidalImgInfo.width;
+                        that.status.imgeHeight = pyramidalImgInfo.height;
+
+
+                        //number of tiles along both axis
+                        that.status.xTilesNumAtMaxLevel = Math.ceil(that.status.imageWidth / that.status.tileWidth);
+                        that.status.yTilesNumAtMaxLevel = Math.ceil(that.status.imgeHeight / that.status.tileHeight);
+
+                        //number of tiles on X axis at each scale level
+                        that.status.xTilesNumAtLevel = {};
+                        for (var level = that.status.minLevel; level <= that.status.maxLevel; level++) {
+                            that.status.xTilesNumAtLevel[level] = Math.ceil(that.status.xTilesNumAtMaxLevel * that.status.levelScale[level]);
+                        }
+
+                        //tile source for 1rst layer of each slices
+                        for (var j = 0; j < that.config.coronalSlideCount; j++) {
+
+                            tileSources.push(
+                                //apply IIP image adjustments on 1rst layer, if any
+                                that.getTileSourceDef(flayer.key, flayer.ext, true)
+                            );
+                        }
+                        that.status.tileSources = tileSources;
+
+                        that.init2ndStage(overridingConf);
+                    }
+
+                });
+
+            } else {
+                //International Image Interoperability Framework (IIIF) protocol (default)
+
+                const tileSources = [];
+                if (this.config.data) {
+                    const flayer = _.findWhere(this.config.layers, { index: 0 });
+                    for (var j = 0; j < this.config.coronalSlideCount; j++) {
+                        tileSources.push(this.getIIIFTileSourceUrl(j, flayer.key, flayer.ext));
+                    }
+                }
+                this.status.tileSources = tileSources;
+
+                this.init2ndStage(overridingConf);
+            }
         }
+
+    }
+
+
+
+    static init2ndStage(overridingConf) {
+        const that = this;
 
         this.viewer = OpenSeadragon({
             id: VIEWER_ID,
@@ -946,9 +1028,49 @@ class ViewerManager {
     }
 
 
-    static getTileSourceDef(slideNum, key, ext) {
+    static getIIIFTileSourceUrl(slideNum, key, ext) {
         return this.config.IIPSERVER_PATH + key + "/" + slideNum + ext + this.config.TILE_EXTENSION;
     }
+
+    /**
+     * compute url to retrieve a specific tile following IIP protocol format 
+     * @param {*} slideNum : slide number
+     * @param {*} key : layer id
+     * @param {*} ext : image file extension
+     * @param {*} level : scale level
+     * @param {*} x : x index of the tile
+     * @param {*} y : y index of the tile
+     */
+    static getIIPTileUrl(slideNum, key, ext, level, x, y, applyIIPadjustment) {
+        const xTilesNum = Math.ceil(this.status.xTilesNumAtMaxLevel * this.status.levelScale[level]);
+        return (
+            this.status.IIPSVR_PATH + key + "/"
+            + slideNum + ext
+            + (applyIIPadjustment && this.status.gamma ? ("&GAM=" + this.status.gamma) : "")
+            + (applyIIPadjustment && this.status.contrast ? ("&CNT=" + this.status.contrast) : "")
+            // + "&WID=" + this.status.tileWidth + "&HEI=" + this.status.tileHeight
+            + "&JTL=" + (level ? level : "0") + "," + (y * xTilesNum + x)
+        );
+    }
+
+    static getTileSourceDef(key, ext, applyIIPadjustment) {
+        if (this.status.useIIProtocol) {
+            return {
+                width: this.status.imageWidth,
+                height: this.status.imgeHeight,
+                tileWidth: this.status.tileWidth,
+                tileHeight: this.status.tileHeight,
+
+                overlap: 1,
+
+                maxLevel: this.status.maxLevel,
+                minLevel: this.status.minLevel,
+                getTileUrl: (level, x, y) => this.getIIPTileUrl(this.viewer.currentPage(), key, ext, level, x, y, applyIIPadjustment)
+            }
+        } else {
+            return this.getIIIFTileSourceUrl(this.viewer.currentPage(), key, ext);
+        }
+    };
 
     /**
      * Called once 1rst layer is opened to add other layers
@@ -958,8 +1080,8 @@ class ViewerManager {
         const isTracer = this.status.layerDisplaySettings[key].isTracer;
         const loadingOpacity = isTracer ? 0.01 : this.getLayerOpacity(key);
         var options = {
-            
-            tileSource: this.getTileSourceDef(this.viewer.currentPage(), key, ext),
+
+            tileSource: this.getTileSourceDef(key, ext),
 
             opacity: loadingOpacity,
             //force loading tracer signal whose opacity has been set to 0 to avoid display glitches
@@ -1258,7 +1380,7 @@ class ViewerManager {
         const confFromPath = Utils.getConfigFromLocation(location);
         if (confFromPath.s) {
             const sliceNum = parseInt(confFromPath.s, 10);
-            if (!isNaN(sliceNum)) {
+            if (!isNaN(sliceNum) && isFinite(sliceNum)) {
                 if (sliceNum >= 0
                     && sliceNum <= (this.config.coronalSlideCount - 1)) {
                     confParams.sliceNum = sliceNum;
@@ -1267,7 +1389,7 @@ class ViewerManager {
         }
         if (confFromPath.z) {
             const imageZoom = Number(confFromPath.z);
-            if (!isNaN(imageZoom)) {
+            if (!isNaN(imageZoom) && isFinite(imageZoom)) {
                 if (imageZoom >= 0.036 && imageZoom <= 1.557) {
                     confParams.imageZoom = imageZoom;
                 }
@@ -1276,9 +1398,28 @@ class ViewerManager {
         if (confFromPath.x && confFromPath.y) {
             const x = parseInt(confFromPath.x, 10);
             const y = parseInt(confFromPath.y, 10);
-            if (!isNaN(x) && !isNaN(y)) {
+            if (!isNaN(x) && !isNaN(y) && isFinite(x) && isFinite(y)) {
                 if (x >= 0 && y >= 0) {
                     confParams.center = new OpenSeadragon.Point(x, y);
+                }
+            }
+        }
+        if (confFromPath.p) {
+            confParams.protocol = confFromPath.p;
+        }
+        if (confFromPath.GAM) {
+            const gamma = Number(confFromPath.GAM);
+            if (!isNaN(gamma) && isFinite(gamma)) {
+                if (gamma >= 0 && gamma <= 5) {
+                    confParams.gamma = gamma;
+                }
+            }
+        }
+        if (confFromPath.CNT) {
+            const contrast = Number(confFromPath.CNT);
+            if (!isNaN(contrast) && isFinite(contrast)) {
+                if (contrast >= 0 && contrast <= 5) {
+                    confParams.contrast = contrast;
                 }
             }
         }
@@ -1297,6 +1438,16 @@ class ViewerManager {
         if (params.sliceNum && params.sliceNum != (this.config.coronalFirstIndex + this.status.coronalChosenSlice)) {
             this.status.coronalChosenSlice = params.sliceNum - this.config.coronalFirstIndex;
             this.viewer.goToPage(params.sliceNum);
+        }
+        if (params.gamma) {
+            this.status.gamma = params.gamma;
+        } else {
+            delete this.status.gamma;
+        }
+        if (params.contrast) {
+            this.status.contrast = params.contrast;
+        } else {
+            delete this.status.contrast;
         }
     }
 }

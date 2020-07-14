@@ -131,7 +131,7 @@ class ZAVConfig {
 
                         //dataRootPath = response.data_root_path;
                         if (response.subview) { that.config.subviewFolderName = response.subview.foldername; }
-                        that.config.coronalSlideCount = response.slide_count;
+                        that.config.coronalSlideCount = parseInt(response.slide_count);
                         //sagittalSlideCount = response.subview.sagittal_slide;
 
 
@@ -158,10 +158,10 @@ class ZAVConfig {
                         that.config.matrix = response.matrix ? response.matrix.split(",") : that.config.matrix;
                         //console.log(matrix);
                         //axialSliceStep = response.axial_slice_step;
-                        that.config.coronalSliceStep = response.slice_step;
+                        that.config.coronalSliceStep = parseInt(response.slice_step);
                         //sagittalSliceStep = response.sagittal_slice_step;
 
-                        that.config.imageSize = response.image_size ? response.image_size : that.config.imageSize;
+                        that.config.imageSize = response.image_size ? parseInt(response.image_size) : that.config.imageSize;
                         that.config.dzWidth = that.config.imageSize;
                         that.config.dzHeight = that.config.imageSize;
                         that.config.dzLayerWidth = that.config.imageSize;
