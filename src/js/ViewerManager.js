@@ -406,8 +406,6 @@ class ViewerManager {
                             //this handler is called anytime the fullyLoaded status changes
                             if (fullyLoadedChangeEvent.fullyLoaded) {
 
-                                //restore opacity once it is fully loaded
-                                that.setLayerOpacity(layer.key);
                                 // apply filter
                                 that.setAllFilters();
 
@@ -1076,17 +1074,8 @@ class ViewerManager {
      * Called once 1rst layer is opened to add other layers
      */
     static addLayer(key, name, ext) {
-        //load tracer signal layer with opacity set to 0 to avoid seeing it before filter is applied
-        const isTracer = this.status.layerDisplaySettings[key].isTracer;
-        const loadingOpacity = isTracer ? 0.01 : this.getLayerOpacity(key);
         var options = {
-
             tileSource: this.getTileSourceDef(key, ext),
-
-            opacity: loadingOpacity,
-            //force loading tracer signal whose opacity has been set to 0 to avoid display glitches
-            preload: isTracer && this.getLayerOpacity(key) != 0,
-
             success: (event) => this.setAllFilters()
         };
 
