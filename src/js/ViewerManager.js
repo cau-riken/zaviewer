@@ -420,6 +420,42 @@ class ViewerManager {
             }
         });
 
+
+        //--------------------------------------------------
+        this.viewer.world.addHandler('add-item', (addItemEvent) => {
+            
+            for (var i = 0; i < that.viewer.world.getItemCount(); i++) {
+                if (that.viewer.world.getItemAt(i) === addItemEvent.item) {
+                    const tiledImage = addItemEvent.item;
+                    //retrieve layer info associated to tiled image source of the event
+                    const layer = _.findWhere(that.status.layerDisplaySettings, { index: i });
+
+                    //signal loading started for current tiledImage
+                    that.eventSource.raiseEvent('zav-layer-loading', { layer: layer.key });
+
+                    //register event handler to track loaded state (loaded state will change after panning & zomming)
+                    tiledImage.addHandler('fully-loaded-change', (fullyLoadedChangeEvent) => {
+                        if (fullyLoadedChangeEvent.fullyLoaded) {
+
+                            that.eventSource.raiseEvent('zav-layer-loaded', { layer: layer.key });
+
+                        } else {
+
+                            that.eventSource.raiseEvent('zav-layer-loading', { layer: layer.key });
+                        }
+                    });
+
+                    //if tiledImage is already loaded by then, event handler might not be called...
+                    if (tiledImage.getFullyLoaded()) {
+                        //... thus, signal loading finished for current tiledImage
+                        that.eventSource.raiseEvent('zav-layer-loaded', { layer: layer.key })
+                    }
+                    break;
+                }
+            }
+
+        });
+
         this.viewer.addHandler('zoom', (zoomEvent) => {
             //change must be recorded in browser's history
             that.makeHistoryStep();
@@ -485,6 +521,15 @@ class ViewerManager {
         this.setMeasureMode(this.status.measureModeOn);
         this.resizeCanvas();
 
+        //--------------------------------------------------
+        this.eventSource.addHandler('zav-layer-loading', (event) => {
+            this.status.layerDisplaySettings[event.layer].loading = true;
+            this.signalStatusChanged(this.status);
+        });
+        this.eventSource.addHandler('zav-layer-loaded', (event) => {
+            this.status.layerDisplaySettings[event.layer].loading = false;
+            this.signalStatusChanged(this.status);
+        });
         //--------------------------------------------------
 
         RegionsManager.addListeners(regionsStatus => {

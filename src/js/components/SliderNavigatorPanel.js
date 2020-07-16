@@ -3,6 +3,7 @@ import React from 'react';
 import _ from 'underscore';
 
 import {
+    ProgressBar,
     Switch
 } from "@blueprintjs/core";
 
@@ -19,14 +20,19 @@ class LayerSlider extends React.Component {
         this.handleClickName = this.handleClickName.bind(this);
     }
     render() {
-        const { layerid, name, opacity, enabled, isTracer, contrast, contrastEnabled, gamma, gammaEnabled, enhanceSignal, dilation } = this.props;
+        const { layerid, name, opacity, enabled, isTracer, contrast, contrastEnabled, gamma, gammaEnabled, enhanceSignal, dilation, loading } = this.props;
 
         return (
             <div
                 style={{ width: 196, marginLeft: 10 }}
             >
 
-                <div>{name}</div>
+                <div>
+                    {name}
+                    <div className="zav-thinProgressBar">
+                        {loading && enabled ? <ProgressBar className="zav-thinProgressBar"/> : null }
+                    </div>
+                </div>
                 <div className="zav-AdjusterItem">
                     <span title="toggle layer's visibility">
                         <Switch
