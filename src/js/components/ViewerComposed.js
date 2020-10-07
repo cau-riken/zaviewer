@@ -19,6 +19,7 @@ import QuickActionButtons from './QuickActionButtons.js';
 
 import ViewerManager from '../ViewerManager.js'
 import RegionsManager from '../RegionsManager.js'
+import ZAVConfig from '../ZAVConfig.js';
 
 
 class TitledCard extends React.Component {
@@ -85,11 +86,17 @@ class ViewerComposed extends React.Component {
             :
             null
             ;
-        const globalHeaderText = (this.props.config ? this.props.config.paramId + " — " : "") + "Global view";
+        const globalHeaderText = (this.props.config && this.props.config.paramId ? this.props.config.paramId + " — " : "") + "Global view";
         const globalHeader = <React.Fragment>{globalHeaderText}{datasetInfo}</React.Fragment>;
 
         const region = this.state.hoveredRegion ? RegionsManager.getRegion(this.state.hoveredRegion) : null;
         const regionName = region ? region.name : "";
+
+        const subviewTitleSuffix = (this.props.config && !this.props.config.hasMultiPlanes)
+            ? (" — " + ZAVConfig.getPlaneLabel(ZAVConfig.getPreferredSubviewForPlane(this.state.activePlane)) + " view")
+            : ""
+            ;
+
         return (
             <div style={{ height: "100%" }}>
                 <div className="zav-StatusBar">
@@ -113,13 +120,14 @@ class ViewerComposed extends React.Component {
                 <Drawer
                     id="ZAV-rightPanel"
                     initExpanded={this.state.initExpanded}
-                    onExpandCollapse={ this.onToolbarExpandCollapse.bind(this)}
+                    onExpandCollapse={this.onToolbarExpandCollapse.bind(this)}
                     quickactions={
                         <QuickActionButtons
                             hasDelineation={this.props.config && this.props.config.hasDelineation}
                             displaySettings={this.state.layerDisplaySettings}
                             showRegions={this.state.showRegions}
-                            coronalChosenSlice={this.state.coronalChosenSlice}
+                            activePlane={this.state.activePlane}
+                            chosenSlice={this.state.chosenSlice}
                             config={this.props.config} />
                     }>
                     <TitledCard header={globalHeader}>
@@ -156,11 +164,11 @@ class ViewerComposed extends React.Component {
                             : null
                     }
 
-                    <TitledCard header={"Slices navigation — Sagittal view"}>
+                    <TitledCard header={"Slices navigation" + subviewTitleSuffix}>
                         <SubViewPanel
-                            coronalChosenSlice={this.state.coronalChosenSlice}
+                            activePlane={this.state.activePlane}
+                            chosenSlice={this.state.chosenSlice}
                             config={this.props.config}
-                            type="sagittal"
                         />
                     </TitledCard>
 

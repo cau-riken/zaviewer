@@ -3,14 +3,13 @@ import _ from 'underscore';
 import Utils from './Utils.js';
 
 import RegionsManager from './RegionsManager.js'
+import ZAVConfig from './ZAVConfig.js';
 
 import CustomFilters from './CustomFilters.js';
 
 export const VIEWER_ID = "openseadragon1";
 export const NAVIGATOR_ID = "navigatorDiv";
-export const AXIAL = 0;
-export const CORONAL = 1;
-export const SAGITTAL = 2;
+
 
 const VIEWER_ACTIONSOURCEID = 'VIEWER';
 const BACKGROUND_PATHID = 'background';
@@ -26,15 +25,6 @@ class ViewerManager {
         return NAVIGATOR_ID;
     }
 
-    static get AXIAL() {
-        return AXIAL;
-    }
-    static get CORONAL() {
-        return CORONAL;
-    }
-    static get SAGITTAL() {
-        return SAGITTAL;
-    }
 
     /**
      * Create ViewManager from the specified config and setup underlying OpenSeaDragon and related components
@@ -71,7 +61,7 @@ class ViewerManager {
             initLayerDisplaySettings[key] = {
                 key: key,
                 enabled: true,
-                opacity: parseInt(value.opacity),
+                opacity: value.opacity ? parseInt(value.opacity) : 100,
                 name: value.metadata,
                 index: i++,
                 isTracer: isTracer,
@@ -141,92 +131,145 @@ class ViewerManager {
             hoveredRegion: null,
             hoveredRegionSide: null,
 
-            currentAxis: this.CORONAL,
+            /** currently displayed plane */
+            activePlane: overridingConf.activePlane || this.config.firstActivePlane,
 
-            /** currently selected coronal slice */
-            coronalChosenSlice: overridingConf.sliceNum || this.config.initialSlice,
+            /** currently displayed slice on active plane */
+            chosenSlice: undefined,
+
+            /** currently selected slice for each plane */
+            axialChosenSlice: (overridingConf.sliceNum && overridingConf.activePlane === ZAVConfig.AXIAL)
+                ? overridingConf.sliceNum
+                : this.config.axialChosenSlice,
+
+            coronalChosenSlice: (overridingConf.sliceNum && overridingConf.activePlane === ZAVConfig.CORONAL)
+                ? overridingConf.sliceNum
+                : this.config.coronalChosenSlice,
+
+            sagittalChosenSlice: (overridingConf.sliceNum && overridingConf.activePlane === ZAVConfig.SAGITTAL)
+                ? overridingConf.sliceNum
+                : this.config.sagittalChosenSlice,
 
             measureModeOn: false,
         };
+
+        this.status.chosenSlice = this.getCurrentPlaneChosenSlice();
 
         this.setupTileSources(overridingConf);
     }
 
     static setupTileSources(overridingConf) {
-
-        if (this.config.data) {
-            //Internet Imaging Protocol (IIP)
-            if (this.status.useIIProtocol) {
-                const that = this;
-                const flayer = _.findWhere(this.config.layers, { index: 0 });
-                //prerequisite: all page have same image size and tile composition, so pyramidal infos for first image is reused for all
-                $.ajax({
-                    url: this.getIIIFTileSourceUrl(this.status.coronalChosenSlice, flayer.key, flayer.ext),
-                    async: true,
-                    success: (pyramidalImgInfo) => {
-                        const tileSources = [];
-
-                        that.status.IIPSVR_PATH = that.config.IIPSERVER_PATH.replace("\?IIIF=", "\?FIF=");
-
-                        const tileDef = pyramidalImgInfo.tiles[0];
-
-                        that.status.minLevel = 0;
-                        that.status.maxLevel = tileDef.scaleFactors.length - 1;
-                        that.status.levelScale = {};
-
-                        //at maxLevel, image is at full scale
-                        tileDef.scaleFactors.forEach(
-                            (scaleFact, level, factors) =>
-                                that.status.levelScale[level] = scaleFact / factors[that.status.maxLevel]
-                        );
-
-
-                        that.status.tileWidth = tileDef.width;
-                        that.status.tileHeight = tileDef.height;
-
-                        that.status.imageWidth = pyramidalImgInfo.width;
-                        that.status.imgeHeight = pyramidalImgInfo.height;
-
-
-                        //number of tiles along both axis
-                        that.status.xTilesNumAtMaxLevel = Math.ceil(that.status.imageWidth / that.status.tileWidth);
-                        that.status.yTilesNumAtMaxLevel = Math.ceil(that.status.imgeHeight / that.status.tileHeight);
-
-                        //number of tiles on X axis at each scale level
-                        that.status.xTilesNumAtLevel = {};
-                        for (var level = that.status.minLevel; level <= that.status.maxLevel; level++) {
-                            that.status.xTilesNumAtLevel[level] = Math.ceil(that.status.xTilesNumAtMaxLevel * that.status.levelScale[level]);
-                        }
-
-                        //tile source for 1rst layer of each slices
-                        for (var j = 0; j < that.config.coronalSlideCount; j++) {
-
-                            tileSources.push(
-                                //apply IIP image adjustments on 1rst layer, if any
-                                that.getTileSourceDef(flayer.key, flayer.ext, true)
-                            );
-                        }
-                        that.status.tileSources = tileSources;
-
-                        that.init2ndStage(overridingConf);
-                    }
-
-                });
-
-            } else {
-                //International Image Interoperability Framework (IIIF) protocol (default)
-
-                const tileSources = [];
-                if (this.config.data) {
+        if (this.config.hasBackend) {
+            if (this.config.data) {
+                //Internet Imaging Protocol (IIP)
+                if (this.status.useIIProtocol) {
+                    const that = this;
                     const flayer = _.findWhere(this.config.layers, { index: 0 });
-                    for (var j = 0; j < this.config.coronalSlideCount; j++) {
-                        tileSources.push(this.getIIIFTileSourceUrl(j, flayer.key, flayer.ext));
+                    //prerequisite: all page have same image size and tile composition, so pyramidal infos for first image is reused for all
+                    $.ajax({
+                        //FIXME use specified plane
+                        url: this.getIIIFTileSourceUrl(this.status.coronalChosenSlice, flayer.key, flayer.ext),
+                        async: true,
+                        success: (pyramidalImgInfo) => {
+                            const tileSources = [];
+
+                            that.status.IIPSVR_PATH = that.config.IIPSERVER_PATH.replace("\?IIIF=", "\?FIF=");
+
+                            const tileDef = pyramidalImgInfo.tiles[0];
+
+                            that.status.minLevel = 0;
+                            that.status.maxLevel = tileDef.scaleFactors.length - 1;
+                            that.status.levelScale = {};
+
+                            //at maxLevel, image is at full scale
+                            tileDef.scaleFactors.forEach(
+                                (scaleFact, level, factors) =>
+                                    that.status.levelScale[level] = scaleFact / factors[that.status.maxLevel]
+                            );
+
+
+                            that.status.tileWidth = tileDef.width;
+                            that.status.tileHeight = tileDef.height;
+
+                            that.status.imageWidth = pyramidalImgInfo.width;
+                            that.status.imgeHeight = pyramidalImgInfo.height;
+
+
+                            //number of tiles along both axis
+                            that.status.xTilesNumAtMaxLevel = Math.ceil(that.status.imageWidth / that.status.tileWidth);
+                            that.status.yTilesNumAtMaxLevel = Math.ceil(that.status.imgeHeight / that.status.tileHeight);
+
+                            //number of tiles on X axis at each scale level
+                            that.status.xTilesNumAtLevel = {};
+                            for (var level = that.status.minLevel; level <= that.status.maxLevel; level++) {
+                                that.status.xTilesNumAtLevel[level] = Math.ceil(that.status.xTilesNumAtMaxLevel * that.status.levelScale[level]);
+                            }
+
+                            //tile source for 1rst layer of each slices
+                            //FIXME use specified plane
+                            for (var j = 0; j < that.config.coronalSlideCount; j++) {
+
+                                tileSources.push(
+                                    //apply IIP image adjustments on 1rst layer, if any
+                                    that.getTileSourceDef(flayer.key, flayer.ext, true)
+                                );
+                            }
+                            that.status.tileSources = tileSources;
+
+                            that.init2ndStage(overridingConf);
+                        }
+
+                    });
+
+                } else {
+                    //International Image Interoperability Framework (IIIF) protocol (default)
+
+                    const tileSources = [];
+                    if (this.config.data) {
+                        const flayer = _.findWhere(this.config.layers, { index: 0 });
+                        //FIXME use specified plane
+                        for (var j = 0; j < this.config.coronalSlideCount; j++) {
+                            tileSources.push(this.getIIIFTileSourceUrl(j, flayer.key, flayer.ext));
+                        }
+                    }
+                    this.status.tileSources = tileSources;
+
+                    this.init2ndStage(overridingConf);
+                }
+            }
+        } else {
+            //no backend image server
+            /*
+            if (this.config.data) {
+                const flayer = _.findWhere(this.config.layers, { index: 0 });
+                this.status.tileSources = this.getTileSourceDef(flayer.key, flayer.ext);
+            }
+            */
+
+            //in case of multiplanes, first layer tiles source for all defined planes are appended in tileSources array
+            const tileSources = [];
+            if (this.config.data) {
+                const flayer = _.findWhere(this.config.layers, { index: 0 });
+
+                if (this.config.hasAxialPlane) {
+                    for (var j = 0; j < this.config.axialSlideCount; j++) {
+                        tileSources.push(this.getFileTileSourceUrl(j, flayer.key, flayer.ext, this.config.hasMultiPlanes ? ZAVConfig.AXIAL : null));
                     }
                 }
-                this.status.tileSources = tileSources;
-
-                this.init2ndStage(overridingConf);
+                if (this.config.hasCoronalPlane) {
+                    for (var j = 0; j < this.config.coronalSlideCount; j++) {
+                        tileSources.push(this.getFileTileSourceUrl(j, flayer.key, flayer.ext, this.config.hasMultiPlanes ? ZAVConfig.CORONAL : null));
+                    }
+                }
+                if (this.config.hasSagittalPlane) {
+                    for (var j = 0; j < this.config.sagittalSlideCount; j++) {
+                        tileSources.push(this.getFileTileSourceUrl(j, flayer.key, flayer.ext, this.config.hasMultiPlanes ? ZAVConfig.SAGITTAL : null));
+                    }
+                }
             }
+            this.status.tileSources = tileSources;
+
+            this.init2ndStage(overridingConf);
         }
 
     }
@@ -236,10 +279,12 @@ class ViewerManager {
     static init2ndStage(overridingConf) {
         const that = this;
 
+        const initialPage = this.config.initialPage;
+
         this.viewer = OpenSeadragon({
             id: VIEWER_ID,
             tileSources: this.status.tileSources,
-            initialPage: this.status.coronalChosenSlice,
+            initialPage: initialPage,
             minZoomLevel: 0,
             minZoomImageRatio: 0.5,
             maxZoomLevel: 16,
@@ -275,22 +320,40 @@ class ViewerManager {
             //add overlay is called for each page change
             //alert("Adding overlays");
             //Reference 1): http://chrishewett.com/blog/openseadragon-svg-overlays/
-            //addSVGData('./data/SVGs/coronal/Anno_'+(viewer.currentPage()+1)+'.svg',event);
-            //var currentPage = viewer.currentPage();
             if (that.config.svgFolerName != "") {
-                //addSVGData(dataRootPath + "/" + G.svgFolerName + "/coronal/Anno_"+ (currentPage - coronalFirstIndex ) + ".svg",event);
+                /*
+                let firstIndex;
+                switch (that.status.activePlane) {
+                    case ZAVConfig.AXIAL:
+                        firstIndex = that.config.axialFirstIndex;
+                        break;
+                    case ZAVConfig.CORONAL:
+                        firstIndex = that.config.coronalFirstIndex;
+                        break;
+                    case ZAVConfig.SAGITTAL:
+                        firstIndex = that.config.sagittalFirstIndex;
+                        break;
+                }
+                //const sliceNum = that.viewer.currentPage() - firstIndex;
+                */
+                const sliceNum = that.getCurrentPlaneChosenSlice();
 
-                that.addSVGData(that.config.PUBLISH_PATH + "/" + that.config.svgFolerName + "/Anno_" + (that.viewer.currentPage() - that.config.coronalFirstIndex) + ".svg", event.element);
+                const svgPath = Utils.makePath(
+                    that.config.PUBLISH_PATH, that.config.svgFolerName,
+                    (that.config.hasMultiPlanes ? ZAVConfig.getPlaneLabel(that.status.activePlane) : null),
+                    "Anno_" + sliceNum + ".svg"
+                );
+
+                that.addSVGData(svgPath, event.element);
             }
         });
 
         this.viewer.addHandler('open', function (event) {
 
-            that.status.coronalChosenSlice = that.viewer.currentPage();
 
             if (!that.viewer.source) { return; }
 
-            /** overlay to hold region delineations */
+            /** overlay to hold region delineations (triggers 'add-overlay' event) */
             var elt = document.createElement("div");
             elt.className = "overlay";
 
@@ -325,8 +388,6 @@ class ViewerManager {
                 }
                 //i++;
             });
-
-            //FIXME updateSubVLine(this.viewer.currentPage());
 
 
             $(that.viewer.canvas).off('.posview');
@@ -423,7 +484,7 @@ class ViewerManager {
 
         //--------------------------------------------------
         this.viewer.world.addHandler('add-item', (addItemEvent) => {
-            
+
             for (var i = 0; i < that.viewer.world.getItemCount(); i++) {
                 if (that.viewer.world.getItemAt(i) === addItemEvent.item) {
                     const tiledImage = addItemEvent.item;
@@ -895,83 +956,124 @@ class ViewerManager {
         this.centerOnRegions(RegionsManager.getSelectedRegions());
     }
 
-    //TODO remove useless code
-    /**  
-    * @public
-    */
-    static selectRegion(regionName) {
-        if (!this.status.userClickedRegion) {
-            var found = false;
-            const that = this;
+    static switchPlane(newPlane) {
+        this.status.activePlane = newPlane;
+        this.status.chosenSlice = this.getCurrentPlaneChosenSlice();
 
-            var newX = 0;
-            var newY = 0;
-            var snCount = 0;
-            this.status.set.forEach(function (el) {
-                var xvdd = el[0].attr("title");//works
-                if (xvdd.trim() == regionName) {
-                    found = true;
-                    //move to correct location
-                    var bbox = el[0].getBBox();
-                    //console.log("The value is"+bbox.x + " "+bbox.y);
-                    newX += (bbox.x2 - bbox.width / 2) / that.config.dzHeight;
-                    newY += (that.config.dzDiff + bbox.y2 - bbox.height / 2) / that.config.dzHeight;
-                    snCount++;
-                    //console.log(el[0].attr("title")+" "+newX + " " + newY);
-                    //we should consider both hemispheres!
-                    //set pan to and zoom to
-                    el[0].attr("fill-opacity", "0.8");//works
-                    el[0].attr("stroke", "#0000ff");
-                    el[0].attr("stroke-width", "2");//"8");
-                    el[0].attr("stroke-opacity", "1");
-                }
-            });
-            if (snCount > 0) {
-                //now we have considered all relevant regions
-                var windowPoint = new OpenSeadragon.Point(newX / snCount, newY / snCount);
-                this.viewer.viewport.panTo(windowPoint);
-            }
+        this.viewer.goToPage(this.getPageNumForCurrentSlice());
+        this.claerPosition();
+    }
 
-            if (found == false) {
-                //console.log("wasnt found");
-                //check for the first occurence
-                var org_id = regionName;
-                var esc_id = org_id.replace(/(:|\.|\/|\[|\])/g, "\\$1");
-                var nodInfo = $("#" + esc_id);
-                var id_value = nodInfo.attr("id");
-                var firstOccVal = nodInfo.attr("dataFirstOccC");
-                //console.log("Coronal Fv: "+firstOccVal+" id:"+id_value+" :"+data.selected[0]);
-                if (firstOccVal >= 0 && firstOccVal < this.config.coronalSlideCount) {
-                    this.status.selectedRegionName = regionName;
-                    //console.log("firstOccVal " + firstOccVal);
-                    goToSlice(CORONAL, parseInt(firstOccVal))
-                    claerPosition();
-                    this.signalStatusChanged(this.status);
+    static activatePlane(newPlane) {
+        if (newPlane !== this.status.activePlane) {
+            this.switchPlane(newPlane);
 
-                    //coronalImg.node.href.baseVal = dataRootPath + "/" + subviewFolderName +"/coronal/" + coronalChosenSlice + ".jpg";
-                    //updateLinePosBaseSlide(coronalChosenSlice);
-                }
-                //WHILE NOT FOUND IN SETSELECTION, wait a bit and try again
-                //console.log("I made it");
-            }
-            this.status.selectedRegionName = regionName;
+            //change must be recorded (immediately) in browser's history
+            this.makeActualHistoryStep({ s: this.status.chosenSlice, a: this.status.activePlane });
+            this.signalStatusChanged(this.status);
         }
-        this.status.userClickedRegion = false;
+    }
+
+    static getPlaneSlideCount(plane) {
+        switch (plane) {
+            case ZAVConfig.AXIAL:
+                return this.config.axialSlideCount;
+            case ZAVConfig.CORONAL:
+                return this.config.coronalSlideCount;
+            case ZAVConfig.SAGITTAL:
+                return this.config.sagittalSlideCount;
+        }
+    }
+
+    static getPlaneSliceStep(plane) {
+        switch (plane) {
+            case ZAVConfig.AXIAL:
+                return this.config.axialSliceStep;
+            case ZAVConfig.CORONAL:
+                return this.config.coronalSliceStep;
+            case ZAVConfig.SAGITTAL:
+                return this.config.sagittalSliceStep;
+        }
+    }
+
+    static getCurrentPlaneChosenSlice() {
+        const chosenSlice = this.getPlaneChosenSlice(this.status.activePlane);
+        return chosenSlice;
+    }
+
+    static getPlaneChosenSlice(plane) {
+        switch (plane) {
+            case ZAVConfig.AXIAL:
+                return this.status.axialChosenSlice;
+            case ZAVConfig.CORONAL:
+                return this.status.coronalChosenSlice;
+            case ZAVConfig.SAGITTAL:
+                return this.status.sagittalChosenSlice;
+        }
     }
 
 
+    static getPageNumForCurrentPlaneSlice(sliceNum) {
+        return this.getPageNumForPlaneSlice(this.status.activePlane, sliceNum);
+    }
+
+    static getPageNumForPlaneSlice(plane, sliceNum) {
+        switch (plane) {
+            case ZAVConfig.AXIAL:
+                return this.config.axialFirstIndex + sliceNum;
+            case ZAVConfig.CORONAL:
+                return this.config.coronalFirstIndex + sliceNum;
+            case ZAVConfig.SAGITTAL:
+                return this.config.sagittalFirstIndex + sliceNum;
+        }
+    }
+
+    static getPageNumForCurrentSlice() {
+        return this.getPageNumForCurrentPlaneSlice(this.getCurrentPlaneChosenSlice());
+    }
+
+    static checkNSetChosenSlice(plane, chosenSlice) {
+        switch (plane) {
+            case ZAVConfig.AXIAL:
+                if (chosenSlice > (this.config.axialSlideCount - 1)) {
+                    chosenSlice = this.config.axialSlideCount - 1;
+                } else if (chosenSlice < 0) {
+                    chosenSlice = 0;
+                }
+                this.status.axialChosenSlice = chosenSlice;
+                return chosenSlice;
+
+            case ZAVConfig.CORONAL:
+                if (chosenSlice > (this.config.coronalSlideCount - 1)) {
+                    chosenSlice = this.config.coronalSlideCount - 1;
+                } else if (chosenSlice < 0) {
+                    chosenSlice = 0;
+                }
+                this.status.coronalChosenSlice = chosenSlice;
+                return chosenSlice;
+
+            case ZAVConfig.SAGITTAL:
+                if (chosenSlice > (this.config.sagittalSlideCount - 1)) {
+                    chosenSlice = this.config.sagittalSlideCount - 1;
+                } else if (chosenSlice < 0) {
+                    chosenSlice = 0;
+                }
+                this.status.sagittalChosenSlice = chosenSlice;
+                return chosenSlice;
+
+        }
+    }
+
     /**  
     * @public
     */
-    static goToSlice(axis, chosenSlice, regionsToCenterOn) {
-        //TODO use axis 
-        if (this.status.coronalChosenSlice != chosenSlice) {
-            if (chosenSlice > (this.config.coronalSlideCount - 1)) {
-                chosenSlice = this.config.coronalSlideCount - 1;
-            } else if (chosenSlice < 0) {
-                chosenSlice = 0;
-            }
-            this.status.coronalChosenSlice = chosenSlice;
+    static goToPlaneSlice(plane, chosenSlice, regionsToCenterOn) {
+        //TODO use plane 
+        if (plane != this.status.activePlane || chosenSlice != this.getCurrentPlaneChosenSlice()) {
+            this.status.activePlane = plane;
+            chosenSlice = this.checkNSetChosenSlice(plane, chosenSlice);
+            this.status.chosenSlice = chosenSlice;
+
             //asynchronous focus the view on specified regions of interest 
             if (regionsToCenterOn) {
                 const that = this;
@@ -979,12 +1081,39 @@ class ViewerManager {
                     that.centerOnRegions(regionsToCenterOn);
                 });
             }
-            const sliceNum = this.config.coronalFirstIndex + this.status.coronalChosenSlice;
-            this.viewer.goToPage(sliceNum);
+
+            const pageNum = this.getPageNumForCurrentSlice();
+            this.viewer.goToPage(pageNum);
 
             //change must be recorded (immediately) in browser's history
-            this.makeActualHistoryStep({ s: sliceNum, a: CORONAL });
+            this.makeActualHistoryStep({ s: chosenSlice, a: this.status.activePlane });
 
+            this.signalStatusChanged(this.status);
+        }
+    }
+
+    static goToSlice(chosenSlice, regionsToCenterOn) {
+        this.goToPlaneSlice(this.status.activePlane, chosenSlice, regionsToCenterOn);
+    }
+
+    static shiftToSlice(increment) {
+        this.goToPlaneSlice(this.status.activePlane, this.status.chosenSlice + increment);
+    }
+
+    static changeSlices(slicesByPlane) {
+
+        //for all planes but the active one
+        for (const [p, slice] of Object.entries(slicesByPlane)) {
+            const plane = parseInt(p);
+            if (plane != this.status.activePlane) {
+                this.checkNSetChosenSlice(plane, slice);
+            }
+        }
+
+        //eventually change active plane's slice
+        if (_.has(slicesByPlane, this.status.activePlane)) {
+            this.goToPlaneSlice(this.status.activePlane, slicesByPlane[this.status.activePlane]);
+        } else {
             this.signalStatusChanged(this.status);
         }
     }
@@ -995,7 +1124,7 @@ class ViewerManager {
         var point;
         var tx = this.config.imageSize - x;
         var ty = this.config.imageSize - y;
-        point = new Array(tx, this.status.coronalChosenSlice * this.config.coronalSliceStep, ty, 1);
+        point = new Array(tx, this.getPlaneChosenSlice(this.status.activePlane) * this.getPlaneSliceStep(this.status.activePlane), ty, 1);
         //console.log(point);
         //console.log(matrix);
         //return multiplyMatrixAndPoint(point);
@@ -1071,6 +1200,30 @@ class ViewerManager {
     }
 
 
+    static getFileTileSourceUrl(slideNum, key, ext, plane) {
+        //if no plane param is specified (= single plane mode), returned plane label will be undefined, thus the url won't contain reference to any plane 
+        return Utils.makePath(this.config.dataRootPath, key, ZAVConfig.getPlaneLabel(plane), slideNum + ext);
+    }
+
+    /**
+     * compute url to retrieve a specific tile stored in file folders (no backend image server)
+     */
+    static getFileTileUrl(slideNum, key, ext, level, x, y) {
+        switch (this.status.activePlane) {
+            case ZAVConfig.AXIAL:
+                slideNum -= this.config.axialFirstIndex;
+                return this.config.dataRootPath + "/" + key + "/axial/" + slideNum + "_files/" + level + "/" + x + "_" + y + ".jpg";
+
+            case ZAVConfig.CORONAL:
+                slideNum -= this.config.coronalFirstIndex;
+                return this.config.dataRootPath + "/" + key + "/coronal/" + slideNum + "_files/" + level + "/" + x + "_" + y + ".jpg";
+
+            case ZAVConfig.SAGITTAL:
+                slideNum -= this.config.sagittalFirstIndex;
+                return this.config.dataRootPath + "/" + key + "/sagittal/" + slideNum + "_files/" + level + "/" + x + "_" + y + ".jpg";
+        }
+    }
+
     static getIIIFTileSourceUrl(slideNum, key, ext) {
         return this.config.IIPSERVER_PATH + key + "/" + slideNum + ext + this.config.TILE_EXTENSION;
     }
@@ -1097,21 +1250,37 @@ class ViewerManager {
     }
 
     static getTileSourceDef(key, ext, applyIIPadjustment) {
-        if (this.status.useIIProtocol) {
+        const currentPage = this.getPageNumForCurrentSlice();
+        if (this.config.hasBackend) {
+            if (this.status.useIIProtocol) {
+                return {
+                    width: this.status.imageWidth,
+                    height: this.status.imgeHeight,
+                    tileWidth: this.status.tileWidth,
+                    tileHeight: this.status.tileHeight,
+
+                    overlap: 1,
+
+                    maxLevel: this.status.maxLevel,
+                    minLevel: this.status.minLevel,
+                    getTileUrl: (level, x, y) => this.getIIPTileUrl(currentPage, key, ext, level, x, y, applyIIPadjustment)
+                }
+            } else {
+                return this.getIIIFTileSourceUrl(currentPage, key, ext);
+            }
+        } else {
             return {
-                width: this.status.imageWidth,
-                height: this.status.imgeHeight,
-                tileWidth: this.status.tileWidth,
-                tileHeight: this.status.tileHeight,
+                width: this.config.dzLayerWidth,
+                height: this.config.dzLayerHeight,
+                tileSize: 256,
 
                 overlap: 1,
 
-                maxLevel: this.status.maxLevel,
-                minLevel: this.status.minLevel,
-                getTileUrl: (level, x, y) => this.getIIPTileUrl(this.viewer.currentPage(), key, ext, level, x, y, applyIIPadjustment)
+                //minLevel: 0,
+                //maxLevel: 10, //maxLevel should correspond to the depth of the number of folders in the dzi subdirectory
+
+                getTileUrl: (level, x, y) => this.getFileTileUrl(currentPage, key, ext, level, x, y)
             }
-        } else {
-            return this.getIIIFTileSourceUrl(this.viewer.currentPage(), key, ext);
         }
     };
 
@@ -1121,6 +1290,7 @@ class ViewerManager {
     static addLayer(key, name, ext) {
         var options = {
             tileSource: this.getTileSourceDef(key, ext),
+            opacity: this.getLayerOpacity(key),
             success: (event) => this.setAllFilters()
         };
 
@@ -1143,7 +1313,7 @@ class ViewerManager {
         const tracerLayer = _.findWhere(this.status.layerDisplaySettings, { isTracer: true });
         const newDilationSize = zoom > 2.5 ? 0 : zoom > 1.5 ? 3 : zoom > 0.3 ? 5 : 7;
         //change filters only if dilation kernel size changed
-        if (newDilationSize != tracerLayer.dilation) {
+        if (tracerLayer && newDilationSize != tracerLayer.dilation) {
             tracerLayer.dilation = newDilationSize;
             if (tracerLayer.enhanceSignal) {
                 this.setAllFilters();
@@ -1393,12 +1563,12 @@ class ViewerManager {
             //get live values (Beware, OSD must not be transitioning)
             const imageZoom = this.viewer.viewport.viewportToImageZoom(this.viewer.viewport.getZoom());
             const center = this.viewer.viewport.viewportToImageCoordinates(this.viewer.viewport.getCenter());
-            const sliceNum = this.config.coronalFirstIndex + this.status.coronalChosenSlice;
+            const sliceNum = this.getCurrentPlaneChosenSlice();
 
             stepParams = {
                 z: imageZoom.toFixed(3),
                 x: Math.round(center.x), y: Math.round(center.y),
-                s: sliceNum, a: CORONAL
+                s: sliceNum, a: this.status.activePlane
             };
         }
         Utils.pushHistoryStep(this.history, stepParams);
@@ -1412,11 +1582,18 @@ class ViewerManager {
     static getParamsFromLocation(location) {
         const confParams = {};
         const confFromPath = Utils.getConfigFromLocation(location);
+        if (confFromPath.a) {
+            const plane = parseInt(confFromPath.a, 10);
+            if (plane === ZAVConfig.AXIAL || plane === ZAVConfig.CORONAL || plane === ZAVConfig.SAGITTAL) {
+                confParams.activePlane = plane;
+            }
+        }
         if (confFromPath.s) {
             const sliceNum = parseInt(confFromPath.s, 10);
             if (!isNaN(sliceNum) && isFinite(sliceNum)) {
+                const plane = confParams.activePlane || this.status.activePlane;
                 if (sliceNum >= 0
-                    && sliceNum <= (this.config.coronalSlideCount - 1)) {
+                    && sliceNum <= (this.getPlaneSlideCount(plane) - 1)) {
                     confParams.sliceNum = sliceNum;
                 }
             }
@@ -1424,7 +1601,7 @@ class ViewerManager {
         if (confFromPath.z) {
             const imageZoom = Number(confFromPath.z);
             if (!isNaN(imageZoom) && isFinite(imageZoom)) {
-                if (imageZoom >= 0.036 && imageZoom <= 1.557) {
+                if (imageZoom >= this.config.minImageZoom && imageZoom <= this.config.maxImageZoom) {
                     confParams.imageZoom = imageZoom;
                 }
             }
@@ -1469,10 +1646,20 @@ class ViewerManager {
             const refPoint = this.viewer.viewport.imageToViewportCoordinates(params.center);
             this.viewer.viewport.panTo(refPoint);
         }
-        if (params.sliceNum && params.sliceNum != (this.config.coronalFirstIndex + this.status.coronalChosenSlice)) {
-            this.status.coronalChosenSlice = params.sliceNum - this.config.coronalFirstIndex;
-            this.viewer.goToPage(params.sliceNum);
+
+        let targetPlane = params.activePlane || this.status.activePlane;
+        if (params.sliceNum && params.sliceNum != this.getPlaneChosenSlice(targetPlane)) {
+            let targetSlice = params.sliceNum || this.getPlaneChosenSlice(targetPlane);
+            //update active slice    
+            targetSlice = this.checkNSetChosenSlice(targetPlane, targetSlice);
         }
+        if (params.activePlane) {
+            //change active plane and page
+            this.switchPlane(targetPlane);
+        } else if (params.sliceNum) {
+            this.viewer.goToPage(this.getPageNumForCurrentSlice());
+        }
+
         if (params.gamma) {
             this.status.gamma = params.gamma;
         } else {

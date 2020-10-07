@@ -3,26 +3,6 @@ $subview-height: 200px;
 $subview-total-padding: 20px;
 
 
-/* Each subview */
-.axialHolder,
-.coronalHolder,
-.sagittalHolder {
-	width: $subview-width + $subview-total-padding;
-	height: $subview-height + $subview-total-padding;
-	float: right;
-}
-.axialHolder {
-	margin: 21px 0 0 0;
-	background-image: url("../img/bg_axialHolder.png");
-}
-.coronalHolder {
-	margin: 21px 0 0 0;
-	background-image: url("../img/bg_coronalHolder.png");
-}
-.sagittalHolder {
-	margin: -2px 0 0 0;
-	background-image: url("../img/bg_sagittalHolder.png");
-}
 
 /* Label of subview */
 .axialLabel,
@@ -55,4 +35,9 @@ $subview-total-padding: 20px;
 
 .zav-SubVSliceSlider {
 	display: inline-block;
+}
+
+//remove outline when Switch is focused
+.zav-SubViewSwitch .bp3-control-indicator {
+	outline: none !important;
 }

@@ -17,7 +17,6 @@ class LayerSlider extends React.Component {
 
         this.handleOpacityChange = this.handleOpacityChange.bind(this);
         this.handleCheckedChange = this.handleCheckedChange.bind(this);
-        this.handleClickName = this.handleClickName.bind(this);
     }
     render() {
         const { layerid, name, opacity, enabled, isTracer, contrast, contrastEnabled, gamma, gammaEnabled, enhanceSignal, dilation, loading } = this.props;
@@ -152,13 +151,6 @@ class LayerSlider extends React.Component {
 
     handleEnhanceCheck(layerid, event) {
         ViewerManager.changeLayerEnhancer(layerid, event.target.checked);
-    }
-
-
-
-
-    handleClickName(layerid) {
-        //FIXME showInfoText & addClass("selected") to layer label
     }
 
 }

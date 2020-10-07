@@ -266,7 +266,7 @@ class RegionDetail extends React.Component {
 
     goToSlice(sliceNum, centerOnRegion) {
         const regionsToCenterOn = centerOnRegion ? [this.props.regionId] : null;
-        ViewerManager.goToSlice(ViewerManager.CORONAL, sliceNum, regionsToCenterOn);
+        ViewerManager.goToSlice(sliceNum, regionsToCenterOn);
         if (!ViewerManager.isShowingRegions()) {
             RegionDetailToaster.show({
                 message: "Do you want to show Atlas regions?",
@@ -397,6 +397,7 @@ class RegionTreeSearch extends React.Component {
                     groupingSwitches.push(
                         <Switch
                             label={<span>List only the regions present in "<span style={{ fontStyle: "italic" }}>{grouping.name}</span>"</span>}
+                            key={'switch-'+ groupingId}
                             onChange={that.onOnlyGroupingChange.bind(that, groupingId)}
                             checked={RegionsManager.getHighlightingGrouping() === groupingId}
                             disabled={RegionsManager.isAutoHighlightingOn() || (RegionsManager.getHighlightingGrouping() != null && RegionsManager.getHighlightingGrouping() != groupingId)}

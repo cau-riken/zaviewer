@@ -2,81 +2,291 @@ import React from 'react';
 
 import {
     Icon,
-    Slider
+    Radio,
+    Slider,
+    Switch,
 } from "@blueprintjs/core";
 
 
+import ZAVConfig from '../ZAVConfig.js'
 import ViewerManager from '../ViewerManager.js'
 
 import Utils from '../Utils.js';
 
-class SubViewPanel extends React.Component {
+class SubView extends React.Component {
 
     constructor(props) {
         super(props);
-        this.subviewStatus = {
-            sagittalVerticalLineId: 'sagittal_vertical_line',
-            currentSlice: 0,
-            sagittalHolderPaper: undefined,
-            sagittalHolderPaperSet: undefined,
-            sagittalRect: undefined,
-
-        };
-
-        this.onGoToSlice = this.onGoToSlice.bind(this);
-    }
-
-
-    componentDidUpdate(prevProps) {
-        if (this.props.config) {
-            if (!prevProps.config) {
-                this.addSagittalSelectSection();
-            }
-            this.updateSubVLine(this.props.coronalChosenSlice);
-        }
+        this.getPlaneSlicePercentOffset = this.getPlaneSlicePercentOffset.bind(this);
+        this.getSliceForWidgetPos = this.getSliceForWidgetPos.bind(this);
     }
 
     render() {
-        const currentSlice = this.props.coronalChosenSlice;
-        const maxSliceNum = this.props.config ? this.props.config.coronalSlideCount - 1 : 1000;
-        const sliceStep = this.props.config ? this.props.config.coronalSliceStep : 1;
+        //bounding box of the subview widget
+        const size = this.props.size ? this.props.size : 200;
+
+        //thicker border for active plane (but don't change widget bounding box size when changing border size)
+        const border = this.props.activePlane && this.props.activePlane === this.props.viewPlane ? 3 : 1;
+        const gap = this.props.activePlane && this.props.activePlane === this.props.viewPlane ? 1 : 3;
+        const margin = 2 * border + 2 * gap;
+        const markerLineWidth = 1;
+
+        let horizontalLine, verticalLine, imageUrl;
+        if (this.props.config && this.props.activePlane) {
+
+            // scaling factor when widget size is different from subview image size (image range are proportional to subview image size), 
+            const scale = size / this.props.config.subviewSize;
+
+            //line marker for orthogonal plane crossing the subview plane horizontally
+            const orthoHorizontal = ZAVConfig.getPlaneOrthoHorizontal(this.props.viewPlane);
+            if (this.props.config.hasPlane(orthoHorizontal)) {
+                const orthoHSlicePct = this.getPlaneSlicePercentOffset(orthoHorizontal);
+
+                const vRange = this.props.config.getSubviewVRange(this.props.viewPlane);
+                //note: origin of vertical axis is at the bottom
+
+                const vOffset = scale * (this.props.config.subviewSize - (vRange.min + vRange.len * orthoHSlicePct));
+                horizontalLine = <line x1="0" y1={vOffset} x2={size} y2={vOffset} stroke={ZAVConfig.getPlaneColor(orthoHorizontal)} strokeWidth={markerLineWidth} />
+            }
+
+            //line marker for orthogonal plane crossing the subview plane vertically
+            const orthoVertical = ZAVConfig.getPlaneOrthoVertical(this.props.viewPlane);
+            if (this.props.config.hasPlane(orthoVertical)) {
+                const orthoVSlicePct = this.getPlaneSlicePercentOffset(orthoVertical);
+
+                const hRange = this.props.config.getSubviewHRange(this.props.viewPlane);
+                let hOffset;
+                if (this.props.config.hasMultiPlanes) {
+                    //in multi-plane mode, origin of horizontal axis is at the right
+                    hOffset = scale * (this.props.config.subviewSize - (hRange.min + hRange.len * orthoVSlicePct));
+                } else {
+                    //in single plane mode, origin of horizontal axis is at the left  
+                    hOffset = scale * (hRange.min + hRange.len * orthoVSlicePct);
+                }
+                verticalLine = <line x1={hOffset} y1="0" x2={hOffset} y2={size} stroke={ZAVConfig.getPlaneColor(orthoVertical)} strokeWidth={markerLineWidth} />;
+            }
+
+
+            if (this.props.config.subviewFolderName) {
+                //FIXME 
+                if (this.props.config.hasMultiPlanes) {
+                    imageUrl = Utils.makePath(this.props.config.PUBLISH_PATH, this.props.config.subviewFolderName, ZAVConfig.getPlaneLabel(this.props.viewPlane), ViewerManager.getPlaneChosenSlice(this.props.viewPlane) + '.jpg');
+                } else {
+                    imageUrl = Utils.makePath(this.props.config.PUBLISH_PATH, this.props.config.subviewFolderName, "/subview.jpg");
+                }
+            } else {
+                imageUrl = "./assets/img/null.png";
+            }
+
+        }
+
+
+        return (
+            <div
+                className="subview_holder"
+                style={{
+                    position: 'relative', height: (size + margin), width: (size + margin),
+                    borderColor: ZAVConfig.getPlaneColor(this.props.viewPlane), borderStyle: 'solid', borderWidth: border
+                }}
+            >
+                <img
+                    className="subview_image" style={{ position: 'absolute', top: gap, left: gap }}
+                    width={size} height={size}
+                    src={imageUrl}
+                />
+                <svg
+                    width={size}
+                    style={{ position: 'absolute', top: gap, left: gap }}
+                    height={size}
+                    viewBox={"0 0 " + size + "" + size}
+                    xmlns="http://www.w3.org/2000/svg"
+                    xmlnsXlink="http://www.w3.org/1999/xlink"
+                    onClick={this.onClick.bind(this)}
+                >
+                    {horizontalLine}
+                    {verticalLine}
+                </svg>
+
+            </div>
+        );
+    }
+
+    onClick(e) {
+        const newSlices = {};
+
+        const size = this.props.size ? this.props.size : 200;
+        const scale = size / this.props.config.subviewSize;
+
+        var bnds = e.target.getBoundingClientRect();
+
+        var subviewY = (e.clientY - bnds.top);
+        const orthoHorizontal = ZAVConfig.getPlaneOrthoHorizontal(this.props.viewPlane);
+        if (this.props.config.hasPlane(orthoHorizontal)) {
+            const vRange = this.props.config.getSubviewVRange(this.props.viewPlane);
+            const vSliceNum = this.getSliceForWidgetPos(orthoHorizontal, vRange, this.props.config.subviewSize, scale, subviewY);
+            newSlices[orthoHorizontal] = vSliceNum;
+        }
+
+        var subviewX = (e.clientX - bnds.left);
+        const orthoVertical = ZAVConfig.getPlaneOrthoVertical(this.props.viewPlane);
+        if (this.props.config.hasPlane(orthoVertical)) {
+            const hRange = this.props.config.getSubviewHRange(this.props.viewPlane);
+            const hSliceNum = this.getSliceForWidgetPos(orthoVertical, hRange, this.props.config.subviewSize, scale, subviewX, !this.props.config.hasMultiPlanes);
+            newSlices[orthoVertical] = hSliceNum;
+        }
+
+        ViewerManager.changeSlices(newSlices);
+    }
+
+
+    getPlaneSlicePercentOffset(plane) {
+        return ViewerManager.getPlaneChosenSlice(plane) / (ViewerManager.getPlaneSlideCount(plane) - 1);
+    }
+
+    getSliceForWidgetPos(plane, range, subviewSize, scale, pos, reversedOrientation) {
+        const maxSlideNum = ViewerManager.getPlaneSlideCount(plane);
+        const percentOffset =
+            reversedOrientation
+                ? (pos / scale - range.min) / range.len
+                : (subviewSize - (pos / scale) - range.min) / range.len
+            ;
+
+        if (percentOffset <= 0) {
+            return 0;
+        } else if (percentOffset >= 1) {
+            return maxSlideNum;
+        } else {
+            return Math.round(maxSlideNum * percentOffset);
+        }
+    }
+
+}
+
+
+class SubViewPanel extends React.Component {
+
+    render() {
+        const currentSlice = this.props.chosenSlice;
+        const maxSliceNum = this.props.config ? ViewerManager.getPlaneSlideCount(this.props.activePlane) - 1 : 1000;
+        const sliceStep = this.props.config ? ViewerManager.getPlaneSliceStep(this.props.activePlane) : 1;
+
+        const subviews = [];
+        let justifyMode;
         if (this.props.config) {
             this.config = this.props.config;
+
+            if (this.props.config.hasMultiPlanes) {
+                const subViewSize = 64;
+                const subViewLabelWidth = subViewSize - 22;
+
+                subviews.push(
+                    <div>
+                        <Switch
+                            className="zav-SubViewSwitch"
+                            style={{ width: subViewSize }}
+                            checked={ZAVConfig.AXIAL === this.props.activePlane}
+                            innerLabel={<span style={{ display: 'inline-block', width: subViewLabelWidth }}>{ZAVConfig.getPlaneLabel(ZAVConfig.AXIAL)}</span>}
+                            onChange={this.onChangePlane.bind(this, ZAVConfig.AXIAL)}
+                        />
+                        <SubView
+                            key={ZAVConfig.AXIAL}
+                            activePlane={this.props.activePlane}
+                            viewPlane={ZAVConfig.AXIAL}
+                            config={this.props.config}
+                            size={subViewSize}
+                        />
+
+                    </div>
+                );
+
+                subviews.push(
+                    <div>
+                        <Switch
+                            className="zav-SubViewSwitch"
+                            style={{ width: subViewSize }}
+                            checked={ZAVConfig.CORONAL === this.props.activePlane}
+                            innerLabel={<span style={{ display: 'inline-block', width: subViewLabelWidth }}>{ZAVConfig.getPlaneLabel(ZAVConfig.CORONAL)}</span>}
+                            onChange={this.onChangePlane.bind(this, ZAVConfig.CORONAL)}
+                        />
+
+                        <SubView
+                            key={ZAVConfig.CORONAL}
+                            activePlane={this.props.activePlane}
+                            viewPlane={ZAVConfig.CORONAL}
+                            config={this.props.config}
+                            size={subViewSize}
+                        />
+                    </div>
+                );
+
+                subviews.push(
+                    <div>
+                        <Switch
+                            className="zav-SubViewSwitch"
+                            style={{ width: subViewSize }}
+                            checked={ZAVConfig.SAGITTAL === this.props.activePlane}
+                            innerLabel={<span style={{ display: 'inline-block', width: subViewLabelWidth }}>{ZAVConfig.getPlaneLabel(ZAVConfig.SAGITTAL)}</span>}
+                            onChange={this.onChangePlane.bind(this, ZAVConfig.SAGITTAL)}
+                        />
+                        <SubView
+                            key={ZAVConfig.SAGITTAL}
+                            activePlane={this.props.activePlane}
+                            viewPlane={ZAVConfig.SAGITTAL}
+                            config={this.props.config}
+                            size={subViewSize}
+                        />
+                    </div>
+                );
+                justifyMode = 'space-between';
+
+            } else {
+                const subviewPlane = ZAVConfig.getPreferredSubviewForPlane(this.props.activePlane);
+                subviews.push(
+                    <SubView
+                        key={subviewPlane}
+                        activePlane={this.props.activePlane}
+                        viewPlane={subviewPlane}
+                        config={this.props.config}
+                    />
+                );
+                justifyMode = 'center';
+            }
         }
 
         return (
             <React.Fragment>
                 <div>
                     <div className="zav-SubViewSlider">
-                        
-                            <Icon
-                                icon="chevron-left"
-                                title="go to previous slice"
-                                style={{marginLeft: -16, verticalAlign: "top"}}
-                                onClick={this.onGoToSlice.bind(this, currentSlice - 1)}
-                            />
-                            <Slider
-                                className="zav-Slider zav-SubVSliceSlider"
-                                min={0}
-                                max={maxSliceNum}
-                                stepSize={1}
-                                labelStepSize={maxSliceNum}
-                                onChange={this.onGoToSlice}
-                                value={currentSlice}
-                                showTrackFill={false}
-                                labelRenderer={(value) => value * sliceStep}
-                            />
-                            <Icon
-                                icon="chevron-right"
-                                title="go to next slice"
-                                style={{marginRight: -16, verticalAlign: "top"}}
-                                onClick={this.onGoToSlice.bind(this, currentSlice + 1)}
-                            />
-                        
+
+                        <Icon
+                            icon="chevron-left"
+                            title="go to previous slice"
+                            style={{ marginLeft: -16, verticalAlign: "top" }}
+                            onClick={this.onGoToSlice.bind(this, currentSlice - 1)}
+                        />
+                        <Slider
+                            className="zav-Slider zav-SubVSliceSlider"
+                            min={0}
+                            max={maxSliceNum}
+                            stepSize={1}
+                            labelStepSize={maxSliceNum}
+                            onChange={this.onGoToSlice.bind(this)}
+                            value={currentSlice}
+                            showTrackFill={false}
+                            labelRenderer={(value) => value * sliceStep}
+                        />
+                        <Icon
+                            icon="chevron-right"
+                            title="go to next slice"
+                            style={{ marginRight: -16, verticalAlign: "top" }}
+                            onClick={this.onGoToSlice.bind(this, currentSlice + 1)}
+                        />
+
                     </div>
                 </ div>
-                <div id="sagittal_holder" className="sagittalHolder" >
-                    <img id="sagittal_image" alt="Sagittal view" width="200" height="200" />
+
+                <div style={{ display: 'flex', flexDirection: 'row', justifyContent: justifyMode }} >
+                    {subviews}
                 </div>
             </React.Fragment>
 
@@ -84,111 +294,13 @@ class SubViewPanel extends React.Component {
     }
 
     onGoToSlice(sliceNum) {
-        ViewerManager.goToSlice(ViewerManager.CORONAL, sliceNum);
+        ViewerManager.goToSlice(sliceNum);
     }
 
-
-    addSagittalSelectSection() {
-        const that = this;
-        // Mapping global min, max of x,y,z to Sagittal subview
-        var minX = this.config.yMinGlobal; // X of Sagittal is global Y
-        var maxX = this.config.yMaxGlobal;
-        var sagittalImgFg;
-        var img = document.getElementById("sagittal_image");
-        img.style.display = "none";
-        //boundary
-        this.subviewStatus.sagittalHolderPaper = Raphael("sagittal_holder", this.config.subviewSize + 20, this.config.subviewSize + 20);
-        this.subviewStatus.sagittalHolderPaperSet = this.subviewStatus.sagittalHolderPaper.set();
-        //relative to the surrounding area
-        this.subviewStatus.sagittalImg = this.subviewStatus.sagittalHolderPaper.image(img.src, 10, 10, this.config.subviewSize, this.config.subviewSize,
-            () => {
-                //console.log("sagittalOnerror");
-                that.subviewStatus.sagittalImg.node.href.baseVal = "./assets/img/no_image.jpg";
-            }
-        );
-        if (this.config.subviewFolderName) {
-            this.subviewStatus.sagittalImg.node.href.baseVal = Utils.makePath(this.config.PUBLISH_PATH, this.config.subviewFolderName, "/subview.jpg");
-        } else {
-            this.subviewStatus.sagittalImg.node.href.baseVal = "./assets/img/null.png";
+    onChangePlane(plane) {
+        if (plane !== this.props.activePlane) {
+            ViewerManager.activatePlane(plane);
         }
-        this.subviewStatus.sagittalHolderPaper.image("./assets/img/yz.png", 110, 110, 100, 100);
-        sagittalImgFg = this.subviewStatus.sagittalHolderPaper.image("./assets/img/null.png", 10, 10, this.config.subviewSize, this.config.subviewSize);
-        this.subviewStatus.sagittalRect = this.subviewStatus.sagittalHolderPaper.rect(10, 10, this.config.subviewSize, this.config.subviewSize);
-
-        //		if (selectedSubview == SAGITTAL) {
-        //			document.getElementById("sagittal_label").className="sagittalLabel btnOn";	// Select SAGITTAL button (First access)
-        //		}
-
-        var startX = 10 + minX;
-        var endX = this.config.subviewSize + 10 + 1.5;
-        var verticalLine = this.subviewStatus.sagittalHolderPaper.path("M" + startX + ",10L" + startX + "," + endX).attr({
-            stroke: this.config.colorCoronal,
-            "stroke-width": 2.0,	// Vertical line of SAGITTAL subview (CORONAL cross)
-            opacity: 1.0
-        });
-        verticalLine.id = this.subviewStatus.sagittalVerticalLineId;
-
-        this.subviewStatus.sagittalHolderPaperSet.push(verticalLine);
-        if (this.config.coronalSlideCount <= 1) { verticalLine.attr('stroke-width', 0) }
-
-        var transferX = this.config.global_Y - startX;
-        verticalLine.transform("T" + transferX + ",0");
-
-        //set up the line
-        //add event handling:
-        if (sagittalImgFg) {
-            sagittalImgFg.mousedown(function (event) {
-                //find x,y click position
-                var bnds = event.target.getBoundingClientRect();
-                var fx = (event.clientX - bnds.left) / bnds.width * that.subviewStatus.sagittalImg.attrs.width;
-                startX = fx;
-                that.updateSubVview(fx, true);
-            });
-
-            var dragMove = function (dx, dy, x, y, e) {
-                var fx = startX + dx;
-                that.updateSubVview(fx, false);
-            };
-            var dragStart = function (x, y) {
-            }
-            var dragEnd = function () {
-                ViewerManager.goToSlice(ViewerManager.CORONAL, that.subviewStatus.targetCoronalChosenSlice);
-            };
-            sagittalImgFg.drag(dragMove, dragStart, dragEnd);
-        }
-    }
-
-    updateSubVview(fx, isClick) {
-        var newCoronalChosenSlice;
-        if (fx <= this.config.yMinGlobal) {
-            newCoronalChosenSlice = 0;//redundant
-        } else if (fx > this.config.yMaxGlobal) {
-            newCoronalChosenSlice = (this.config.coronalSlideCount - 1.0);
-        } else {
-            var percent = (fx - this.config.yMinGlobal) / (this.config.yMaxGlobal - this.config.yMinGlobal);
-            newCoronalChosenSlice = Math.round((this.config.coronalSlideCount - 1.0) * percent);
-        }
-        if (this.config.coronalSlideCount > 1 && isClick) {
-            ViewerManager.goToSlice(ViewerManager.CORONAL, newCoronalChosenSlice);
-        }
-
-        this.subviewStatus.targetCoronalChosenSlice = newCoronalChosenSlice;
-        $("#sagittal_spinner>input:first-child").val(newCoronalChosenSlice);
-        this.updateSubVLine(newCoronalChosenSlice);
-
-        //AW(2010/01/16): Added this code to call a tile-drawn event, which then calls updateFilters
-        //FIXME G.viewer.addHandler('tile-drawn', G.tileDrawnHandler);
-    }
-
-    updateSubVLine(page) {
-        var sagittalVLine = this.subviewStatus.sagittalHolderPaper.getById(this.subviewStatus.sagittalVerticalLineId);
-        sagittalVLine.transform("T" + (this.config.yMaxGlobal - this.config.yMinGlobal) * page / (this.config.coronalSlideCount - 1) + ",0");
-    }
-
-    updateLinePosBaseSlide(coronalSlide) {
-        // Coronal subview's image is changed
-        var tmpCoronalSlide = this.config.coronalSlideCount - 1 - coronalSlide;
-        //this.updateSubVLine(tmpCoronalSlide);
     }
 
 }

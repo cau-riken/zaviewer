@@ -50,9 +50,14 @@ class RegionsManager {
         const that = this;
 
         //load regions related data
+        const treeDataUrl =
+            config.hasBackend
+                ? Utils.makePath(config.PUBLISH_PATH, config.treeUrlPath, "regionTreeGroup_" + config.paramId + ".json")
+                : config.fallbackTreeUrl;
+
         $.ajax({
-            url: Utils.makePath(config.PUBLISH_PATH, config.treeUrlPath, "regionTreeGroup_" + config.paramId + ".json"),
-            type: "POST",
+            url: treeDataUrl,
+            type: config.hasBackend ? "POST" : "GET",
             async: true,
             dataType: 'json',
             success: function (data) {

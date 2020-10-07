@@ -40,6 +40,9 @@ class QuickActionButtons extends React.Component {
 
         const tracerLayer = _.findWhere(this.props.displaySettings, { isTracer: true });
 
+        const currentSlice = this.props.chosenSlice;
+        const maxSliceNum = this.props.config ? ViewerManager.getPlaneSlideCount(this.props.activePlane) - 1 : 1000;
+        const sliceStep = this.props.config ? ViewerManager.getPlaneSliceStep(this.props.activePlane) : 1;
 
         return (
             <React.Fragment>
@@ -79,7 +82,7 @@ class QuickActionButtons extends React.Component {
                 {this.props.config ?
                     <div
                         className="zav-ActionContainer"
-                        title={"slice #" + (this.props.coronalChosenSlice * this.props.config.coronalSliceStep) + " of " + (this.props.config.coronalSliceStep * (this.props.config.coronalSlideCount - 1))}
+                        title={"slice #" + (currentSlice+1) + " of " + (maxSliceNum+1)}
                     >
 
                         <Popover
@@ -101,13 +104,13 @@ class QuickActionButtons extends React.Component {
                                 <Slider
                                     className="zav-Slider zav-QActSliceSlider"
                                     min={0}
-                                    max={this.props.config.coronalSlideCount - 1}
+                                    max={maxSliceNum}
                                     stepSize={1}
                                     onChange={this.onGoToSlice}
-                                    value={this.props.coronalChosenSlice}
+                                    value={currentSlice}
                                     showTrackFill={false}
-                                    labelStepSize={this.props.config.coronalSlideCount - 1}
-                                    labelRenderer={(value) => value * this.props.config.coronalSliceStep}
+                                    labelStepSize={maxSliceNum}
+                                    labelRenderer={(value) => value}
                                 />
                                 <Icon
                                     icon="chevron-right"
@@ -174,11 +177,11 @@ class QuickActionButtons extends React.Component {
     }
 
     onShiftToSlice(increment) {
-        this.onGoToSlice(this.props.coronalChosenSlice + increment);
+        ViewerManager.shiftToSlice(increment);
     }
 
     onGoToSlice(sliceNum) {
-        ViewerManager.goToSlice(ViewerManager.CORONAL, sliceNum);
+        ViewerManager.goToSlice(sliceNum);
     }
 
 

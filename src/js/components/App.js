@@ -63,8 +63,9 @@ class App extends React.Component {
   }
 
   componentDidMount() {
+    //config ID is undefined when the viewer is used without backend (i.e. shipped within its dataset)
     const configId = this.getConfigIdParam();
-    if (configId && configId != this.state.configId) {
+    if (configId !== this.state.configId) {
       //retrieve config asynchronously...
       ZAVConfig.getConfig(configId, (config) => {
         //... and expand state when config has been retrieved
@@ -84,7 +85,7 @@ class App extends React.Component {
    * @private
   */
   getConfigIdParam() {
-    var configId = undefined;
+    var configId = null;
     var i;
     const url = location.search.substring(1).split('&');
 

@@ -29,7 +29,12 @@ class Utils {
 	}
 
 	static makePath(...args) {
-		return args.reduce((acc, frag) => acc + (acc.endsWith("/") || frag.startsWith("/") ? "" : "/") + frag);
+		return args.reduce(
+			(acc, frag) =>
+				frag
+					? acc + (acc.endsWith("/") || frag.startsWith("/") ? "" : "/") + frag
+					: acc
+		);
 	}
 
 	static getCleanHash(hash) {
