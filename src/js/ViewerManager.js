@@ -712,6 +712,13 @@ class ViewerManager {
 
                         that.status.set.push(newPathElt);
                     }
+                    
+                    //once path elements are added to the DOM
+                    for (let p of overlayElement.getElementsByTagName('svg')[0].getElementsByTagName('path')) {
+                        //make path's stroke width independant of scaling transformations 
+                        p.setAttribute("vector-effect", "non-scaling-stroke");
+                    }
+
                     that.eventSource.raiseEvent('zav-regions-created', { svgUrl: svgName })
 
                     that.adjustResizeRegionsOverlay(that.status.set);
@@ -845,7 +852,7 @@ class ViewerManager {
         element.attr({
             "fill-opacity": (!this.status.displayAreas || this.status.regionsOpacity < 0.05) ? 0 : this.status.regionsOpacity + (this.status.regionsOpacity > 0.6 ? -0.4 : 0.4),
             "stroke-opacity": forcedBorder || this.status.displayBorders ? 1 : 0,
-            "stroke-width": 30,
+            "stroke-width": '4px',
             "stroke": color,
         });
     }
@@ -862,7 +869,7 @@ class ViewerManager {
         element.attr({
             "fill-opacity": (!this.status.displayAreas || this.status.regionsOpacity < 0.05) ? 0 : this.status.regionsOpacity + (this.status.regionsOpacity > 0.6 ? -0.4 : 0.4),
             "stroke-opacity": this.status.showRegions ? 0.7 : 0,
-            "stroke-width": 20,
+            "stroke-width": '3px',
             "stroke": "#0000ff",
         });
     }
@@ -873,7 +880,7 @@ class ViewerManager {
         element.attr({
             "fill-opacity": this.status.displayAreas ? this.status.regionsOpacity : 0,
             "stroke-opacity": this.status.displayBorders ? 0.5 : 0,
-            "stroke-width": 10,
+            "stroke-width": '2px',
             "stroke": color,
         });
     }
