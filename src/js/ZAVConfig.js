@@ -557,9 +557,9 @@ class ZAVConfig {
         }
 
         if (response.verofdata) {
-
-            //FIXME
-
+            if (response.verofdata.all) {
+                this.config.datasetVersion = response.verofdata.all;
+            }
         }
 
 

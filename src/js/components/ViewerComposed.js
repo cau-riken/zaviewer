@@ -87,6 +87,8 @@ class ViewerComposed extends React.Component {
             null
             ;
         const globalHeaderText = (this.props.config && this.props.config.paramId ? this.props.config.paramId + " — " : "") + "Global view";
+        const globalDatasetVersion = (this.props.config && this.props.config.datasetVersion) ? <a href={this.props.config.datasetVersion.uri} target="_blank">{this.props.config.datasetVersion.label}</a> : null;
+
         const globalHeader = <React.Fragment>{globalHeaderText}{datasetInfo}</React.Fragment>;
 
         const region = this.state.hoveredRegion ? RegionsManager.getRegion(this.state.hoveredRegion) : null;
@@ -133,6 +135,7 @@ class ViewerComposed extends React.Component {
                     <TitledCard header={globalHeader}>
                         <div className="navigatorParentClass">
                             <div id={ViewerManager.NAVIGATOR_ID} className="navigatorChildClass"></div>
+                            <div className="zav-DatasetVersion">{globalDatasetVersion}</div>
                         </div>
                     </TitledCard>
 
