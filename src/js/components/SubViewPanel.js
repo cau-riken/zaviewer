@@ -13,6 +13,39 @@ import ViewerManager from '../ViewerManager.js'
 
 import Utils from '../Utils.js';
 
+class AxisArrow extends React.Component {
+
+    render() {
+        const arrowHead = { width: 3, length: 8 }
+        const fontSize = 12;
+
+        const { pX, pY, arrowlen, axisLabel } = this.props;
+        let arrowPath, arrowLabel;
+        if (this.props.horizontal) {
+            arrowPath = <path
+                d={`M${pX},${pY} l${arrowlen},0 M${pX},${pY} l${arrowHead.length},-${arrowHead.width} M${pX},${pY} l${arrowHead.length},${arrowHead.width}`}
+                stroke="silver"
+                strokeWidth={1}
+            />;
+            arrowLabel = <text x={pX - 3} y={pY} textAnchor="end" stroke="silver">{axisLabel}</text>;
+        } else {
+            arrowPath = <path
+                d={`M${pX},${pY} l0,${arrowlen} M${pX},${pY} l-${arrowHead.width},${arrowHead.length} M${pX},${pY} l${arrowHead.width},${arrowHead.length}`}
+                stroke="silver"
+                strokeWidth={1}
+            />;
+            arrowLabel = <text x={pX} y={pY - 3} textAnchor="middle" stroke="silver">{axisLabel}</text>;
+        }
+
+        return (
+            <React.Fragment>
+                {arrowPath}
+                {arrowLabel}
+            </React.Fragment>
+        );
+    }
+}
+
 class SubView extends React.Component {
 
     constructor(props) {
@@ -31,7 +64,8 @@ class SubView extends React.Component {
         const margin = 2 * border + 2 * gap;
         const markerLineWidth = 1;
 
-        let horizontalLine, verticalLine, imageUrl;
+        let horizontalLine, verticalLine, horizontalArrow, verticalArrow, imageUrl;
+        const arrowLen = size * 1 / 3 - 6;
         if (this.props.config && this.props.activePlane) {
 
             // scaling factor when widget size is different from subview image size (image range are proportional to subview image size), 
@@ -48,6 +82,13 @@ class SubView extends React.Component {
                 const vOffset = scale * (this.props.config.subviewSize - (vRange.min + vRange.len * orthoHSlicePct));
                 horizontalLine = <line x1="0" y1={vOffset} x2={size} y2={vOffset} stroke={ZAVConfig.getPlaneColor(orthoHorizontal)} strokeWidth={markerLineWidth} />
             }
+            const vArrow = {
+                pX: size - 6,
+                pY: size * 2 / 3,
+                arrowlen: arrowLen,
+                axisLabel: ZAVConfig.getPlaneVerticalAxis(this.props.viewPlane)
+            };
+            verticalArrow = <AxisArrow horizontal={false} {...vArrow} />;
 
             //line marker for orthogonal plane crossing the subview plane vertically
             const orthoVertical = ZAVConfig.getPlaneOrthoVertical(this.props.viewPlane);
@@ -65,6 +106,13 @@ class SubView extends React.Component {
                 }
                 verticalLine = <line x1={hOffset} y1="0" x2={hOffset} y2={size} stroke={ZAVConfig.getPlaneColor(orthoVertical)} strokeWidth={markerLineWidth} />;
             }
+            const hArrow = {
+                pX: size * 2 / 3,
+                pY: size - 6,
+                arrowlen: arrowLen,
+                axisLabel: ZAVConfig.getPlaneHorizontalAxis(this.props.viewPlane),
+            };
+            horizontalArrow = <AxisArrow horizontal={true} {...hArrow} />;
 
 
             if (this.props.config.subviewFolderName) {
@@ -105,6 +153,8 @@ class SubView extends React.Component {
                 >
                     {horizontalLine}
                     {verticalLine}
+                    {horizontalArrow}
+                    {verticalArrow}
                 </svg>
 
             </div>
@@ -143,10 +193,10 @@ class SubView extends React.Component {
         return ViewerManager.getPlaneChosenSlice(plane) / (ViewerManager.getPlaneSlideCount(plane) - 1);
     }
 
-    getSliceForWidgetPos(plane, range, subviewSize, scale, pos, reversedOrientation) {
+    getSliceForWidgetPos(plane, range, subviewSize, scale, pos, invertedSliceIndex) {
         const maxSlideNum = ViewerManager.getPlaneSlideCount(plane);
         const percentOffset =
-            reversedOrientation
+            invertedSliceIndex
                 ? (pos / scale - range.min) / range.len
                 : (subviewSize - (pos / scale) - range.min) / range.len
             ;

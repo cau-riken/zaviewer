@@ -16,6 +16,13 @@ export const PLANE_ORTHOG = {
     [SAGITTAL]: { 'v': CORONAL, 'h': AXIAL }
 };
 
+/** labels of coordinate axis defining the plane */
+export const PLANE_AXIS = {
+    [AXIAL]: { 'v': 'y', 'h': 'x' },
+    [CORONAL]: { 'v': 'z', 'h': 'x' },
+    [SAGITTAL]: { 'v': 'z', 'h': 'y' }
+};
+
 /** preferred subview plane for main image plane (signel plane mode) */
 export const PLANE_PREFSUBVIEW = { [AXIAL]: CORONAL, [CORONAL]: SAGITTAL, [SAGITTAL]: AXIAL };
 
@@ -47,6 +54,14 @@ class ZAVConfig {
 
     static getPlaneOrthoHorizontal(plane) {
         return PLANE_ORTHOG[plane]['h'];
+    }
+
+    static getPlaneVerticalAxis(plane) {
+        return PLANE_AXIS[plane]['v'];
+    }
+
+    static getPlaneHorizontalAxis(plane) {
+        return PLANE_AXIS[plane]['h'];
     }
 
     static getPreferredSubviewForPlane(plane) {
