@@ -9,8 +9,10 @@
   "private": true,
   "dependencies": {
     "@babel/runtime": "^7.9.6",
-    "@blueprintjs/core": "^3.28.1",
+    "@blueprintjs/core": "^3.33.0",
+    "color": "^3.1.2",
     "history": "^4.10.1",
+    "paper": "^0.12.11",
     "qs": "^6.9.4",
     "react": "^16.13.1",
     "react-dom": "^16.13.1",

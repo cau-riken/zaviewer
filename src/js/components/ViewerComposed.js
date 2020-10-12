@@ -162,6 +162,12 @@ class ViewerComposed extends React.Component {
                                     regionsOpacity={this.state.regionsOpacity}
                                     displayAreas={this.state.displayAreas}
                                     displayBorders={this.state.displayBorders}
+                                    editModeOn={this.state.editModeOn}
+                                    editingActive={this.state.editingActive}
+                                    editRegionId={this.state.editRegionId}
+                                    editRegionColor={this.state.editRegionColor}
+                                    editingTool={this.state.editingTool}
+                                    editingToolRadius={this.state.editingToolRadius}
                                 />
                             </TitledCard>
                             : null

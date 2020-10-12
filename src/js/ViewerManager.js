@@ -1,5 +1,8 @@
 import _ from 'underscore';
 
+import paper from 'paper';
+import Color from 'color';
+
 import Utils from './Utils.js';
 
 import RegionsManager from './RegionsManager.js'
@@ -128,8 +131,12 @@ class ViewerManager {
             regionsOpacity: 0.4,
             displayBorders: false,
 
+            /** info about region currently hovered by mouse cursor */
             hoveredRegion: null,
             hoveredRegionSide: null,
+
+            /** (reusable) mouse event listeners for region contained in the current slice */
+            regionEventListeners: {},
 
             /** currently displayed plane */
             activePlane: overridingConf.activePlane || this.config.firstActivePlane,
@@ -150,7 +157,32 @@ class ViewerManager {
                 ? overridingConf.sliceNum
                 : this.config.sagittalChosenSlice,
 
+            /** set to true when measuring tool is activated  */
             measureModeOn: false,
+
+
+            /** set to true when region editing mode is enabled */
+            editModeOn: false,
+            /** set to true when a region is being edited */
+            editingActive: false,
+            /** current editing tool */
+            editingTool: 'pen',
+            /** current editing tool radius */
+            editingToolRadius: 60,
+
+            /** ID of the region being edited */
+            editRegionId: undefined,
+            /** source path element to be edited (in the region overlay) */
+            editRegion: undefined,
+            /** root SVG element containing region being edited */
+            editSVG: undefined,
+            /** color of the edited region */
+            editRegionColor: undefined,
+            /** path element representing the region being edited */
+            editLivePath: undefined,
+            /** last recorder position of cursor during region editing*/
+            editPos: undefined,
+
         };
 
         this.status.chosenSlice = this.getCurrentPlaneChosenSlice();
@@ -318,33 +350,20 @@ class ViewerManager {
 
         this.viewer.addHandler('add-overlay', function (event) {
             //add overlay is called for each page change
-            //alert("Adding overlays");
             //Reference 1): http://chrishewett.com/blog/openseadragon-svg-overlays/
             if (that.config.svgFolerName != "") {
-                /*
-                let firstIndex;
-                switch (that.status.activePlane) {
-                    case ZAVConfig.AXIAL:
-                        firstIndex = that.config.axialFirstIndex;
-                        break;
-                    case ZAVConfig.CORONAL:
-                        firstIndex = that.config.coronalFirstIndex;
-                        break;
-                    case ZAVConfig.SAGITTAL:
-                        firstIndex = that.config.sagittalFirstIndex;
-                        break;
+                //load region delineations in the dedicated overlay
+                if (event.element.id === 'svgDelineationOverlay') {
+                    const sliceNum = that.getCurrentPlaneChosenSlice();
+
+                    const svgPath = Utils.makePath(
+                        that.config.PUBLISH_PATH, that.config.svgFolerName,
+                        (that.config.hasMultiPlanes ? ZAVConfig.getPlaneLabel(that.status.activePlane) : null),
+                        "Anno_" + sliceNum + ".svg"
+                    );
+
+                    that.addSVGData(svgPath, event.element);
                 }
-                //const sliceNum = that.viewer.currentPage() - firstIndex;
-                */
-                const sliceNum = that.getCurrentPlaneChosenSlice();
-
-                const svgPath = Utils.makePath(
-                    that.config.PUBLISH_PATH, that.config.svgFolerName,
-                    (that.config.hasMultiPlanes ? ZAVConfig.getPlaneLabel(that.status.activePlane) : null),
-                    "Anno_" + sliceNum + ".svg"
-                );
-
-                that.addSVGData(svgPath, event.element);
             }
         });
 
@@ -352,14 +371,28 @@ class ViewerManager {
 
 
             if (!that.viewer.source) { return; }
+            const dimensions = that.viewer.source.dimensions;
+
+            if (that.status.editModeOn) {
+                /** overlay to hold currently edited region */
+                const editOverlay = document.createElement("div");
+                editOverlay.className = "overlay";
+                editOverlay.id = "svgEditOverlay";
+                editOverlay.style.zIndex = 0;
+
+                that.viewer.addOverlay({
+                    element: editOverlay,
+                    location: that.viewer.viewport.imageToViewportRectangle(new OpenSeadragon.Rect(0, 0, dimensions.x, dimensions.y)),
+                });
+            }
 
             /** overlay to hold region delineations (triggers 'add-overlay' event) */
-            var elt = document.createElement("div");
-            elt.className = "overlay";
+            const regionOverlay = document.createElement("div");
+            regionOverlay.className = "overlay";
+            regionOverlay.id = "svgDelineationOverlay";
 
-            var dimensions = that.viewer.source.dimensions;
             that.viewer.addOverlay({
-                element: elt,
+                element: regionOverlay,
                 location: that.viewer.viewport.imageToViewportRectangle(new OpenSeadragon.Rect(0, 0, dimensions.x, dimensions.y)),
             });
 
@@ -369,24 +402,7 @@ class ViewerManager {
                     that.addLayer(key, value.name, value.ext);
                 } else {
                     that.setLayerOpacity(key);
-
-                    if (!that.viewer.referenceStrip) {
-                        //AW(2020/01/16): Disabled reference strip
-                        //				viewer.referenceStrip = new OpenSeadragon.ReferenceStrip({
-                        //					id:          viewer.referenceStripElement,
-                        //					position:    viewer.referenceStripPosition,
-                        //					sizeRatio:   viewer.referenceStripSizeRatio,
-                        //					scroll:      viewer.referenceStripScroll,
-                        //					height:      viewer.referenceStripHeight,
-                        //					width:       viewer.referenceStripWidth,
-                        //					tileSources: viewer.tileSources,
-                        //					prefixUrl:   viewer.prefixUrl,
-                        //					viewer:      viewer
-                        //				});
-                        //				viewer.referenceStrip.setFocus(viewer.currentPage());
-                    }
                 }
-                //i++;
             });
 
 
@@ -533,7 +549,8 @@ class ViewerManager {
         this.viewer.addViewerInputHook({
             hooks: [
                 { tracker: 'viewer', handler: 'scrollHandler', hookHandler: this.onViewerScroll },
-                { tracker: 'viewer', handler: 'clickHandler', hookHandler: this.onViewerClick }
+                { tracker: 'viewer', handler: 'clickHandler', hookHandler: this.onViewerClick },
+                { tracker: 'viewer', handler: 'dragHandler', hookHandler: this.onViewerDrag.bind(this) },
             ]
         });
 
@@ -546,26 +563,6 @@ class ViewerManager {
         this.viewer.addHandler('animation', function (event) {
             that.adjustResizeRegionsOverlay(that.status.set);
         });
-
-        //Handle changing the page; perhaps dynamically load new data at this point
-        this.viewer.addHandler('page', function (event) {
-            /*
-                var pageNum = event.page;
-                $.each(layers, function( key, value ) {
-                    if (value.index == 0) {
-                        var options = viewer.tileSources[pageNum];
-                        if(!options.tileSource){
-                            viewer.tileSources[pageNum] = {
-                                tileSource:options,
-                            };
-                        }
-                        viewer.tileSources[pageNum].opacity = getOpacity(key);
-                    }
-                });
-                */
-        });
-
-
 
         //--------------------------------------------------
 
@@ -602,6 +599,302 @@ class ViewerManager {
 
     }
     // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
+    //create SVG element where all editing related drawing is performed  
+    static createEditSVGElement() {
+        if (this.status.editModeOn) {
+            const editOverlay = document.getElementById('svgEditOverlay');
+            const regionSVG = document.getElementById('svgDelineationOverlay').getElementsByTagName('svg')[0];
+
+            const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+            //same size a region delineation SVG
+            svg.setAttribute('height', regionSVG.getAttribute('height'));
+            svg.setAttribute('width', regionSVG.getAttribute('width'));
+            svg.setAttribute('style', 'overflow: hidden; position: relative;');
+            const svgNS = svg.namespaceURI;
+            const g = document.createElementNS(svgNS, 'g');
+            g.setAttribute('id', 'svgEditGroup');
+            svg.appendChild(g);
+            editOverlay.appendChild(svg);
+            this.status.editSVG = svg;
+
+            new OpenSeadragon.MouseTracker({
+
+                element: this.status.editSVG,
+
+                dblClickHandler: (event) => {
+                    //double-clicking outside a region stop the current region being edited
+                    if (this.status.editRegionId) {
+                        this.stopEdit(event);
+                    }
+                },
+                moveHandler: (event) => {
+                    //incremental edit after each move while left button pressed
+                    if (event.buttons == 1) {
+                        this.doEdit(event);
+                    }
+                },
+                pressHandler: (event) => {
+                    //start active editing when left button pressed
+                    if (event.buttons == 1) {
+                        this.startEdit(event);
+                    }
+                },
+                releaseHandler: (event) => {
+                    //stop active editing when left button is released
+                    this.suspendEdit(event)
+                },
+            });
+        }
+    }
+
+
+    static createEditSVGBackground(srcBackNode) {
+        if (this.status.editModeOn) {
+
+            srcBackNode.setAttribute('id', 'editBackgroundPath');
+            srcBackNode.setAttribute('class', 'editBackground');
+            srcBackNode.setAttribute('fill-opacity', 0);
+            this.status.editBackgNode = srcBackNode.cloneNode();
+            const editGroup = document.getElementById('svgEditGroup');
+            if (editGroup) {
+                editGroup.appendChild(this.status.editBackgNode);
+            }
+
+            this.status.editScope = paper.setup([10, 10]);
+        }
+    }
+
+
+    static getEditCursorSVG(tool) {
+        //
+        const brushRadius = this.status.editingToolRadius;
+        const brushBorder = 8;
+        const color = Color(this.status.editRegionColor);
+        const invcolor = color.negate();
+        const zoom = this.viewer.world.getItemAt(0).viewportToImageZoom(this.viewer.viewport.getZoom(true));
+        const scaledWidth = 2 * brushRadius * zoom;
+
+        const eraserOn = tool == 'eraser';
+        const strokeDash = eraserOn ? 'stroke-dasharray="1 1"' : '';
+        const fillColor = eraserOn ? invcolor : color;
+        const strokeColor = eraserOn ? 'silver' : invcolor;
+
+        return `url('data:image/svg+xml;utf8,
+<svg
+ width="${scaledWidth}" 
+ height="${scaledWidth}" 
+ viewBox="0 0 ${2 * (brushRadius + brushBorder)} ${2 * (brushRadius + brushBorder)}" 
+ xmlns="http://www.w3.org/2000/svg" 
+ style="background-color: transparent;"
+ >
+  <g>
+    <circle 
+     cx="${brushRadius + brushBorder}" 
+     cy="${brushRadius + brushBorder}" 
+     r="${brushRadius}" 
+     stroke="${strokeColor}" 
+     stroke-width="${brushBorder}" 
+     fill="${fillColor}" 
+     fill-opacity="0.55"
+     ${strokeDash}
+    />
+  </g>
+</svg>
+') ${scaledWidth / 2} ${scaledWidth / 2}, crosshair
+`.replace(/\n/g, '');
+
+    }
+
+    //set up specific mouse cursor for edit  
+    static updateEditCursor() {
+        if (this.status.editRegionId) {
+            const inlinedCursor = this.getEditCursorSVG(this.status.editingTool);
+            this.status.editSVG.style.cursor = inlinedCursor;
+        }
+    }
+
+    static removeEditCursor() {
+        this.status.editSVG.style.cursor = 'default';
+    }
+
+
+    static getSVGPos(x, y) {
+        const zoom = this.viewer.world.getItemAt(0).viewportToImageZoom(this.viewer.viewport.getZoom(true));
+        return { x: Math.round(x / zoom), y: Math.round(y / zoom) };
+    }
+
+    static selectEditRegion(e) {
+        //
+        const targetElt = e.target;
+        this.status.editRegionId = targetElt.id;
+        this.status.editRegion = targetElt;
+        this.status.editRegionColor = targetElt.getAttribute("fill");
+
+        const editGroup = this.status.editSVG.getElementById('svgEditGroup');
+        //copy region svg as a base for edit 
+        const newLivPath = targetElt.cloneNode();
+        newLivPath.id = "beingEditedRegion";
+
+        //insert in DOM
+        editGroup.appendChild(newLivPath);
+        newLivPath.setAttribute("stroke", Color(this.status.editRegionColor).negate());
+        newLivPath.removeAttribute("style");
+        newLivPath.setAttribute("fill-opacity", 0.35);
+        newLivPath.setAttribute("stroke-opacity", 0.2);
+        newLivPath.setAttribute("stroke-width", 20);
+        newLivPath.setAttribute("vector-effect", "non-scaling-stroke");
+
+
+        this.status.editLivePath = newLivPath;
+        //import as Paper object for edit transformations
+        this.status.editRegionPath = paper.project.importSVG(newLivPath, { insert: false });
+
+        //hide source region while its copy is being edited
+        targetElt.style.display = 'none';
+
+        //place the editing overlay on top of region overlay while editing is being done
+        const editOverlay = document.getElementById('svgEditOverlay');
+        editOverlay.style.zIndex = 1;
+
+        this.updateEditCursor();
+
+        this.signalStatusChanged(this.status);
+    }
+
+    static startEdit(e) {
+        this.status.editingActive = true;
+        this.status.editPos = this.status.lastPos;
+        this.doEdit(e, true);
+    }
+
+    static suspendEdit(e) {
+        this.status.editingActive = false;
+    }
+
+    static doEdit(e, forcedEdit) {
+        if (this.status.editingActive) {
+
+            const prevPos = this.status.editPos;
+            //const newPos = this.getSVGPos(e.layerX, e.layerY);
+            const newPos = this.getSVGPos(e.position.x, e.position.y);
+            this.status.editPos = newPos;
+            if (forcedEdit || (prevPos && (Math.abs(prevPos.x - newPos.x) > 1 || Math.abs(prevPos.y - newPos.y) > 1))) {
+
+                const outlined = new paper.Path.Circle(new paper.Point(newPos.x, newPos.y), this.status.editingToolRadius);
+
+                const united =
+                    this.status.editingTool == 'eraser' ?
+                        this.status.editRegionPath.subtract(outlined, { insert: false })
+                        :
+                        this.status.editRegionPath.unite(outlined, { insert: false });
+
+                const newLivPath = united.exportSVG();
+                this.status.editRegionPath = united;
+
+                this.status.editLivePath.replaceWith(newLivPath);
+                this.status.editLivePath = newLivPath;
+
+            }
+        } else {
+
+            //store first position of editing segment
+            this.status.lastPos = this.getSVGPos(e.position.x, e.position.y);
+
+        }
+    };
+
+    static stopEdit() {
+        this.status.editingActive = false;
+        if (this.status.editRegionId) {
+
+            //restore region overlay above edition
+            const editOverlay = document.getElementById('svgEditOverlay');
+            editOverlay.style.zIndex = 0;
+
+            this.removeEditCursor();
+            this.status.editRegionId = null;
+
+
+            //replace exisiting region by edited one
+
+            //remove un-edited source region from Raphaël set
+            this.status.set.exclude(this.status.editRegion);
+            const regionId = this.status.editRegion.id;
+            //remove from DOM
+            this.status.editRegion.remove();
+
+            //import edited region in Raphaël  
+            const modifiedRegion = this.status.editRegionPath.exportSVG();
+            modifiedRegion.setAttribute('id', regionId);
+
+            //FIXME region order is not conserved, Raphaël will place the newly imported region at the end 
+            const newRaphElt = this.status.paper.importSVG(modifiedRegion);
+            this.status.set.push(newRaphElt);
+
+            //once path is added to DOM, restore non-scaling strocke attribute
+            document.getElementById(regionId).setAttribute("vector-effect", "non-scaling-stroke");
+
+            //reuse region event listener
+            this.connectRegionListeners(newRaphElt, this.status.regionEventListeners[regionId]);
+            this.applyUnselectedPresentation(newRaphElt);
+
+            this.status.editLivePath.remove();
+
+            this.status.editLivePath = null;
+            this.status.editPos = null;
+            this.status.editRegion = null;
+
+            this.signalStatusChanged(this.status);
+        }
+    }
+
+    static simplifyEditedRegion() {
+        if (this.status.editRegionId) {
+
+            if (this.status.editRegionPath.simplify()) {
+                const newLivPath = this.status.editRegionPath.exportSVG();
+
+                this.status.editLivePath.replaceWith(newLivPath);
+                this.status.editLivePath = newLivPath;
+            }
+        }
+    }
+
+    static extendRegionListenerForEdit(listener) {
+        listener.dblclick = (e) => {
+            if (this.status.editRegionId) {
+                this.stopEdit(e);
+            } else {
+                this.selectEditRegion(e);
+            }
+        };
+        return listener;
+    }
+
+    static connectRegionListeners(newPathElt, regionListener) {
+        newPathElt.mouseover(function (e) { regionListener.mouseover(e, this); });
+        newPathElt.mouseout(function (e) { regionListener.mouseout(e, this); });
+        newPathElt.click(function (e) { regionListener.click(e, this); });
+        if (regionListener.dblclick) {
+            newPathElt.dblclick(function (e) { regionListener.dblclick(e, this); });
+        }
+    }
+
+    static changeEditingTool(newTool) {
+        this.status.editingTool = newTool;
+        this.updateEditCursor();
+        this.signalStatusChanged(this.status);
+    }
+
+    static changeEditingRadius(newradius) {
+        this.status.editingToolRadius = newradius;
+        this.updateEditCursor();
+        this.signalStatusChanged(this.status);
+    }
+
+
+
+    // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
 
     /** Add region delineations to specified overlay  
      * 
@@ -611,6 +904,7 @@ class ViewerManager {
      * 
     */
     static addSVGData(svgName, overlayElement) {
+
         this.status.paper = Raphael(overlayElement);
         this.status.set = this.status.paper.set();
         //clear the set if necessary
@@ -620,8 +914,12 @@ class ViewerManager {
         this.status.currentSVGName = svgName;
         console.log("svg " + svgName);
 
+        //Create SVG element dedecated to edition
+        this.createEditSVGElement();
+
         const that = this;
 
+        //load SVG
         $.ajax({
             url: svgName,
             async: true,
@@ -634,6 +932,8 @@ class ViewerManager {
                     var paths = root.getElementsByTagName('path');
 
                     that.status.currentSliceRegions.clear();
+                    //new set of mouse event listeners 
+                    that.status.regionEventListeners = {};
 
                     for (var i = 0; i < paths.length; i++) {
 
@@ -659,6 +959,9 @@ class ViewerManager {
                                 }
                             });
 
+                            //Create Background path in the SVG dedicated to edition
+                            that.createEditSVGBackground(paths[i]);
+
                         } else {
                             newPathElt.id = pathId;
                             //extract region abbreviation from path id
@@ -668,51 +971,71 @@ class ViewerManager {
 
                             that.status.currentSliceRegions.set(pathId, abbrev);
 
-                            newPathElt.mouseover(function (e) {
-                                if (that.status.showRegions) {
-                                    that.applyMouseOverPresentation(this);
-                                }
-                                that.status.hoveredRegion = abbrev;
-                                that.status.hoveredRegionSide = side;
-                                that.signalStatusChanged(this.status);
-                            });
+                            //grouped listeners so they can be easily reused
+                            const regionListener = {
+                                abbrev: abbrev,
+                                side: side,
 
-                            newPathElt.mouseout(function (e) {
-                                if (that.status.showRegions) {
-                                    that.applyMouseOutPresentation(this, RegionsManager.isSelected(abbrev));
-                                }
-                                that.status.hoveredRegion = null;
-                                that.status.hoveredRegionSide = null;
-                                that.signalStatusChanged(this.status);
-                            });
-
-                            newPathElt.click(function (e) {
-                                if (that.status.showRegions) {
-                                    that.unselectRegions();
-                                    if (e.ctrlKey) {
-                                        //when Ctrl key is pressed, allow multi-select or toogle of currently selected region 
-                                        if (RegionsManager.isSelected(abbrev)) {
-                                            that.regionActionner.unSelect(abbrev);
-                                        } else {
-                                            that.regionActionner.addToSelection(abbrev);
-                                        }
-                                    } else {
-                                        that.regionActionner.replaceSelected(abbrev);
+                                mouseover: (e, raphElt) => {
+                                    //highlight border and display info about hovered region
+                                    if (that.status.showRegions) {
+                                        that.applyMouseOverPresentation(raphElt);
                                     }
-                                    that.status.userClickedRegion = true;
-                                    that.selectRegions(RegionsManager.getSelectedRegions());
+                                    that.status.hoveredRegion = abbrev;
+                                    that.status.hoveredRegionSide = side;
+                                    that.signalStatusChanged(that.status);
+                                },
 
-                                } else if (e.shiftKey) {
+                                mouseout: (e, raphElt) => {
+                                    //remove highlighted border and info when cursor move out of region
+                                    if (that.status.showRegions) {
+                                        that.applyMouseOutPresentation(raphElt, RegionsManager.isSelected(abbrev));
+                                    }
+                                    that.status.hoveredRegion = null;
+                                    that.status.hoveredRegionSide = null;
+                                    that.signalStatusChanged(that.status);
+                                },
 
-                                    that.applyMouseOverPresentation(this, true);
-                                    setTimeout(() => that.applyUnselectedPresentation(this), 2500);
-                                }
-                            });
+                                click: (e, raphElt) => {
+
+                                    if (that.status.showRegions) {
+                                        that.unselectRegions();
+                                        if (e.ctrlKey) {
+                                            //when Ctrl key is pressed, allow multi-select or toogle of currently selected region 
+                                            if (RegionsManager.isSelected(abbrev)) {
+                                                that.regionActionner.unSelect(abbrev);
+                                            } else {
+                                                that.regionActionner.addToSelection(abbrev);
+                                            }
+                                        } else {
+                                            that.regionActionner.replaceSelected(abbrev);
+                                        }
+                                        that.status.userClickedRegion = true;
+                                        that.selectRegions(RegionsManager.getSelectedRegions());
+
+                                    } else if (e.shiftKey) {
+
+                                        that.applyMouseOverPresentation(raphElt, true);
+                                        setTimeout(() => that.applyUnselectedPresentation(raphElt), 2500);
+                                    }
+                                },
+
+                            };
+
+                            that.status.regionEventListeners[pathId] = regionListener;
+
+                            //Add event listener related to edit mode
+                            if (that.status.editModeOn) {
+                                that.status.regionEventListeners[pathId] = that.extendRegionListenerForEdit(regionListener);
+                            }
+
+                            that.connectRegionListeners(newPathElt, that.status.regionEventListeners[pathId]);
+                            that.applyUnselectedPresentation(newPathElt);
                         }
 
                         that.status.set.push(newPathElt);
                     }
-                    
+
                     //once path elements are added to the DOM
                     for (let p of overlayElement.getElementsByTagName('svg')[0].getElementsByTagName('path')) {
                         //make path's stroke width independant of scaling transformations 
@@ -759,6 +1082,13 @@ class ViewerManager {
             //console.log('S' + zoom + ',' + zoom + ',0,0');
 
             this.displayMeasureLine();
+
+            if (this.status.editModeOn) {
+                //scale edition overlay
+                const editGroup = document.getElementById('svgEditGroup');
+                editGroup.setAttribute('transform', ' scale(' + zoom + ',' + zoom + ') translate(0,' + this.config.dzDiff + ')');
+                this.updateEditCursor();
+            }
         }
     }
 
@@ -836,14 +1166,18 @@ class ViewerManager {
         this.updateRegionAreasPresentation();
     }
 
-    static toggleBorderDisplay() {
-        this.status.displayBorders = !this.status.displayBorders;
+    static setBorderDisplay(active) {
+        this.status.displayBorders = active;
         this.status.showRegions = this.status.displayBorders || this.status.displayAreas;
         if (this.status.showRegions) {
             this.setMeasureMode(false);
         }
         this.updateRegionsVisibility();
         this.updateRegionAreasPresentation();
+    }
+
+    static toggleBorderDisplay() {
+        this.setBorderDisplay(!this.status.displayBorders);
     }
 
     static applyMouseOverPresentation(element, forcedBorder = false) {
@@ -1177,6 +1511,13 @@ class ViewerManager {
         // Disable click zoom on the viewer using event.preventDefaultAction
         event.preventDefaultAction = true;
         event.stopBubbling = true;
+    }
+
+    static onViewerDrag(event) {
+        // Disable panning on the viewer when a region is selected for edition
+        if (this.status.editModeOn && this.status.editRegionId) {
+            event.preventDefaultAction = true;
+        }
     }
 
 
@@ -1641,6 +1982,9 @@ class ViewerManager {
                 }
             }
         }
+        if (confFromPath.mode && confFromPath.mode === 'edit') {
+            confParams.editMode = true;
+        }
         return confParams;
     }
 
@@ -1676,6 +2020,10 @@ class ViewerManager {
             this.status.contrast = params.contrast;
         } else {
             delete this.status.contrast;
+        }
+        this.status.editModeOn = params.editMode === true;
+        if (params.editMode === true) {
+            this.setBorderDisplay(true);
         }
     }
 }

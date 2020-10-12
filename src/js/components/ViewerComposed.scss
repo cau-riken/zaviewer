@@ -21,6 +21,11 @@
 	}
 }
 
+#ZAV-rightPanel {
+	//always be on top of region editing panel
+	z-index: 10;
+}
+
 .zav-TitledCard {
 	min-width: 240px;
 
