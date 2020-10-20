@@ -84,7 +84,7 @@ if ($requestMethod === "GET") {
 
         // save a backup copy of the previous version of the SVG file
         $currentDate = new DateTime();
-        $archivedPath = SVGEditBaseFolder . '/' . $datasetId . '/' . 'coronal' . '/' . 'ARCHIVE' . '/' . $basename . '_' . $currentDate->format('c') . $suffix;
+        $archivedPath = SVGEditBaseFolder . '/' . $datasetId . '/' . $PLANE_LABEL[$planeId] . '/' . 'ARCHIVE' . '/' . $basename . '_' . $currentDate->format('c') . $suffix;
         rename($fullpath, $archivedPath);
 
         // load source SVG file to apply changes
