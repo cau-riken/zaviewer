@@ -67,22 +67,41 @@ class RegionOptions extends React.Component {
                             <div style={{ backgroundColor: "#f4f4f4", margin: 3, padding: 4, borderRadius: 2, color: "black" }}>
                                 <div style={{ margin: 3 }}>
                                     {"Region Editing"}
-                                    <span style={{ display: "inline-block", padding: 3 }}>
+
+                                </div>
+                                <div style={{ margin: 3, height: 30, display: 'flex', flexDirection: 'row', justifyContent: "space-between" }}>
+                                    <Button
+                                        icon="annotation"
+                                        disabled={this.props.editRegionId}
+                                        title="Select a region to edit"
+                                        outlined={true}
+                                        onClick={(e) => ViewerManager.startEditingClickedRegion()}
+                                    />
+                                    <div style={{ padding: 3 }}>
                                         {this.props.editRegionId
                                             ? <span><span style={{ display: "inline-block", width: 20, height: 12, backgroundColor: this.props.editRegionColor }}>{" "}</span>{" " + this.props.editRegionId}</span>
                                             : null
                                         }
-                                    </span>
+                                    </div>
+                                    <Button
+                                        icon="document-share"
+                                        disabled={!this.props.editRegionId}
+                                        title="Stop editing current region"
+                                        outlined={true}
+                                        onClick={(e) => ViewerManager.stopEditingRegion()}
+                                    />
                                 </div>
                                 <div style={{ display: 'flex', flexDirection: 'row', justifyContent: "space-evenly" }}>
                                     <Button
                                         icon="draw"
+                                        title="tool to extend region"
                                         outlined={true}
                                         active={this.props.editingTool == 'pen'}
                                         onClick={(e) => ViewerManager.changeEditingTool('pen')}
                                     />
                                     <Button
                                         icon="eraser"
+                                        title="tool to reduce region"
                                         outlined={true}
                                         active={this.props.editingTool == 'eraser'}
                                         onClick={(e) => ViewerManager.changeEditingTool('eraser')}
@@ -94,29 +113,28 @@ class RegionOptions extends React.Component {
                                         popoverClassName="bp3-popover-content-sizing"
                                         lazy
                                     >
-                                        <Button icon="ring" outlined={true} />
+                                        <Button icon="ring" title="Change tool's width" outlined={true} />
 
                                         <Slider
                                             min={10}
                                             max={200}
                                             stepSize={1}
-                                            value={this.props.editingToolRadius}            
+                                            value={this.props.editingToolRadius}
                                             showTrackFill={true}
                                             labelStepSize={50}
                                             labelRenderer={(value) => value}
                                             vertical={true}
-                                            onChange={ (radius) => ViewerManager.changeEditingRadius(radius)}
+                                            onChange={(radius) => ViewerManager.changeEditingRadius(radius)}
                                         />
                                     </Popover>
 
                                     <Button
                                         icon="switch"
+                                        disabled={!this.props.editRegionId}
+                                        title="Simplify current region"
                                         outlined={true}
                                         onClick={(e) => ViewerManager.simplifyEditedRegion()}
                                     />
-                                    
-
-
 
                                 </div>
                             </div>

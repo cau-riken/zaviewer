@@ -354,14 +354,7 @@ class ViewerManager {
             if (that.config.svgFolerName != "") {
                 //load region delineations in the dedicated overlay
                 if (event.element.id === 'svgDelineationOverlay') {
-                    const sliceNum = that.getCurrentPlaneChosenSlice();
-
-                    const svgPath = Utils.makePath(
-                        that.config.PUBLISH_PATH, that.config.svgFolerName,
-                        (that.config.hasMultiPlanes ? ZAVConfig.getPlaneLabel(that.status.activePlane) : null),
-                        "Anno_" + sliceNum + ".svg"
-                    );
-
+                    const svgPath = that.getRegionsSVGUrl();
                     that.addSVGData(svgPath, event.element);
                 }
             }
@@ -624,7 +617,7 @@ class ViewerManager {
                 dblClickHandler: (event) => {
                     //double-clicking outside a region stop the current region being edited
                     if (this.status.editRegionId) {
-                        this.stopEdit(event);
+                        this.stopEditingRegion(event);
                     }
                 },
                 moveHandler: (event) => {
@@ -726,39 +719,42 @@ class ViewerManager {
     static selectEditRegion(e) {
         //
         const targetElt = e.target;
-        this.status.editRegionId = targetElt.id;
-        this.status.editRegion = targetElt;
-        this.status.editRegionColor = targetElt.getAttribute("fill");
+        if (targetElt.id && !targetElt.id.startsWith(BACKGROUND_PATHID)) {
 
-        const editGroup = this.status.editSVG.getElementById('svgEditGroup');
-        //copy region svg as a base for edit 
-        const newLivPath = targetElt.cloneNode();
-        newLivPath.id = "beingEditedRegion";
+            this.status.editRegionId = targetElt.id;
+            this.status.editRegion = targetElt;
+            this.status.editRegionColor = targetElt.getAttribute("fill");
 
-        //insert in DOM
-        editGroup.appendChild(newLivPath);
-        newLivPath.setAttribute("stroke", Color(this.status.editRegionColor).negate());
-        newLivPath.removeAttribute("style");
-        newLivPath.setAttribute("fill-opacity", 0.35);
-        newLivPath.setAttribute("stroke-opacity", 0.2);
-        newLivPath.setAttribute("stroke-width", 20);
-        newLivPath.setAttribute("vector-effect", "non-scaling-stroke");
+            const editGroup = this.status.editSVG.getElementById('svgEditGroup');
+            //copy region svg as a base for edit 
+            const newLivPath = targetElt.cloneNode();
+            newLivPath.id = "beingEditedRegion";
+
+            //insert in DOM
+            editGroup.appendChild(newLivPath);
+            newLivPath.setAttribute("stroke", Color(this.status.editRegionColor).negate());
+            newLivPath.removeAttribute("style");
+            newLivPath.setAttribute("fill-opacity", 0.35);
+            newLivPath.setAttribute("stroke-opacity", 0.2);
+            newLivPath.setAttribute("stroke-width", 20);
+            newLivPath.setAttribute("vector-effect", "non-scaling-stroke");
 
 
-        this.status.editLivePath = newLivPath;
-        //import as Paper object for edit transformations
-        this.status.editRegionPath = paper.project.importSVG(newLivPath, { insert: false });
+            this.status.editLivePath = newLivPath;
+            //import as Paper object for edit transformations
+            this.status.editRegionPath = paper.project.importSVG(newLivPath, { insert: false });
 
-        //hide source region while its copy is being edited
-        targetElt.style.display = 'none';
+            //hide source region while its copy is being edited
+            targetElt.style.display = 'none';
 
-        //place the editing overlay on top of region overlay while editing is being done
-        const editOverlay = document.getElementById('svgEditOverlay');
-        editOverlay.style.zIndex = 1;
+            //place the editing overlay on top of region overlay while editing is being done
+            const editOverlay = document.getElementById('svgEditOverlay');
+            editOverlay.style.zIndex = 1;
 
-        this.updateEditCursor();
+            this.updateEditCursor();
 
-        this.signalStatusChanged(this.status);
+            this.signalStatusChanged(this.status);
+        }
     }
 
     static startEdit(e) {
@@ -803,7 +799,7 @@ class ViewerManager {
         }
     };
 
-    static stopEdit() {
+    static stopEditingRegion() {
         this.status.editingActive = false;
         if (this.status.editRegionId) {
 
@@ -819,23 +815,28 @@ class ViewerManager {
 
             //remove un-edited source region from Raphaël set
             this.status.set.exclude(this.status.editRegion);
-            const regionId = this.status.editRegion.id;
+            const regionId = this.status.editRegion.getAttribute('bma:regionId');
+            const pathId = this.status.editRegion.id;
             //remove from DOM
             this.status.editRegion.remove();
 
             //import edited region in Raphaël  
             const modifiedRegion = this.status.editRegionPath.exportSVG();
-            modifiedRegion.setAttribute('id', regionId);
+            modifiedRegion.setAttribute('id', pathId);
 
             //FIXME region order is not conserved, Raphaël will place the newly imported region at the end 
             const newRaphElt = this.status.paper.importSVG(modifiedRegion);
             this.status.set.push(newRaphElt);
 
-            //once path is added to DOM, restore non-scaling strocke attribute
-            document.getElementById(regionId).setAttribute("vector-effect", "non-scaling-stroke");
+            //once modified path is added to DOM, restore lost attributes
+            const modifiedRegionInDom = document.getElementById(pathId);
+            //restore non-scaling strocke attribute
+            modifiedRegionInDom.setAttribute("vector-effect", "non-scaling-stroke");
+            //restore region Id
+            modifiedRegionInDom.setAttribute('bma:regionId', regionId);
 
             //reuse region event listener
-            this.connectRegionListeners(newRaphElt, this.status.regionEventListeners[regionId]);
+            this.connectRegionListeners(newRaphElt, this.status.regionEventListeners[pathId]);
             this.applyUnselectedPresentation(newRaphElt);
 
             this.status.editLivePath.remove();
@@ -844,8 +845,35 @@ class ViewerManager {
             this.status.editPos = null;
             this.status.editRegion = null;
 
+            const url = this.getRegionsSVGEditUrl({ region: pathId });
+            fetch(
+                url,
+                {
+                    method: 'PUT',
+                    headers: {
+                        "Accept": "application/json",
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        pathId: pathId,
+                        regionId: regionId,
+                        pathSVG: modifiedRegionInDom.outerHTML,
+                    }),
+                })
+                .then(response => response.json())
+                .then(data => {
+                    console.log('Modified region path ' + pathId + ' successfully saved!', data);
+                })
+                .catch((error) => {
+                    console.error('Error when saving region path ' + pathId, data);
+                });
+
             this.signalStatusChanged(this.status);
         }
+    }
+
+    static startEditingClickedRegion() {
+        this.status.acquiringRegionToEdit = true;
     }
 
     static simplifyEditedRegion() {
@@ -863,18 +891,37 @@ class ViewerManager {
     static extendRegionListenerForEdit(listener) {
         listener.dblclick = (e) => {
             if (this.status.editRegionId) {
-                this.stopEdit(e);
+                this.stopEditingRegion(e);
             } else {
                 this.selectEditRegion(e);
             }
         };
+
+        listener.click = [
+            listener.click,
+            (e, raphElt) => {
+                if (this.status.acquiringRegionToEdit) {
+                    this.status.acquiringRegionToEdit = false;
+                    this.selectEditRegion(e);
+                }
+            }
+        ];
+
         return listener;
     }
 
     static connectRegionListeners(newPathElt, regionListener) {
         newPathElt.mouseover(function (e) { regionListener.mouseover(e, this); });
         newPathElt.mouseout(function (e) { regionListener.mouseout(e, this); });
-        newPathElt.click(function (e) { regionListener.click(e, this); });
+        newPathElt.click(function (e) {
+            if (_.isArray(regionListener.click)) {
+                for (let clickListener of regionListener.click) {
+                    clickListener(e, this);
+                }
+            } else {
+                regionListener.click(e, this);
+            }
+        });
         if (regionListener.dblclick) {
             newPathElt.dblclick(function (e) { regionListener.dblclick(e, this); });
         }
@@ -935,21 +982,22 @@ class ViewerManager {
                     //new set of mouse event listeners 
                     that.status.regionEventListeners = {};
 
+                    const svgElement = overlayElement.getElementsByTagName('svg')[0];
                     for (var i = 0; i < paths.length; i++) {
+                        //path ids are garanteed to be unique in those SVG 
+                        const pathId = paths[i].getAttribute('id').trim();
 
-                        const rawId = paths[i].getAttribute('id').trim();
-                        //append ordinal number to ensure unique id (case of non-contiguous regions)
-                        const pathId = rawId + "-" + i;
-                        paths[i].setAttribute('id', pathId);
+                        let regionId = paths[i].getAttribute('bma:regionId')
+                        regionId = regionId ? regionId.trim() : regionId;
                         var newPathElt = that.status.paper.importSVG(paths[i]);
 
                         that.applyMouseOutPresentation(newPathElt, false);
 
-                        if (rawId === BACKGROUND_PATHID) {
+                        const isBackgroundElement = pathId === BACKGROUND_PATHID;
+                        if (isBackgroundElement) {
                             //background elements
-                            newPathElt.id = rawId;
+                            newPathElt.id = pathId;
                             newPathElt.attr("fill-opacity", 0.0);
-                            that.status.currentSliceRegions.set(rawId, rawId);
 
                             //unselect all when click on the background element
                             newPathElt.click(function (e) {
@@ -964,10 +1012,11 @@ class ViewerManager {
 
                         } else {
                             newPathElt.id = pathId;
-                            //extract region abbreviation from path id
-                            const suffix = rawId.substring(rawId.length - 2);
+                            //extract hemisphere side from region id 
+                            const suffix = regionId ? regionId.substring(regionId.length - 2) : "";
                             const side = (suffix === "_L") ? "(left)" : (suffix === "_R") ? "(right)" : "";
-                            const abbrev = side ? rawId.substring(0, rawId.length - 2) : rawId;
+                            //region abbreviation without hemisphere side
+                            const abbrev = side ? regionId.substring(0, regionId.length - 2) : pathId;
 
                             that.status.currentSliceRegions.set(pathId, abbrev);
 
@@ -1034,12 +1083,16 @@ class ViewerManager {
                         }
 
                         that.status.set.push(newPathElt);
-                    }
+                        
+                        if (!isBackgroundElement) {
 
-                    //once path elements are added to the DOM
-                    for (let p of overlayElement.getElementsByTagName('svg')[0].getElementsByTagName('path')) {
-                        //make path's stroke width independant of scaling transformations 
-                        p.setAttribute("vector-effect", "non-scaling-stroke");
+                            //once path elements are added to the DOM
+                            const modifiedRegionInDom = svgElement.getElementById(pathId);
+                            //restore custom attribute lost when imported in Raphaël
+                            modifiedRegionInDom.setAttribute('bma:regionId', regionId);
+                            //make path's stroke width independant of scaling transformations 
+                            modifiedRegionInDom.setAttribute("vector-effect", "non-scaling-stroke");
+                        }
                     }
 
                     that.eventSource.raiseEvent('zav-regions-created', { svgUrl: svgName })
@@ -1547,6 +1600,32 @@ class ViewerManager {
         }
     }
 
+    static getRegionsSVGEditUrl(extraParams) {
+        const sliceNum = this.getCurrentPlaneChosenSlice();
+        const url = new URL(Utils.makePath(this.config.ADMIN_PATH, 'SVG.php'));
+        //const url = new URL('http://zavdev.localhost/admin/SVG.php');
+        const params = { dataset: this.config.paramId, plane: this.status.activePlane, slice: this.getCurrentPlaneChosenSlice() };
+        if (extraParams) {
+            _.extend(params, extraParams);
+        }
+        url.search = new URLSearchParams(params).toString();
+        return url.toString();
+    }
+
+    static getRegionsSVGUrl(extraParams) {
+
+        if (this.status.editModeOn) {
+            return this.getRegionsSVGEditUrl(extraParams);
+        } else {
+            const sliceNum = this.getCurrentPlaneChosenSlice();
+            const svgurl = Utils.makePath(
+                this.config.PUBLISH_PATH, this.config.svgFolerName,
+                (this.config.hasMultiPlanes ? ZAVConfig.getPlaneLabel(this.status.activePlane) : null),
+                "AtlasReg_" + sliceNum + ".svg"
+            );
+            return svgurl;
+        }
+    }
 
     static getFileTileSourceUrl(slideNum, key, ext, plane) {
         //if no plane param is specified (= single plane mode), returned plane label will be undefined, thus the url won't contain reference to any plane 

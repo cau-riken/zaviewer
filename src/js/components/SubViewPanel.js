@@ -216,13 +216,13 @@ class SubView extends React.Component {
 class SubViewPanel extends React.Component {
 
     render() {
-        const currentSlice = this.props.chosenSlice;
+        const currentSlice = this.props.chosenSlice || 0;
         const maxSliceNum = this.props.config ? ViewerManager.getPlaneSlideCount(this.props.activePlane) - 1 : 1000;
         const sliceStep = this.props.config ? ViewerManager.getPlaneSliceStep(this.props.activePlane) : 1;
 
         const subviews = [];
         let justifyMode;
-        if (this.props.config) {
+        if (this.props.config && this.props.activePlane) {
             this.config = this.props.config;
 
             if (this.props.config.hasMultiPlanes) {
@@ -230,7 +230,9 @@ class SubViewPanel extends React.Component {
                 const subViewLabelWidth = subViewSize - 22;
 
                 subviews.push(
-                    <div>
+                    <div
+                        key={ZAVConfig.AXIAL}
+                    >
                         <Switch
                             className="zav-SubViewSwitch"
                             style={{ width: subViewSize }}
@@ -239,7 +241,6 @@ class SubViewPanel extends React.Component {
                             onChange={this.onChangePlane.bind(this, ZAVConfig.AXIAL)}
                         />
                         <SubView
-                            key={ZAVConfig.AXIAL}
                             activePlane={this.props.activePlane}
                             viewPlane={ZAVConfig.AXIAL}
                             config={this.props.config}
@@ -250,7 +251,9 @@ class SubViewPanel extends React.Component {
                 );
 
                 subviews.push(
-                    <div>
+                    <div
+                        key={ZAVConfig.CORONAL}
+                    >
                         <Switch
                             className="zav-SubViewSwitch"
                             style={{ width: subViewSize }}
@@ -260,7 +263,6 @@ class SubViewPanel extends React.Component {
                         />
 
                         <SubView
-                            key={ZAVConfig.CORONAL}
                             activePlane={this.props.activePlane}
                             viewPlane={ZAVConfig.CORONAL}
                             config={this.props.config}
@@ -270,7 +272,9 @@ class SubViewPanel extends React.Component {
                 );
 
                 subviews.push(
-                    <div>
+                    <div
+                        key={ZAVConfig.SAGITTAL}
+                    >
                         <Switch
                             className="zav-SubViewSwitch"
                             style={{ width: subViewSize }}
@@ -279,7 +283,6 @@ class SubViewPanel extends React.Component {
                             onChange={this.onChangePlane.bind(this, ZAVConfig.SAGITTAL)}
                         />
                         <SubView
-                            key={ZAVConfig.SAGITTAL}
                             activePlane={this.props.activePlane}
                             viewPlane={ZAVConfig.SAGITTAL}
                             config={this.props.config}
@@ -314,6 +317,7 @@ class SubViewPanel extends React.Component {
                             style={{ marginLeft: -16, verticalAlign: "top" }}
                             onClick={this.onGoToSlice.bind(this, currentSlice - 1)}
                         />
+
                         <Slider
                             className="zav-Slider zav-SubVSliceSlider"
                             min={0}
