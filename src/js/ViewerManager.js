@@ -865,6 +865,7 @@ class ViewerManager {
                     console.log('Modified region path ' + pathId + ' successfully saved!', data);
                 })
                 .catch((error) => {
+                    //FIXME alert user
                     console.error('Error when saving region path ' + pathId, data);
                 });
 
@@ -1602,8 +1603,7 @@ class ViewerManager {
 
     static getRegionsSVGEditUrl(extraParams) {
         const sliceNum = this.getCurrentPlaneChosenSlice();
-        const url = new URL(Utils.makePath(this.config.ADMIN_PATH, 'SVG.php'));
-        //const url = new URL('http://zavdev.localhost/admin/SVG.php');
+        const url = new URL(Utils.makePath("../", this.config.ADMIN_PATH, 'SVG.php'), window.location);
         const params = { dataset: this.config.paramId, plane: this.status.activePlane, slice: this.getCurrentPlaneChosenSlice() };
         if (extraParams) {
             _.extend(params, extraParams);
