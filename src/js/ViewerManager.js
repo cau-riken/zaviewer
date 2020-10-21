@@ -985,16 +985,25 @@ class ViewerManager {
 
                     const svgElement = overlayElement.getElementsByTagName('svg')[0];
                     for (var i = 0; i < paths.length; i++) {
-                        //path ids are garanteed to be unique in those SVG 
-                        const pathId = paths[i].getAttribute('id').trim();
 
-                        let regionId = paths[i].getAttribute('bma:regionId')
-                        regionId = regionId ? regionId.trim() : regionId;
+                        let regionId = paths[i].getAttribute('bma:regionId') ? paths[i].getAttribute('bma:regionId').trim() : null;
+                        let pathId;
+                        if (regionId) {
+                            //when a specific attribute holding region id exists, SVG path's id is garanteed to be unique
+                            pathId = paths[i].getAttribute('id').trim();
+                        } else {
+                            //regionId is specified in the id attribute of the path
+                            regionId = paths[i].getAttribute('id').trim();
+                            //append ordinal number to ensure unique id (case of non-contiguous regions)
+                            pathId = regionId + "-" + i;
+                            paths[i].setAttribute('id', pathId);
+                        }
+
                         var newPathElt = that.status.paper.importSVG(paths[i]);
 
                         that.applyMouseOutPresentation(newPathElt, false);
 
-                        const isBackgroundElement = pathId === BACKGROUND_PATHID;
+                        const isBackgroundElement = (regionId === BACKGROUND_PATHID);
                         if (isBackgroundElement) {
                             //background elements
                             newPathElt.id = pathId;
@@ -1084,7 +1093,7 @@ class ViewerManager {
                         }
 
                         that.status.set.push(newPathElt);
-                        
+
                         if (!isBackgroundElement) {
 
                             //once path elements are added to the DOM
@@ -1621,7 +1630,7 @@ class ViewerManager {
             const svgurl = Utils.makePath(
                 this.config.PUBLISH_PATH, this.config.svgFolerName,
                 (this.config.hasMultiPlanes ? ZAVConfig.getPlaneLabel(this.status.activePlane) : null),
-                "AtlasReg_" + sliceNum + ".svg"
+                "Anno_" + sliceNum + ".svg"
             );
             return svgurl;
         }

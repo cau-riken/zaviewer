@@ -2,7 +2,8 @@
 
 /** Basic WebService for retrieval & update of Region SVG files  */
 
-define("SVGEditBaseFolder",     "../data/SVGEdit");
+//base folder to region SVG documents (specific set used in edit mode) 
+define("SVGEditBaseFolder",  $_SERVER['DOCUMENT_ROOT'] . "/data/SVGEdit");
 
 define("AXIAL",     1);
 define("CORONAL",   2);
@@ -85,11 +86,11 @@ if ($requestMethod === "GET") {
         // save a backup copy of the previous version of the SVG file
         $currentDate = new DateTime();
         $archivedPath = SVGEditBaseFolder . '/' . $datasetId . '/' . $PLANE_LABEL[$planeId] . '/' . 'ARCHIVE' . '/' . $basename . '_' . $currentDate->format('c') . $suffix;
-        rename($fullpath, $archivedPath);
+        copy($fullpath, $archivedPath);
 
         // load source SVG file to apply changes
         $domSVG = new DomDocument();
-        $domSVG->load($archivedPath);
+        $domSVG->load($fullpath);
         $SVGns = $domSVG->documentElement->namespaceURI;
 
         //locate the edited path in the source SVG document 
