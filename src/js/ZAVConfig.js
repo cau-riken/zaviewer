@@ -231,8 +231,17 @@ class ZAVConfig {
             this.config.THUMB_EXTENSION = "/full/250,/0/default.jpg"; //".ptif/full/250,/0/default.jpg";
 
             //FIXME retrieve from config stored on server
+            /** url to retrieve extra info for dataset from flatmap Json API */
+            this.config.fmDatasetsInfoUrl = "https://www.brainminds.riken.jp/wp-json/bmind/p3/get_dataset/";
+
+            //FIXME retrieve from config stored on server
             /** url of the tracer signal (including injection point) on the flatmap */
             this.config.fmTracerSignalImgUrl = "https://www.brainminds.riken.jp/injections_point/" + configId + ".png";
+
+            //BETA : will we have content there someday ?
+            //FIXME retrieve from config stored on server
+            /** url to access the dataset information page */
+            this.config.AboutDatasetUrl = "https://www.brainminds.riken.jp/dataset_info/" + configId;
 
 
         } else {
@@ -272,27 +281,36 @@ class ZAVConfig {
     retrieveConfigFromBackend(callbackWhenReady) {
 
         const that = this;
+        const baseConfigUrl = "../path.json";
 
         $.ajax({
-            url: "../path.json",
+            url: baseConfigUrl,
 
             type: "GET",
             async: true,
             dataType: 'json',
+            error: function (jqXHR, textStatus, errorThrown) {
+                console.error('Error while retrieving base configuration: ', errorThrown);
+                alert('Error while retrieving base configuration from ' + baseConfigUrl + "\nTry reloading [F5], or check configuration source is up and running.");
+            },
             success: function (response) {
 
                 that.config.ADMIN_PATH = response.admin_path;
                 that.config.IIPSERVER_PATH = response.iipserver_path;
                 that.config.PUBLISH_PATH = response.publish_path;
+				const configUrl = Utils.makePath("../", that.config.ADMIN_PATH, "json.php");
 
                 $.ajax({
-                    url: Utils.makePath("../", that.config.ADMIN_PATH, "json.php"),
-
+                    url: configUrl,
                     type: "POST",
                     async: true,
                     dataType: 'json',
                     data: {
                         id: that.config.paramId,
+                    },
+                    error: function (jqXHR, textStatus, errorThrown) {
+                        console.error('Error while retrieving configuration: ', errorThrown);
+                        alert('Error while retrieving configuration from ' + configUrl + "\nTry reloading [F5], or check configuration source is up and running.");
                     },
                     success: that.parseLayersConfig.bind(that, callbackWhenReady)
                 });
@@ -300,8 +318,7 @@ class ZAVConfig {
 
                 /** retrieve extra info for dataset from flatmap backend */
                 $.ajax({
-                    //FIXME retrieve url from server config
-                    url: "https://www.brainminds.riken.jp/wp-json/bmind/p3/get_dataset/",
+                    url: that.config.fmDatasetsInfoUrl,
                     type: "GET",
                     async: true,
                     dataType: 'json',
@@ -310,7 +327,7 @@ class ZAVConfig {
                         if (dataset_info) {
                             that.config.dataset_info = dataset_info;
                         } else {
-                            console.warn("Missing info for dataset ", that.config.paramId);
+                            console.info("Missing info for dataset ", that.config.paramId);
                         }
                     },
                     error: function (jqXHR, textStatus, errorThrown) {
@@ -319,6 +336,8 @@ class ZAVConfig {
                 });
 
 
+                //FIXME unused code
+                
                 //search
                 $.ajax({
                     url: Utils.makePath("../", that.config.ADMIN_PATH, "findImageGroupList.php"),
@@ -332,7 +351,7 @@ class ZAVConfig {
                         if (!data["error"]) {
 
                             that.config.imageGroupListData = data;
-                            $.each(data, function (key, value) {
+                            _.each(data, function (value, key) {
                                 that.config.editLayers[this["publish_id"]] = { "name": this["display_name"], "ext": "." + this["extension"] };
                             });
 
@@ -465,7 +484,7 @@ class ZAVConfig {
             this.config.data = response.data;
             const that = this;
             var i = 0;
-            $.each(response.data, function (key, value) {
+            _.each(response.data, function (value, key) {
 
                 // only firstLayer when running with a backend 
                 if (that.config.hasBackend && (i == 0)) {

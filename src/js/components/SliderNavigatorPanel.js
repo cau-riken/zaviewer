@@ -165,7 +165,7 @@ class SliderNavigatorPanel extends React.Component {
 
         const layerSliders = [];
         if (this.props.displaySettings) {
-            $.each(this.props.displaySettings, function (layerid, value) {
+            _.each(this.props.displaySettings, function (value, layerid) {
                 var params = _.extend(value, { layerid: layerid });
                 layerSliders.push(<LayerSlider key={"slid_" + layerid}  {...params} />);
                 layerSliders.push(<div key={"sepslid_" + layerid} style={{ borderBottom: "dotted 1px #8a8a8a", margin: "3px 0" }} />);

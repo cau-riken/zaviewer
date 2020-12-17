@@ -58,7 +58,7 @@ class ViewerManager {
         //layers initial display values
         const initLayerDisplaySettings = {};
         var i = 0;
-        $.each(this.config.data, function (key, value) {
+        _.each(this.config.data, function (value, key) {
             //FIXME should use another method than name to identify tracer signal layer
             const isTracer = value.metadata.includes("nn_tracer");
             initLayerDisplaySettings[key] = {
@@ -390,7 +390,7 @@ class ViewerManager {
             });
 
 
-            $.each(that.config.layers, function (key, value) {
+            _.each(that.config.layers, function (value, key) {
                 if (value.index != 0) {
                     that.addLayer(key, value.name, value.ext);
                 } else {
