@@ -68,16 +68,17 @@ class ZAVConfig {
         return PLANE_PREFSUBVIEW[plane];
     }
 
-    static getConfig(configId, callbackWhenReady) {
-        return new ZAVConfig(configId, callbackWhenReady);
+    static getConfig(configId, dataSrc, callbackWhenReady) {
+        return new ZAVConfig(configId, dataSrc ? dataSrc.toString().trim() : undefined, callbackWhenReady);
     }
 
     /**
      * Create a configuration 
      * @param {string} configId - ID of the configuration.
+     * @param {string} dataSrc -  when the configId is not specified, url from where to retrieve config & data
      * @param {function} callbackWhenReady - function asynchronously invoked to signal that the configuration is fully loaded
      */
-    constructor(configId, callbackWhenReady) {
+    constructor(configId, dataSrc, callbackWhenReady) {
 
         /** default subview size */
         const _subviewSize = 200;
@@ -87,7 +88,10 @@ class ZAVConfig {
         this.config = {
             /** ZAViewer can be run with or without a backend instance (i.e. web services used to request dataset config repository, and an images server)
              * Without backend, only one dataset is available, and its data is stored as files directly served by the http server */
-            hasBackend: (configId !== null),
+            hasBackend: (typeof configId !== "undefined"),
+
+            /** When running without a backend, ZAViewer can retrieve its config and data from cross-origin domain */
+            hasCOSource: false,
 
             /** planes for which slices images can be displayed */
             hasMultiPlanes: false,
@@ -251,14 +255,17 @@ class ZAVConfig {
             var datasetIndex = {}; // Save index of "key" in dataset
             */
 
-            this.config.dataRootPath = undefined;
+            this.config.hasCOSource = dataSrc ? true : false;
+            this.config.baseConfigPath = this.config.hasCOSource ? (dataSrc + (dataSrc.endsWith('/') ? '' : '/')) : '';
+
+            this.config.dataRootPath = this.config.baseConfigPath ? Utils.makePath(this.config.baseConfigPath, 'data') : undefined;
             /** base URL for region infos, region SVGs, ... */
             this.config.PUBLISH_PATH = undefined;
 
             this.config.fallbackExtension = 'dzi';
 
             /** URL path to the default tree region */
-            this.config.fallbackTreeUrl = "regionTree.json";
+            this.config.fallbackTreeUrl = Utils.makePath(this.config.baseConfigPath, "regionTree.json");
 
         }
 
@@ -298,7 +305,7 @@ class ZAVConfig {
                 that.config.ADMIN_PATH = response.admin_path;
                 that.config.IIPSERVER_PATH = response.iipserver_path;
                 that.config.PUBLISH_PATH = response.publish_path;
-				const configUrl = Utils.makePath("../", that.config.ADMIN_PATH, "json.php");
+                const configUrl = Utils.makePath("../", that.config.ADMIN_PATH, "json.php");
 
                 $.ajax({
                     url: configUrl,
@@ -337,7 +344,7 @@ class ZAVConfig {
 
 
                 //FIXME unused code
-                
+
                 //search
                 $.ajax({
                     url: Utils.makePath("../", that.config.ADMIN_PATH, "findImageGroupList.php"),
@@ -377,12 +384,17 @@ class ZAVConfig {
     */
     retrieveSimpleConfig(callbackWhenReady) {
         const that = this;
+        const configUrl = Utils.makePath(this.config.baseConfigPath, "viewer.json");
 
         $.ajax({
-            url: "viewer.json",
+            url: configUrl,
             type: "GET",
             async: true,
             dataType: 'json',
+            error: function (jqXHR, textStatus, errorThrown) {
+                console.error('Error while retrieving configuration: ', errorThrown);
+                alert('Error while retrieving configuration from ' + configUrl + "\nTry reloading [F5], or check configuration source is accessible.");
+            },
             success: that.parseLayersConfig.bind(that, callbackWhenReady)
         });
     }
@@ -406,8 +418,12 @@ class ZAVConfig {
         this.config.treeUrlPath = response.tree;
 
         if (!this.config.hasBackend) {
-            this.config.dataRootPath = response.data_root_path;
-            this.config.PUBLISH_PATH = response.data_root_path;
+            if (this.config.hasCOSource) {
+                // set according to server config, converting server relative url to absolute one
+                this.config.PUBLISH_PATH = this.config.dataRootPath = new URL(response.data_root_path, this.config.baseConfigPath).toString();
+            } else {
+                this.config.PUBLISH_PATH = this.config.dataRootPath = response.data_root_path;
+            }
         }
 
         this.config.subviewFolderName = response.subview.foldername;
@@ -490,6 +506,7 @@ class ZAVConfig {
                 if (that.config.hasBackend && (i == 0)) {
                     //showInfoText(key);
                     that.config.infoTextName = value.metadata;
+                    //FIXME probably useless
                     $.ajax({
                         url: Utils.makePath(that.config.PUBLISH_PATH, key, "/info.txt"),
                         type: "GET",

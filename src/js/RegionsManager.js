@@ -129,6 +129,9 @@ class RegionsManager {
         }
     }
 
+    static isReady() {
+        return (typeof this.status !== "undefined");
+    }
 
     static getActionner(actionGroupId) {
         return new Actionner(actionGroupId);
@@ -424,7 +427,7 @@ class RegionsManager {
                             }
                         })
                     }
-                });
+                }, this);
 
 
                 /** reset all node to expanded */

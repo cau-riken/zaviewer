@@ -992,7 +992,7 @@ class ViewerManager {
                             //when a specific attribute holding region id exists, SVG path's id is garanteed to be unique
                             pathId = paths[i].getAttribute('id').trim();
                         } else {
-                            //regionId is specified in the id attribute of the path
+                            //Legacy SVG : regionId is specified in the id attribute of the path
                             regionId = paths[i].getAttribute('id').trim();
                             //append ordinal number to ensure unique id (case of non-contiguous regions)
                             pathId = regionId + "-" + i;
@@ -1026,7 +1026,7 @@ class ViewerManager {
                             const suffix = regionId ? regionId.substring(regionId.length - 2) : "";
                             const side = (suffix === "_L") ? "(left)" : (suffix === "_R") ? "(right)" : "";
                             //region abbreviation without hemisphere side
-                            const abbrev = side ? regionId.substring(0, regionId.length - 2) : pathId;
+                            const abbrev = side ? regionId.substring(0, regionId.length - 2) : regionId;
 
                             that.status.currentSliceRegions.set(pathId, abbrev);
 
@@ -1118,7 +1118,7 @@ class ViewerManager {
 
                     RegionsManager.setCurrentSliceRegions(Array.from(that.status.currentSliceRegions.values()));
 
-                    that.signalStatusChanged(this.status);
+                    that.signalStatusChanged(that.status);
                 }
             }
         });

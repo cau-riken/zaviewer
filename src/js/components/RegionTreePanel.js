@@ -89,7 +89,7 @@ class RegionItem extends React.Component {
         if (RegionsManager.getLastSelected() === region.abb &&
             this.regionActionner.lastActionInitiatedByOther()
             //prevent scrolling if region is hidden due to filtering 
-            && RegionsManager.getHighlightStatus(region.abb)!=="0") {
+            && RegionsManager.getHighlightStatus(region.abb) !== "0") {
             setTimeout(() => {
                 //20200518 FF76 : Can't directly use this.treeItemRef.current.scrollIntoView(), because can make above components dissappearing... 
                 this.props.requestScrollIntoView(this.treeItemRef.current.getBoundingClientRect());
@@ -175,93 +175,96 @@ class RegionDetail extends React.Component {
         const region = RegionsManager.getRegion(this.props.regionId);
 
         let grouping = null;
-        if (region.groups) {
-            const groupingInfo = [];
-            //Note: groups id are unique and can be found in several grouping schemes 
-            _.chain(region.groups)
-                .pairs()
-                .groupBy(sgPair => sgPair[1])
-                .each((sgPairs, groupid) => {
-                    const partOf = sgPairs.map(sgPair => RegionsManager.getGrouping(sgPair[0]).name).join(", ");
-                    const firstGrouping = sgPairs[0][0];
-                    groupingInfo.push(
-                        <div key={groupid} className="zav-RegionDetailGroupings">
-                            <div>
-                                <Icon icon="search-around"/>
-                                <span style={{ fontStyle: "italic", fontSize: 12, marginLeft: 16 }}>part of </span>
-                                <b>{RegionsManager.getGroupName(firstGrouping, groupid)}</b>
+        if (region) {
+            if (region.groups) {
+                const groupingInfo = [];
+                //Note: groups id are unique and can be found in several grouping schemes 
+                _.chain(region.groups)
+                    .pairs()
+                    .groupBy(sgPair => sgPair[1])
+                    .each((sgPairs, groupid) => {
+                        const partOf = sgPairs.map(sgPair => RegionsManager.getGrouping(sgPair[0]).name).join(", ");
+                        const firstGrouping = sgPairs[0][0];
+                        groupingInfo.push(
+                            <div key={groupid} className="zav-RegionDetailGroupings">
+                                <div>
+                                    <Icon icon="search-around" />
+                                    <span style={{ fontStyle: "italic", fontSize: 12, marginLeft: 16 }}>part of </span>
+                                    <b>{RegionsManager.getGroupName(firstGrouping, groupid)}</b>
+                                </div>
+                                {"in grouping" + (sgPairs.length > 1 ? "s" : "") + " :"}
+                                <ul>
+                                    {sgPairs.map(sgPair => <li>{RegionsManager.getGrouping(sgPair[0]).name}</li>)}
+                                </ul>
                             </div>
-                            {"in grouping" + (sgPairs.length > 1 ? "s" : "") + " :"}
-                            <ul>
-                                {sgPairs.map(sgPair => <li>{RegionsManager.getGrouping(sgPair[0]).name}</li>)}
-                            </ul>
-                        </div>
-                    );
-                })
-            grouping = groupingInfo.length
-            ?
-                <Popover
-                interactionKind={PopoverInteractionKind.HOVER}
-                popoverClassName="bp3-popover-content-sizing"
-                position={Position.RIGHT}
-                boundary="window"
-                >
-                    <Icon icon="search-around"  iconSize={12} className="zav-RegionGrpngsTarget"/>
-                    <div>{groupingInfo}</div>
-                </Popover>
-                :
-                null
-                ;
+                        );
+                    })
+                grouping = groupingInfo.length
+                    ?
+                    <Popover
+                        interactionKind={PopoverInteractionKind.HOVER}
+                        popoverClassName="bp3-popover-content-sizing"
+                        position={Position.RIGHT}
+                        boundary="window"
+                    >
+                        <Icon icon="search-around" iconSize={12} className="zav-RegionGrpngsTarget" />
+                        <div>{groupingInfo}</div>
+                    </Popover>
+                    :
+                    null
+                    ;
             }
 
             const crumbs = []
             region.trail.forEach(rId => {
-    
                 crumbs.push(<Icon style={{ color: "white" }} icon="slash" />);
                 crumbs.push(<span style={{ fontWeight: "bold" }}>{rId}</span>);
             });
-    
+
             const trail = <div style={{ fontSize: 10 }}>{crumbs}{grouping}</div>;
 
             return (
-            <div className="zav-RegionDetailContent">
-                {trail}
-                <div style={{ marginTop: 8 }}>
-                    <RegionItemLabel region={region} />
-                </div>
-                <div
-                    style={{ marginTop: 12, marginLeft: 10 }}
-                >
-                    {region.centerSlice
-                        ?
-                        (<React.Fragment>
-                            <div>
-                                <AnchorButton
-                                    icon="compass"
-                                    minimal
-                                    fill
-                                    onClick={this.goToSlice.bind(this, region.centerSlice, false)}
-                                >Go to slice containing region center</AnchorButton>
-                            </div>
-                            <div>
-                                <AnchorButton
-                                    icon="locate"
-                                    minimal
-                                    fill
-                                    onClick={this.goToSlice.bind(this, region.centerSlice, true)}
-                                >Go to slice and focus on region center</AnchorButton>
-                            </div>
-                        </React.Fragment>)
-                        :
-                        (region.exists
+                <div className="zav-RegionDetailContent">
+                    {trail}
+                    <div style={{ marginTop: 8 }}>
+                        <RegionItemLabel region={region} />
+                    </div>
+                    <div
+                        style={{ marginTop: 12, marginLeft: 10 }}
+                    >
+                        {region.centerSlice
                             ?
-                            null
+                            (<React.Fragment>
+                                <div>
+                                    <AnchorButton
+                                        icon="compass"
+                                        minimal
+                                        fill
+                                        onClick={this.goToSlice.bind(this, region.centerSlice, false)}
+                                    >Go to slice containing region center</AnchorButton>
+                                </div>
+                                <div>
+                                    <AnchorButton
+                                        icon="locate"
+                                        minimal
+                                        fill
+                                        onClick={this.goToSlice.bind(this, region.centerSlice, true)}
+                                    >Go to slice and focus on region center</AnchorButton>
+                                </div>
+                            </React.Fragment>)
                             :
-                            <span style={{ fontStyle: "italic" }}>This region has not been identified in this dataset</span>)
-                    }
+                            (region.exists
+                                ?
+                                null
+                                :
+                                <span style={{ fontStyle: "italic" }}>This region has not been identified in this dataset</span>)
+                        }
+                    </div>
                 </div>
-            </div>
-        );
+            );
+        } else {
+            return null;
+        }
     }
 
     goToSlice(sliceNum, centerOnRegion) {
@@ -397,7 +400,7 @@ class RegionTreeSearch extends React.Component {
                     groupingSwitches.push(
                         <Switch
                             label={<span>List only the regions present in "<span style={{ fontStyle: "italic" }}>{grouping.name}</span>"</span>}
-                            key={'switch-'+ groupingId}
+                            key={'switch-' + groupingId}
                             onChange={that.onOnlyGroupingChange.bind(that, groupingId)}
                             checked={RegionsManager.getHighlightingGrouping() === groupingId}
                             disabled={RegionsManager.isAutoHighlightingOn() || (RegionsManager.getHighlightingGrouping() != null && RegionsManager.getHighlightingGrouping() != groupingId)}

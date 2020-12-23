@@ -16,7 +16,7 @@ class App extends React.Component {
 
   constructor(props) {
     super(props);
-    this.state = { configId: undefined, config: undefined, isRegionPanelExpanded: false, splitSize: 350 };
+    this.state = { configId: undefined, dataSrc: undefined, config: undefined, isRegionPanelExpanded: false, splitSize: 350 };
     this.handleClick = this.handleClick.bind(this);
     this.onSplitSizeChange = this.onSplitSizeChange.bind(this);
 
@@ -41,14 +41,23 @@ class App extends React.Component {
                 <img id="zav_logo" src="./assets/img/logo.png" height={23} />
               </div>
             </div>
-            <RegionTreePanel regionsStatus={this.state.regionsStatus} />
+            {
+              RegionsManager.isReady()
+                ? <RegionTreePanel regionsStatus={this.state.regionsStatus} />
+                : null
+            }
           </div>
           <div className="primaryViewerPane" style={{ height: "100%" }}>
-            <DrawerHandle
-              collapseDirection={DrawerHandle.LEFT}
-              isExpanded={this.state.isRegionPanelExpanded}
-              onClick={this.handleClick}
-            />
+            {
+              RegionsManager.isReady()
+                ? <DrawerHandle
+                  collapseDirection={DrawerHandle.LEFT}
+                  isExpanded={this.state.isRegionPanelExpanded}
+                  onClick={this.handleClick}
+                />
+                : null
+            }
+
             <div style={{ position: "absolute", left: 13, width: "calc( 100% - 13px )", height: "100%" }}>
               <ViewerComposed
                 config={this.state.config}
@@ -64,12 +73,14 @@ class App extends React.Component {
 
   componentDidMount() {
     //config ID is undefined when the viewer is used without backend (i.e. shipped within its dataset)
-    const configId = this.getConfigIdParam();
-    if (configId !== this.state.configId) {
+    const params = this.getConfigParams();
+    const configId = params["configId"];
+    const dataSrc = params["dataSrc"];
+    if (configId !== this.state.configId || dataSrc !== this.state.dataSrc) {
       //retrieve config asynchronously...
-      ZAVConfig.getConfig(configId, (config) => {
+      ZAVConfig.getConfig(configId, dataSrc, (config) => {
         //... and expand state when config has been retrieved
-        this.setState(state => ({ configId: configId, config: config }));
+        this.setState(state => ({ configId: configId, dataSrc: dataSrc, config: config }));
 
         //retrieve region data asynchronously...
         RegionsManager.init(config, (regionsStatus) => {
@@ -84,19 +95,19 @@ class App extends React.Component {
   /** retrieve configuration ID from url query param  
    * @private
   */
-  getConfigIdParam() {
-    var configId = null;
-    var i;
+  getConfigParams() {
+    const params = {};
     const url = location.search.substring(1).split('&');
 
-    for (i = 0; url[i]; i++) {
-      var k = url[i].split('=');
+    for (var i = 0; url[i]; i++) {
+      const k = url[i].split('=');
       if (k[0] == "id") {
-        configId = k[1];
-        break;
+        params["configId"] = k[1];
+      } else if (k[0] == "datasrc") {
+        params["dataSrc"] = k[1];
       }
     }
-    return configId;
+    return params;
   }
 
   handleClick() {
