@@ -1,0 +1,32 @@
+# temporary image used as build environment
+FROM node:14.15.4-alpine as build
+
+WORKDIR /app
+ENV PATH /app/node_modules/.bin:$PATH
+
+# copy required files from context
+COPY package.json ./
+COPY package-lock.json ./
+
+# download and install build system tool
+RUN npm install --global gulp-cli@2.2.0
+
+# download and install node modules
+RUN npm install --no-optional
+#RUN npm clean-install --no-optional
+
+COPY . ./
+
+#generate ZAViewer bundles
+RUN gulp buildprodall
+
+# production environment
+FROM nginx:stable-alpine
+
+# copy generated bundles and assets from building stage image
+COPY --from=build /app/index.html /usr/share/nginx/html
+COPY --from=build /app/assets /usr/share/nginx/html/assets
+COPY --from=build /app/node_modules/@blueprintjs /usr/share/nginx/html/assets/vendors/@blueprintjs
+
+
+EXPOSE 80

@@ -10,7 +10,7 @@ const stripCssComments = require('gulp-strip-css-comments');
 
 const concat = require("gulp-concat");
 const source = require('vinyl-source-stream');
-const    buffer = require('vinyl-buffer');
+const buffer = require('vinyl-buffer');
 
 
 gulp.task('sass', function () {
@@ -47,7 +47,7 @@ gulp.task('apply-prod-environment', (done) => {
 
 gulp.task('sassprod', function () {
     return gulp.src('src/js/components/*.scss')
-        .pipe(sass({outputStyle: 'compressed'}).on('error', sass.logError))
+        .pipe(sass({ outputStyle: 'compressed' }).on('error', sass.logError))
         .pipe(stripCssComments())
         .pipe(concat("ZAViewer.css"))
         .pipe(gulp.dest('./assets/css'));
