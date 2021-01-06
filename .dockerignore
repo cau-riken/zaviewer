@@ -1,0 +1,7 @@
+admin/
+docker_scripts/
+node_modules/
+*.md
+.git
+.gitignore
+.vscode/

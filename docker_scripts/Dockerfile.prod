@@ -23,10 +23,14 @@ RUN gulp buildprodall
 # production environment
 FROM nginx:stable-alpine
 
+LABEL jp.riken.cau.product="ZAViewer User Interface" \
+    jp.riken.cau.version="2.0.0" \
+    jp.riken.cau.release-date="2021-01-06"
+
 # copy generated bundles and assets from building stage image
 COPY --from=build /app/index.html /usr/share/nginx/html
 COPY --from=build /app/assets /usr/share/nginx/html/assets
 COPY --from=build /app/node_modules/@blueprintjs /usr/share/nginx/html/assets/vendors/@blueprintjs
 
-
+# port which NginX listens to 
 EXPOSE 80
