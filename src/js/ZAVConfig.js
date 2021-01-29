@@ -444,7 +444,7 @@ class ZAVConfig {
         }
 
         //In multiplanes mode, slices of all available planes are appended to the OSD viewer page list in that order : Axial, Coronal then Sagittal.
-        //Hence, each plane start at diffrent page offset which must be taken into account to display correct slice.
+        //Hence, each plane start at different page offset which must be taken into account to display correct slice.
 
         //index of first slice of each plane within the Page axis 
         this.config.axialFirstIndex = 0;
@@ -463,7 +463,9 @@ class ZAVConfig {
             this.config.zMinGlobal = (response.subview.z_min ? response.subview.z_min : 0) / this.config.subviewZoomRatio;
             this.config.zMaxGlobal = (response.subview.z_max ? response.subview.z_max : subviewOrgSize) / this.config.subviewZoomRatio;
         } else {
-            this.config.xMinGlobal = this.config.yMinGlobal = this.config.zMinGlobal = (response.subview.min ? response.subview.min : 0) / this.config.subviewZoomRatio;
+            this.config.xMinGlobal = this.config.yMinGlobal = this.config.zMinGlobal = (response.subview.min ? response.subview.min : 1) / this.config.subviewZoomRatio;
+
+            //this.config.xMaxGlobal = this.config.yMaxGlobal = this.config.zMaxGlobal = (response.subview.max ? response.subview.max : subviewOrgSize) / this.config.subviewZoomRatio;
             this.config.xMaxGlobal = this.config.yMaxGlobal = this.config.zMaxGlobal = (response.subview.max ? response.subview.max : subviewOrgSize) / this.config.subviewZoomRatio;
         }
 
