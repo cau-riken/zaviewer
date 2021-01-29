@@ -76,7 +76,7 @@ class App extends React.Component {
     const params = this.getConfigParams();
     const configId = params["configId"];
     const dataSrc = params["dataSrc"];
-    if (configId !== this.state.configId || dataSrc !== this.state.dataSrc) {
+    if (dataSrc !== this.state.dataSrc || configId !== this.state.configId || (typeof this.state.configId == "undefined")) {
       //retrieve config asynchronously...
       ZAVConfig.getConfig(configId, dataSrc, (config) => {
         //... and expand state when config has been retrieved
