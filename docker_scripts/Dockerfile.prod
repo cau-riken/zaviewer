@@ -32,5 +32,8 @@ COPY --from=build /app/index.html /usr/share/nginx/html
 COPY --from=build /app/assets /usr/share/nginx/html/assets
 COPY --from=build /app/node_modules/@blueprintjs /usr/share/nginx/html/assets/vendors/@blueprintjs
 
+# link to configuration descriptor used when displaying data located in mounted directory
+RUN ln -s /usr/share/nginx/html/data/viewer.json /usr/share/nginx/html/viewer.json
+
 # port which NginX listens to 
 EXPOSE 80
