@@ -354,8 +354,10 @@ class ViewerManager {
             if (that.config.svgFolerName != "") {
                 //load region delineations in the dedicated overlay
                 if (event.element.id === 'svgDelineationOverlay') {
-                    const svgPath = that.getRegionsSVGUrl();
-                    that.addSVGData(svgPath, event.element);
+                    if (that.config.hasDelineation) {
+                        const svgPath = that.getRegionsSVGUrl();
+                        that.addSVGData(svgPath, event.element);
+                    }
                 }
             }
         });
@@ -1141,7 +1143,9 @@ class ViewerManager {
             /*
             One caveat here is that the changes we applied only operate within the SVG module of Raphael. Since CircuitLab doesn't currently support Internet Explorer, this isn't a concern for us, however if you rely on Raphael for IE support you will also have to implement the setTransform() method appropriately in the VML module. Here is a link to the change set that shows the changes discussed in this post.*/
             //NOTE: we should set translate appropriately to the size of the SVG
-            this.status.paper.setTransform(' scale(' + zoom + ',' + zoom + ') translate(0,' + this.config.dzDiff + ')');//translate(0,1290)');
+            if (this.status.paper) {
+                this.status.paper.setTransform(' scale(' + zoom + ',' + zoom + ') translate(0,' + this.config.dzDiff + ')');//translate(0,1290)');
+            }
             //console.log('S' + zoom + ',' + zoom + ',0,0');
 
             this.displayMeasureLine();
@@ -1648,15 +1652,15 @@ class ViewerManager {
         switch (this.status.activePlane) {
             case ZAVConfig.AXIAL:
                 slideNum -= this.config.axialFirstIndex;
-                return this.config.dataRootPath + "/" + key + "/axial/" + slideNum + "_files/" + level + "/" + x + "_" + y + ".jpg";
+                return this.config.dataRootPath + "/" + key + (this.config.hasMultiPlanes ? "/" + ZAVConfig.AXIAL : "") + "/" + slideNum + "_files/" + level + "/" + x + "_" + y + ".jpg";
 
             case ZAVConfig.CORONAL:
                 slideNum -= this.config.coronalFirstIndex;
-                return this.config.dataRootPath + "/" + key + "/coronal/" + slideNum + "_files/" + level + "/" + x + "_" + y + ".jpg";
+                return this.config.dataRootPath + "/" + key + (this.config.hasMultiPlanes ? "/" + ZAVConfig.CORONAL : "") + "/" + slideNum + "_files/" + level + "/" + x + "_" + y + ".jpg";
 
             case ZAVConfig.SAGITTAL:
                 slideNum -= this.config.sagittalFirstIndex;
-                return this.config.dataRootPath + "/" + key + "/sagittal/" + slideNum + "_files/" + level + "/" + x + "_" + y + ".jpg";
+                return this.config.dataRootPath + "/" + key + (this.config.hasMultiPlanes ? "/" + ZAVConfig.SAGITTAL : "") + "/" + slideNum + "_files/" + level + "/" + x + "_" + y + ".jpg";
         }
     }
 
