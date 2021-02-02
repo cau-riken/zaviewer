@@ -1,6 +1,12 @@
 # temporary image used as build environment
 FROM node:14.15.4-alpine as build
 
+# install tools necessary for some node modules
+#RUN apk add --no-cache autoconf automake gcc zlib-dev
+#RUN apk add --no-cache autoconf automake gcc libc-dev libtool 
+
+#ENV LIBRARY_PATH=/lib:/usr/lib
+
 WORKDIR /app
 ENV PATH /app/node_modules/.bin:$PATH
 
@@ -30,7 +36,6 @@ LABEL jp.riken.cau.product="ZAViewer User Interface" \
 # copy generated bundles and assets from building stage image
 COPY --from=build /app/index.html /usr/share/nginx/html
 COPY --from=build /app/assets /usr/share/nginx/html/assets
-COPY --from=build /app/node_modules/@blueprintjs /usr/share/nginx/html/assets/vendors/@blueprintjs
 
 # link to configuration descriptor used when displaying data located in mounted directory
 RUN ln -s /usr/share/nginx/html/data/viewer.json /usr/share/nginx/html/viewer.json
