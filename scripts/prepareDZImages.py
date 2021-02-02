@@ -344,7 +344,7 @@ def prepareImages(axisLayersFiles, config, ouput_path):
                     layer['path'], image['shortname'] + image['ext'])
                 output = os.path.join(layer_ouputpath, str(index) + '.dzi')
 
-                #createDeepZoomImage(source, output)
+                createDeepZoomImage(source, output)
 
                 # create subview image from image in reference layer (needed in case of multiplane mode only)
                 if isMultiPlane and layerName == referenceLayerName:
