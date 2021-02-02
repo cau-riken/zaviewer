@@ -361,37 +361,37 @@ def prepareImages(axisLayersFiles, config, ouput_path):
                 # subview images are create from reference layer
                 if layerName == referenceLayerName:
 
-                    # create subview images because current axis is used as subview for another axis
+                    # create subview image(s) because current axis is used as subview for another axis
+                    # FIXME works only if current axis and its orthogonal plane have samne number of slices!
                     if axis in requiredOrthogPlanes:
 
-                        subviewPath = os.path.join(
-                            subviewBasePath, axis) if isMultiPlane else subviewBasePath
-                        os.makedirs(subviewPath, exist_ok=True)
+                        if isMultiPlane or index == centerImageIndex:
 
-                        subviewImageFile = os.path.join(
-                            subviewPath, str(index) + '.jpg')
-                        changeSize(
-                            os.path.join(
-                                layer['path'], image['shortname'] + image['ext']),
-                            subviewImageFile,
-                            desired_size=[200, 200])
+                            # in single plane mode, only 1 image for the subview, but one for each slice in multiplane
+                            subviewPath = os.path.join(subviewBasePath, axis) if isMultiPlane else subviewBasePath
+                            os.makedirs(subviewPath, exist_ok=True)
+
+                            subviewImageFile = os.path.join(subviewPath, (str(index) if isMultiPlane else 'subview') + '.jpg')
+                            changeSize(
+                                os.path.join(
+                                    layer['path'], image['shortname'] + image['ext']),
+                                subviewImageFile,
+                                desired_size=[200, 200])
 
                     # current axis' subview can not be generated, use default image instead
                     orthogplane = PLANE_PREFSUBVIEW[axis]
-                    if orthogplane in subviewToDefault and not index:
+                    if orthogplane in subviewToDefault:
+                        if isMultiPlane or index == centerImageIndex:
 
-                        defaultSubview = os.path.join(os.path.dirname(
-                            __file__), 'assets', 'subview_' + orthogplane + '.jpg')
+                            defaultSubview = os.path.join(os.path.dirname(__file__), 'assets', 'subview_' + orthogplane + '.jpg')
 
-                        subviewPath = os.path.join(
-                            subviewBasePath, orthogplane) if isMultiPlane else subviewBasePath
-                        os.makedirs(subviewPath, exist_ok=True)
+                            subviewPath = os.path.join(subviewBasePath, orthogplane) if isMultiPlane else subviewBasePath
+                            os.makedirs(subviewPath, exist_ok=True)
 
-                        subviewImageFile = os.path.join(
-                            subviewPath, 'subview' + '.jpg')
+                            subviewImageFile = os.path.join(subviewPath, (str(index) if isMultiPlane else 'subview') + '.jpg')
 
-                        # copy SVG to output dir
-                        copyfile(defaultSubview, subviewImageFile)
+                            # copy SVG to output dir
+                            copyfile(defaultSubview, subviewImageFile)
 
         if 'first_access' not in config:
             config['first_access'] = {
