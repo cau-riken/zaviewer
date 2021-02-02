@@ -306,23 +306,35 @@ def getLayersNFiles(input_path, config):
 
 
 def prepareImages(axisLayersFiles, config, ouput_path):
+
+    # TODO for single plane mode, enabled users to select preferred subview insteqd of predefined value
+    PLANE_PREFSUBVIEW = {"axial": "coronal",
+                         "coronal": "sagittal", 
+                         "sagittal": "axial"}
+
     print('Preparing images...')
 
     referenceAxis = next(iter(axisLayersFiles['axis']))
     referenceLayerName = next(
         iter(axisLayersFiles['axis'][referenceAxis]['layers']))
+
     # FIXME for now only 1 single overlay set, which corresponds to delineations
     hasDelineations = len(
         axisLayersFiles['axis'][referenceAxis]['overlays'].keys())
 
     isMultiPlane = len(axisLayersFiles['axis'].keys()) > 1
+
+    # all othogonal planes to existing slice axis, i.e. planes for which subview has to be prepared
+    requiredOrthogPlanes = axisLayersFiles['axis'].keys() if isMultiPlane else [
+        PLANE_PREFSUBVIEW[axis] for axis in axisLayersFiles['axis'].keys()]
+    # when there is not slice provided to populate a subview, use default image
+    subviewToDefault = [
+        plane for plane in requiredOrthogPlanes if plane not in axisLayersFiles['axis']]
+
     for axis in axisLayersFiles['axis'].keys():
         print(f"\t{axis}")
-        subviewPath = os.path.join(ouput_path, config['subview']['foldername'])
-        if isMultiPlane:
-            subviewPath = os.path.join(subviewPath, axis)
-
-        os.makedirs(subviewPath, exist_ok=True)
+        subviewBasePath = os.path.join(ouput_path, config['subview']['foldername'])
+        os.makedirs(subviewBasePath, exist_ok=True)
 
         for layerName, layer in axisLayersFiles['axis'][axis]['layers'].items():
             print(f"\t\t{layerName}")
@@ -346,16 +358,40 @@ def prepareImages(axisLayersFiles, config, ouput_path):
 
                 createDeepZoomImage(source, output)
 
-                # create subview image from image in reference layer (needed in case of multiplane mode only)
-                if isMultiPlane and layerName == referenceLayerName:
+                # subview images are create from reference layer
+                if layerName == referenceLayerName:
 
-                    subviewImageFile = os.path.join(
-                        subviewPath, str(index) + '.jpg')
-                    changeSize(
-                        os.path.join(
-                            layer['path'], image['shortname'] + image['ext']),
-                        subviewImageFile,
-                        desired_size=[200, 200])
+                    # create subview images because current axis is used as subview for another axis
+                    if axis in requiredOrthogPlanes:
+
+                        subviewPath = os.path.join(
+                            subviewBasePath, axis) if isMultiPlane else subviewBasePath
+                        os.makedirs(subviewPath, exist_ok=True)
+
+                        subviewImageFile = os.path.join(
+                            subviewPath, str(index) + '.jpg')
+                        changeSize(
+                            os.path.join(
+                                layer['path'], image['shortname'] + image['ext']),
+                            subviewImageFile,
+                            desired_size=[200, 200])
+
+                    # current axis' subview can not be generated, use default image instead
+                    orthogplane = PLANE_PREFSUBVIEW[axis]
+                    if orthogplane in subviewToDefault and not index:
+
+                        defaultSubview = os.path.join(os.path.dirname(
+                            __file__), 'assets', 'subview_' + orthogplane + '.jpg')
+
+                        subviewPath = os.path.join(
+                            subviewBasePath, orthogplane) if isMultiPlane else subviewBasePath
+                        os.makedirs(subviewPath, exist_ok=True)
+
+                        subviewImageFile = os.path.join(
+                            subviewPath, 'subview' + '.jpg')
+
+                        # copy SVG to output dir
+                        copyfile(defaultSubview, subviewImageFile)
 
         if 'first_access' not in config:
             config['first_access'] = {
@@ -385,7 +421,6 @@ def prepareImages(axisLayersFiles, config, ouput_path):
                 output = os.path.join(overlay_ouputpath, 'Anno_' + str(index) + image['ext'])
                 # copy SVG to output dir
                 copyfile(source, output)
-
 
     if 'image_size' not in config:
         # TODO set value depending on actual image
