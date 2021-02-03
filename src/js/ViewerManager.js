@@ -80,6 +80,8 @@ class ViewerManager {
 
         //params retrieved from initial location
         const overridingConf = this.getParamsFromCurrLocation();
+        // should use overrinf configuration only if it make sens with current data
+        const overridingPlane = this.config.hasPlane(overridingConf.activePlane) ? overridingConf.activePlane : null;
 
         /** dynamic state of the viewer */
         this.status = {
@@ -139,21 +141,21 @@ class ViewerManager {
             regionEventListeners: {},
 
             /** currently displayed plane */
-            activePlane: overridingConf.activePlane || this.config.firstActivePlane,
+            activePlane: overridingPlane || this.config.firstActivePlane,
 
             /** currently displayed slice on active plane */
             chosenSlice: undefined,
 
             /** currently selected slice for each plane */
-            axialChosenSlice: (overridingConf.sliceNum && overridingConf.activePlane === ZAVConfig.AXIAL)
+            axialChosenSlice: (overridingConf.sliceNum && overridingPlane === ZAVConfig.AXIAL)
                 ? overridingConf.sliceNum
                 : this.config.axialChosenSlice,
 
-            coronalChosenSlice: (overridingConf.sliceNum && overridingConf.activePlane === ZAVConfig.CORONAL)
+            coronalChosenSlice: (overridingConf.sliceNum && overridingPlane === ZAVConfig.CORONAL)
                 ? overridingConf.sliceNum
                 : this.config.coronalChosenSlice,
 
-            sagittalChosenSlice: (overridingConf.sliceNum && overridingConf.activePlane === ZAVConfig.SAGITTAL)
+            sagittalChosenSlice: (overridingConf.sliceNum && overridingPlane === ZAVConfig.SAGITTAL)
                 ? overridingConf.sliceNum
                 : this.config.sagittalChosenSlice,
 
@@ -1144,7 +1146,7 @@ class ViewerManager {
             One caveat here is that the changes we applied only operate within the SVG module of Raphael. Since CircuitLab doesn't currently support Internet Explorer, this isn't a concern for us, however if you rely on Raphael for IE support you will also have to implement the setTransform() method appropriately in the VML module. Here is a link to the change set that shows the changes discussed in this post.*/
             //NOTE: we should set translate appropriately to the size of the SVG
             if (this.status.paper) {
-                this.status.paper.setTransform(' scale(' + zoom + ',' + zoom + ') translate(0,' + this.config.dzDiff + ')');//translate(0,1290)');
+                this.status.paper.setTransform(' scale(' + zoom + ',' + zoom + ') translate(0,' + this.config.dzDiff + ')');
             }
             //console.log('S' + zoom + ',' + zoom + ',0,0');
 
@@ -1365,11 +1367,17 @@ class ViewerManager {
     }
 
     static switchPlane(newPlane) {
-        this.status.activePlane = newPlane;
-        this.status.chosenSlice = this.getCurrentPlaneChosenSlice();
+        //allow switching to another plane only if it exits!
+        if (this.config.hasPlane(newPlane)) {
+            this.status.activePlane = newPlane;
+            this.status.chosenSlice = this.getCurrentPlaneChosenSlice();
 
-        this.viewer.goToPage(this.getPageNumForCurrentSlice());
-        this.claerPosition();
+            this.viewer.goToPage(this.getPageNumForCurrentSlice());
+            this.claerPosition();
+            return true;
+        } else {
+            return false;
+        }
     }
 
     static activatePlane(newPlane) {
