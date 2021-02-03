@@ -2098,25 +2098,25 @@ class ViewerManager {
             this.viewer.viewport.panTo(refPoint);
         }
 
-        let targetPlane = params.activePlane || this.status.activePlane;
-        if (params.sliceNum && params.sliceNum != this.getPlaneChosenSlice(targetPlane)) {
-            let targetSlice = params.sliceNum || this.getPlaneChosenSlice(targetPlane);
+        let targetPlane = params.activePlane || this.status.activePlane;       
+        if (typeof params.sliceNum !== "undefined" && params.sliceNum != this.getPlaneChosenSlice(targetPlane)) {
+            let targetSlice = params.sliceNum;
             //update active slice    
             targetSlice = this.checkNSetChosenSlice(targetPlane, targetSlice);
         }
         if (params.activePlane) {
             //change active plane and page
             this.switchPlane(targetPlane);
-        } else if (params.sliceNum) {
+        } else if (typeof params.sliceNum !== "undefined") {
             this.viewer.goToPage(this.getPageNumForCurrentSlice());
         }
 
-        if (params.gamma) {
+        if (typeof params.gamma !== "undefined") {
             this.status.gamma = params.gamma;
         } else {
             delete this.status.gamma;
         }
-        if (params.contrast) {
+        if (typeof params.contrast !== "undefined") {
             this.status.contrast = params.contrast;
         } else {
             delete this.status.contrast;
