@@ -118,6 +118,10 @@ class ZAVConfig {
             coronalSlideCount: 0,
             sagittalSlideCount: 0,
 
+            getTotalSlidesCount: function () {
+                return this.axialSlideCount + this.coronalSlideCount + this.sagittalSlideCount;
+            },
+
             /** index increment between 2 consecutive slices */
             axialSliceStep: 1,
             coronalSliceStep: 1,
@@ -568,12 +572,12 @@ class ZAVConfig {
             }
 
             //start with the middle slice if none is specified 
-            this.config.axialChosenSlice = Math.round(this.config.axialSlideCount / 2);
-            this.config.coronalChosenSlice = Math.round(this.config.coronalSlideCount / 2);
-            this.config.sagittalChosenSlice = Math.round(this.config.sagittalSlideCount / 2);
+            this.config.axialChosenSlice = Math.floor(this.config.axialSlideCount / 2);
+            this.config.coronalChosenSlice = Math.floor(this.config.coronalSlideCount / 2);
+            this.config.sagittalChosenSlice = Math.floor(this.config.sagittalSlideCount / 2);
 
             //FIXME magic value!!
-            const initialSlice = response.first_access.slide ? parseInt(response.first_access.slide) : 30;
+            const initialSlice = (response.first_access.slide !== "undefined") ? parseInt(response.first_access.slide) : 30;
             switch (this.config.firstActivePlane) {
                 case AXIAL:
                     this.config.axialChosenSlice = initialSlice;

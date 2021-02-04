@@ -62,86 +62,86 @@ class QuickActionButtons extends React.Component {
                     null
                 }
 
-                <div className="zav-ActionContainer">
-                    <AnchorButton
-                        icon="double-chevron-right"
-                        small
-                        title="go to 10 slices forward"
-                        onClick={this.onShiftToSlice.bind(this, 10)}
-                    />
-                </div>
-                <div className="zav-ActionContainer">
-                    <AnchorButton
-                        icon="chevron-right"
-                        small
-                        title="go to next slice"
-                        onClick={this.onShiftToSlice.bind(this, 1)}
-                    />
-                </div>
+                { this.props.config && (this.props.config.getTotalSlidesCount() > 1) ?
+                    <React.Fragment>
+                        <div className="zav-ActionContainer">
+                            <AnchorButton
+                                icon="double-chevron-right"
+                                small
+                                title="go to 10 slices forward"
+                                onClick={this.onShiftToSlice.bind(this, 10)}
+                            />
+                        </div>
+                        <div className="zav-ActionContainer">
+                            <AnchorButton
+                                icon="chevron-right"
+                                small
+                                title="go to next slice"
+                                onClick={this.onShiftToSlice.bind(this, 1)}
+                            />
+                        </div>
 
-                {this.props.config ?
-                    <div
-                        className="zav-ActionContainer"
-                        title={"slice #" + (currentSlice+1) + " of " + (maxSliceNum+1)}
-                    >
-
-                        <Popover
-                            interactionKind={PopoverInteractionKind.HOVER}
-                            position={Position.LEFT}
-                            boundary="window"
-                            popoverClassName="bp3-popover-content-sizing"
-                            lazy
+                        <div
+                            className="zav-ActionContainer"
+                            title={"slice #" + (currentSlice + 1) + " of " + (maxSliceNum + 1)}
                         >
-                            <AnchorButton icon="multi-select" small />
 
-                            <div>
-                                <Icon
-                                    icon="chevron-left"
-                                    title="go to previous slice"
-                                    style={{ paddingRight: 10, verticalAlign: "top" }}
-                                    onClick={this.onShiftToSlice.bind(this, -1)}
-                                />
-                                <Slider
-                                    className="zav-Slider zav-QActSliceSlider"
-                                    min={0}
-                                    max={maxSliceNum}
-                                    stepSize={1}
-                                    onChange={this.onGoToSlice}
-                                    value={currentSlice}
-                                    showTrackFill={false}
-                                    labelStepSize={maxSliceNum}
-                                    labelRenderer={(value) => value}
-                                />
-                                <Icon
-                                    icon="chevron-right"
-                                    title="go to next slice"
-                                    style={{ paddingLeft: 10, verticalAlign: "top" }}
-                                    onClick={this.onShiftToSlice.bind(this, 1)}
-                                />
-                            </div>
-                        </Popover>
-                    </div>
+                            <Popover
+                                interactionKind={PopoverInteractionKind.HOVER}
+                                position={Position.LEFT}
+                                boundary="window"
+                                popoverClassName="bp3-popover-content-sizing"
+                                lazy
+                            >
+                                <AnchorButton icon="multi-select" small />
 
-                    :
-                    null
+                                <div>
+                                    <Icon
+                                        icon="chevron-left"
+                                        title="go to previous slice"
+                                        style={{ paddingRight: 10, verticalAlign: "top" }}
+                                        onClick={this.onShiftToSlice.bind(this, -1)}
+                                    />
+                                    <Slider
+                                        className="zav-Slider zav-QActSliceSlider"
+                                        min={0}
+                                        max={maxSliceNum}
+                                        stepSize={1}
+                                        onChange={this.onGoToSlice}
+                                        value={currentSlice}
+                                        showTrackFill={false}
+                                        labelStepSize={maxSliceNum}
+                                        labelRenderer={(value) => value}
+                                    />
+                                    <Icon
+                                        icon="chevron-right"
+                                        title="go to next slice"
+                                        style={{ paddingLeft: 10, verticalAlign: "top" }}
+                                        onClick={this.onShiftToSlice.bind(this, 1)}
+                                    />
+                                </div>
+                            </Popover>
+                        </div>
+
+                        <div className="zav-ActionContainer">
+                            <AnchorButton
+                                icon="chevron-left"
+                                small
+                                title="go to previous slice"
+                                onClick={this.onShiftToSlice.bind(this, -1)}
+                            />
+                        </div>
+                        <div className="zav-ActionContainer">
+                            <AnchorButton
+                                icon="double-chevron-left"
+                                small
+                                title="go to 10 slices backward"
+                                onClick={this.onShiftToSlice.bind(this, -10)}
+                            />
+                        </div>
+                    </React.Fragment>
+                    : null
                 }
-
-                <div className="zav-ActionContainer">
-                    <AnchorButton
-                        icon="chevron-left"
-                        small
-                        title="go to previous slice"
-                        onClick={this.onShiftToSlice.bind(this, -1)}
-                    />
-                </div>
-                <div className="zav-ActionContainer">
-                    <AnchorButton
-                        icon="double-chevron-left"
-                        small
-                        title="go to 10 slices backward"
-                        onClick={this.onShiftToSlice.bind(this, -10)}
-                    />
-                </div>
 
                 {
                     tracerLayer

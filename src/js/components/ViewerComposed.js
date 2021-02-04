@@ -148,7 +148,7 @@ class ViewerComposed extends React.Component {
                                     markedPosColors={this.state.markedPosColors}
                                 />
                             </TitledCard>
-                        : null
+                            : null
                     }
 
                     <TitledCard header={"Layers control"}>
@@ -176,13 +176,17 @@ class ViewerComposed extends React.Component {
                             : null
                     }
 
-                    <TitledCard header={"Slices navigation" + subviewTitleSuffix}>
-                        <SubViewPanel
-                            activePlane={this.state.activePlane}
-                            chosenSlice={this.state.chosenSlice}
-                            config={this.props.config}
-                        />
-                    </TitledCard>
+                    {
+                        this.props.config && (this.props.config.getTotalSlidesCount() > 1) ?
+                            <TitledCard header={"Slices navigation" + subviewTitleSuffix}>
+                                <SubViewPanel
+                                    activePlane={this.state.activePlane}
+                                    chosenSlice={this.state.chosenSlice}
+                                    config={this.props.config}
+                                />
+                            </TitledCard>
+                            : null
+                    }
 
                 </Drawer>
 
