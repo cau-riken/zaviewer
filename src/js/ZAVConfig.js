@@ -175,7 +175,7 @@ class ZAVConfig {
             },
 
             /** matrix to convert image space to physical space */
-            matrix: [0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0],
+            matrix: undefined,
 
             imageSize: 1000,
 

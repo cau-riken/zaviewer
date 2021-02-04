@@ -428,7 +428,7 @@ def prepareImages(axisLayersFiles, config, ouput_path):
 
     if 'matrix' not in config:
         # TODO set value depending on actual image
-        config['matrix'] = "0.05,0,0,-13.54,0,0.05,0,-16.00,0,0,0.05,-3.0,0,0,0,1"
+        config['matrix'] = ""
 
 
 def saveConfig(config_filepath, prev_config, config):

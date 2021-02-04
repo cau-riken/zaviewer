@@ -139,14 +139,17 @@ class ViewerComposed extends React.Component {
                         </div>
                     </TitledCard>
 
-
-                    <TitledCard header={"Distance measurement"}>
-                        <MeasureInfoPanel
-                            posCount={this.state.position ? this.state.position[0].c : 0}
-                            pos={this.state.pos} markedPos={this.state.markedPos}
-                            markedPosColors={this.state.markedPosColors}
-                        />
-                    </TitledCard>
+                    {
+                        this.props.config && this.props.config.matrix ?
+                            <TitledCard header={"Distance measurement"}>
+                                <MeasureInfoPanel
+                                    posCount={this.state.position ? this.state.position[0].c : 0}
+                                    pos={this.state.pos} markedPos={this.state.markedPos}
+                                    markedPosColors={this.state.markedPosColors}
+                                />
+                            </TitledCard>
+                        : null
+                    }
 
                     <TitledCard header={"Layers control"}>
                         <SliderNavigatorPanel

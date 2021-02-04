@@ -22,8 +22,11 @@ Table of Contents
 ZAViewer is a web 2D image viewer that was primarily designed to explore the [Brain/MINDS Marmoset Reference Atlas](https://doi.org/10.24475/bma.2799).
 
 It can display up to 3 sets of multimodal, regularly interspaced, large image slices along 3 standard orthogonal axis (Axial, Coronal, Sagittal).
-Each slice view may contains several raster images layers, and Atlas regions (represented by aligned vector images, SVG) displayed as an overlay over the raster images. 
+Each slice view may contains several raster images layers, and Atlas regions (represented by aligned vector images, SVG) displayed as an overlay over the raster images.
 
+
+
+🟣 ADD [overview video presentation] 🟣
 
 ## Detailed Architecture
 
@@ -37,6 +40,7 @@ It is usually served from a remote web server, but can be conveniently executed 
 
     * The standalone version of ZAViewer can display image in [DZI (Deep Zoom Image)](http://msdn.microsoft.com/en-us/library/cc645077(v=vs.95).aspx) format.
     <br/>
+
     **Note**: these images may even be retrieved from a remote domain (if properly configured to serve cross-origin content)
 
 
@@ -56,13 +60,11 @@ The provided Docker script will:
 
 * download dependencies and build ZAViewer UI from the source within a temporary image (so you don't have to setup the build environement on your machine)
 
-* create an image containing a light footprint web server to serve the generated ZAViewer Web App.
+* create an image containing a light memory footprint web server to serve the generated ZAViewer Web App.
 
 ### **Step by step procedure**
 
-<div style="color:orange; text-align:center; margin: 16px 6px; padding: 2px; border: dashed 1px orange" >
-Possible improvement: change procedure to avoid cloning repo in user's host, but inside a Docker image
-</div>
+🟠 Possible improvement: change procedure to avoid cloning repo in user's host, but inside a Docker image 🟠
 
 1. Clone this git repo to get the latest sources
 
@@ -163,6 +165,8 @@ Parameters:
         * SVG viewport (defined by `<svg>`'s `width` and `height` attributes) must be identical to corresponding raster image dimensions in pixels.
         * SVG user coordinate system must be identical to the viewport (i.e. it must not be redefined via a `viewBox` attribute, or by any `transform` attribute on container or graphic elements, since those will be lost when the SVG is imported in the UI).
         * Therefore, coordinates used for graphic elements directly map to pixels (1 user unit maps to 1 pixel), 
+        * 🟠 TODO: add region identifier  attribute and explain link to region info 🟠
+
 
 
     The overall structure of the input directory looks like this:
@@ -190,9 +194,7 @@ Parameters:
         ...
     ```
 
-<div style="color:orange; text-align:center; margin: 16px 6px; padding: 2px; border: dashed 1px orange" >
-TODO: add Region information file import and explain its structure
-</div>
+🟠 TODO: add Region information file import and explain its structure 🟠
 
 
 * In case of single axis image set, you may provide a small image from on an orthogonal plane which will be displayed in the subview wigdet (it allows to see the current slice position in the set)
@@ -200,9 +202,8 @@ TODO: add Region information file import and explain its structure
 
 #### 1.2 Install script dependancies
 
-<div style="color:orange; text-align:center; margin: 16px 6px; padding: 2px; border: dashed 1px orange" >
-Possible improvement: change procedure to run script inside a Docker container
-</div>
+
+🟠 Possible improvement: change procedure to run script inside a Docker container 🟠
 
 
 ```sh
@@ -370,7 +371,7 @@ When ZAViewer is used with images along a single axis (aka "single-plane mode") 
 | `first_access.plane` <sup>multi</sup> | plane displayed by default after loading (allowed values: `axial`,`coronal` or `sagittal` ) |
 | `first_access.slide` | initial slide to display |
 | `first_access.delineations` | set whether Atlas region area are displayed by default (allowed values: `show` or `hide` ) |
-| `matrix` |  |
+| `matrix` | Matrix to convert image space coordinates to physical space coordinates (String representation of as a single dimensional vector with the entries in row major order)  |
 | **[unused]** `gamma` | _not used_ |
 | **[unused]** `bright` | _not used_ |
 | `image_size` |  |

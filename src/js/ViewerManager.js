@@ -334,20 +334,22 @@ class ViewerManager {
             showFullPageControl: false
         });
 
-        this.viewer.scalebar({
-            type: OpenSeadragon.ScalebarType.MAP,
-            pixelsPerMeter: 1000 / (this.getPointXY(0, this.config.imageSize / 2).x - this.getPointXY(this.config.imageSize, this.config.imageSize / 2).x) * this.config.imageSize,//37cm:1000px
-            minWidth: "150px",
-            location: OpenSeadragon.ScalebarLocation.BOTTOM_LEFT,
-            xOffset: 5,
-            yOffset: 10,
-            stayInsideImage: false,
-            color: "rgb(255, 0, 0, 0.65)",
-            fontColor: "rgb(255,255,255)",
-            backgroundColor: "rgba(100,100, 100, 0.25)",
-            fontSize: "10px",
-            barThickness: 2
-        });
+        if (this.config.matrix) {
+            this.viewer.scalebar({
+                type: OpenSeadragon.ScalebarType.MAP,
+                pixelsPerMeter: 1000 / (this.getPointXY(0, this.config.imageSize / 2).x - this.getPointXY(this.config.imageSize, this.config.imageSize / 2).x) * this.config.imageSize,
+                minWidth: "150px",
+                location: OpenSeadragon.ScalebarLocation.BOTTOM_LEFT,
+                xOffset: 5,
+                yOffset: 10,
+                stayInsideImage: false,
+                color: "rgb(255, 0, 0, 0.65)",
+                fontColor: "rgb(255,255,255)",
+                backgroundColor: "rgba(100,100, 100, 0.25)",
+                fontSize: "10px",
+                barThickness: 2
+            });
+        }
 
 
         this.viewer.addHandler('add-overlay', function (event) {
@@ -1561,17 +1563,20 @@ class ViewerManager {
 
     static mousemoveHandler(event) {
         if (this.viewer.currentOverlays[0] == null) { return; }
-
-        var rect = this.viewer.canvas.getBoundingClientRect();
-        var zoom = this.viewer.viewport.getZoom(true) * (this.viewer.canvas.clientWidth / this.config.imageSize);
-        this.status.position[0].x = event.clientX;
-        this.status.position[0].y = event.clientY;
-        var orig = this.viewer.viewport.pixelFromPoint(new OpenSeadragon.Point(0, 0), true);
-        var x = (this.status.position[0].x - orig.x - rect.left) / zoom;
-        var y = (this.status.position[0].y - orig.y - rect.top) / zoom;
-
-        this.status.livePosition = this.getPoint(x, y);
-        this.signalStatusChanged(this.status);
+        if (this.config.matrix) {
+            var rect = this.viewer.canvas.getBoundingClientRect();
+            var zoom = this.viewer.viewport.getZoom(true) * (this.viewer.canvas.clientWidth / this.config.imageSize);
+            // update current position of pointer in local (DOM content) coordinates
+            this.status.position[0].x = event.clientX;
+            this.status.position[0].y = event.clientY;
+            var orig = this.viewer.viewport.pixelFromPoint(new OpenSeadragon.Point(0, 0), true);
+            // convert to coordinates in image space
+            var x = (this.status.position[0].x - orig.x - rect.left) / zoom;
+            var y = (this.status.position[0].y - orig.y - rect.top) / zoom;
+            
+            this.status.livePosition = this.getPoint(x, y);
+            this.signalStatusChanged(this.status);
+        }
     }
 
     static onViewerScroll(event) {
@@ -1902,6 +1907,7 @@ class ViewerManager {
     /** Draw the measure line widgets on the position canvas */
     static displayMeasureLine() {
         if (this.viewer.currentOverlays[0] == null) { return; }
+        if (!this.config.matrix) { return; }
         if (this.status.ctx == null) {
             this.status.ctx = $("#poscanvas")[0].getContext('2d');
         }
@@ -2098,7 +2104,7 @@ class ViewerManager {
             this.viewer.viewport.panTo(refPoint);
         }
 
-        let targetPlane = params.activePlane || this.status.activePlane;       
+        let targetPlane = params.activePlane || this.status.activePlane;
         if (typeof params.sliceNum !== "undefined" && params.sliceNum != this.getPlaneChosenSlice(targetPlane)) {
             let targetSlice = params.sliceNum;
             //update active slice    
