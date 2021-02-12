@@ -5,12 +5,18 @@ from typing import Final
 import logging
 #logging.basicConfig(format='%(asctime)s : %(message)s')
 
+import sys
 import os
+import tempfile
+
 from shutil import copyfile
 import re
 from datetime import datetime
 import json
 import base64
+
+from progress.spinner import Spinner
+from progress.bar import Bar
 
 import SimpleITK as sitk
 import numpy as np
@@ -106,7 +112,7 @@ def getCleanedAndCheckedPath(input_query, error_message, default_path=None):
         raise Exception(message)
 
 
-def getLayersNFiles(input_path, config):
+def getLayersNFiles(input_path, config, phys_unit):
 
     layersCompo = list()
     overlaysCompo = list()
@@ -137,7 +143,6 @@ def getLayersNFiles(input_path, config):
                             'dirname': layerEntry.name,
                             'safename': safename
                         })
-                print(f"\t{len(layersCompo)} layer(s) found:\n")
 
                 # TODO check for duplicate layer's name
 
@@ -161,7 +166,8 @@ def getLayersNFiles(input_path, config):
                             'safename': safename
                         })
 
-                print(f"\t{len(overlaysCompo)} overlay(s) found:\n")
+                print(
+                    f"\t{len(layersCompo)} layer(s) and {len(overlaysCompo)} overlay(s) found")
 
             # Note: keys' insertion order is preserved in dictionary (Python >=3.6)
             axisLayersFiles['axis'][axis] = {'layers': {}}
@@ -188,20 +194,58 @@ def getLayersNFiles(input_path, config):
 
                 # retrieve image file in input folder : image name must contain a number as suffix (before extension)
                 imageFile_re = re.compile(
-                    '((?:.+_)?(\d+))(\.(?:png|tif))$', re.IGNORECASE)
-                for imageEntry in [f for f in os.scandir(axis_layerpath) if f.is_file()]:
+                    '((?:.+_)?(\d+))(\.(?:tif))$', re.IGNORECASE)
+                imageEntries = [f for f in os.scandir(
+                    axis_layerpath) if f.is_file()]
+                bar = Bar(f"Reading images in layer {layer['name']} ", suffix='%(percent)d%%', max=len(
+                    imageEntries)+1, check_tty=False)
+                bar.next()
+
+                for imageEntry in imageEntries:
+
                     imageFile_search = imageFile_re.match(imageEntry.name)
                     if imageFile_search:
 
-                        image2D = sitk.ReadImage(imageEntry.path)
+                        reader = sitk.ImageFileReader()
+
+                        reader.SetFileName(imageEntry.path)
+                        reader.LoadPrivateTagsOn()
+
+                        reader.ReadImageInformation()
+
+                        # for k in reader.GetMetaDataKeys():
+                        #    v = reader.GetMetaData(k)
+                        #    print("({0}) = = \"{1}\"".format(k, v))
+
+                        # currently only expect 2D images
+                        # FIXME check it is actual 2D image
+                        # if reader.GetDepth()==0:
+                        # if reader.GetDimension()==2
+
+                        #
+                        # distance between pixels along each of the dimensions, in consistent, but not specified, units (nm, mm, m ?)
+                        spacing = reader.GetSpacing()
+                        # size in pixels along each of the dimensions
+                        size = reader.GetSize()
+
+                        # images should be aligned on their respective origin
+                        origin = reader.GetOrigin()
+                        # reader.GetDirection(): Direction cosine matrix (axis directions in physical space).
+
                         images.append({
                             'ordnum': imageFile_search.group(2),
                             'shortname': imageFile_search.group(1),
                             'ext': imageFile_search.group(3),
-                            'width': image2D.GetWidth(),
-                            'height': image2D.GetHeight()
+                            'width': size[0],
+                            'height': size[1],
+                            'spacing': spacing,
+                            'origin': origin
                         })
                         image2D = None
+
+                    bar.next()
+
+                bar.finish()
 
                 # every layers must have same number of slice images (within a specific axis)
                 if layerName != referenceLayerName:
@@ -305,11 +349,11 @@ def getLayersNFiles(input_path, config):
     return axisLayersFiles
 
 
-def prepareImages(axisLayersFiles, config, ouput_path):
+def prepareImages(axisLayersFiles, config, ouput_path, phys_unit):
 
     # TODO for single plane mode, enabled users to select preferred subview insteqd of predefined value
     PLANE_PREFSUBVIEW = {"axial": "coronal",
-                         "coronal": "sagittal", 
+                         "coronal": "sagittal",
                          "sagittal": "axial"}
 
     print('Preparing images...')
@@ -332,8 +376,10 @@ def prepareImages(axisLayersFiles, config, ouput_path):
         plane for plane in requiredOrthogPlanes if plane not in axisLayersFiles['axis']]
 
     for axis in axisLayersFiles['axis'].keys():
+
         print(f"\t{axis}")
-        subviewBasePath = os.path.join(ouput_path, config['subview']['foldername'])
+        subviewBasePath = os.path.join(
+            ouput_path, config['subview']['foldername'])
         os.makedirs(subviewBasePath, exist_ok=True)
 
         for layerName, layer in axisLayersFiles['axis'][axis]['layers'].items():
@@ -348,30 +394,70 @@ def prepareImages(axisLayersFiles, config, ouput_path):
 
             nbImages = len(layer['images'])
             centerImageIndex = nbImages // 2
+
+            bar = Bar('Processing slices images... ', suffix='%(percent)d%%', max=nbImages *
+                      (2 if layerName == referenceLayerName else 1) + 1, check_tty=False)
+            bar.next()
+
+            # image are assumed to:
+            #  * have same spacing values,
+            #  * be aligned on their registered origin,
+            # => therefore they will be cropped on the largest common area from the origin
+            cropWidth = cropHeigth = sys.maxsize
+            for image in layer['images']:
+                cropWidth = int(min(image['width'] - image['origin'][0], cropWidth))
+                cropHeigth = int(min(image['height'] - image['origin'][1], cropHeigth))
+
             for index, image in enumerate(layer['images']):
-                print(f"\t\t\t{index+1}/{nbImages}")
 
                 # create DeepZoom image for the slice
                 source = os.path.join(
                     layer['path'], image['shortname'] + image['ext'])
                 output = os.path.join(layer_ouputpath, str(index) + '.dzi')
 
-                createDeepZoomImage(source, output)
+                #
+                with tempfile.TemporaryDirectory() as tmpDir:
+                    needsCropping = (image['width'] - image['origin'][0] > cropWidth) or (image['height'] - image['origin'][1] > cropHeigth)
+                    if needsCropping:
+                        #create temporary cropped image
+                        tempImgPath = os.path.join(tmpDir, 'croppedImg' + image['ext'])
+                        image2D = sitk.ReadImage(source)
+
+                        #extract subregion using ExtractImageFilter
+                        extract = sitk.ExtractImageFilter()
+                        extract.SetSize([cropWidth, cropHeigth])
+                        extract.SetIndex([int(image['origin'][0]), int(image['origin'][1])])
+                        croppedImg = extract.Execute(image2D)
+                        sitk.WriteImage(croppedImg, tempImgPath)
+                        source = tempImgPath
+
+                        image['final_width'] = cropWidth
+                        image['final_height'] = cropHeigth
+                    else:
+                        image['final_width'] = image['width']
+                        image['final_height'] = image['height']
+
+                    #create actual DeepZoom image for the slice
+                    createDeepZoomImage(source, output)
+
+                bar.next()
 
                 # subview images are create from reference layer
                 if layerName == referenceLayerName:
 
                     # create subview image(s) because current axis is used as subview for another axis
-                    # FIXME works only if current axis and its orthogonal plane have samne number of slices!
+                    # FIXME works only if current axis and its orthogonal plane have same number of slices!
                     if axis in requiredOrthogPlanes:
 
                         if isMultiPlane or index == centerImageIndex:
 
                             # in single plane mode, only 1 image for the subview, but one for each slice in multiplane
-                            subviewPath = os.path.join(subviewBasePath, axis) if isMultiPlane else subviewBasePath
+                            subviewPath = os.path.join(
+                                subviewBasePath, axis) if isMultiPlane else subviewBasePath
                             os.makedirs(subviewPath, exist_ok=True)
 
-                            subviewImageFile = os.path.join(subviewPath, (str(index) if isMultiPlane else 'subview') + '.jpg')
+                            subviewImageFile = os.path.join(
+                                subviewPath, (str(index) if isMultiPlane else 'subview') + '.jpg')
                             changeSize(
                                 os.path.join(
                                     layer['path'], image['shortname'] + image['ext']),
@@ -383,15 +469,21 @@ def prepareImages(axisLayersFiles, config, ouput_path):
                     if orthogplane in subviewToDefault:
                         if isMultiPlane or index == centerImageIndex:
 
-                            defaultSubview = os.path.join(os.path.dirname(__file__), 'assets', 'subview_' + orthogplane + '.jpg')
+                            defaultSubview = os.path.join(os.path.dirname(
+                                __file__), 'assets', 'subview_' + orthogplane + '.jpg')
 
-                            subviewPath = os.path.join(subviewBasePath, orthogplane) if isMultiPlane else subviewBasePath
+                            subviewPath = os.path.join(
+                                subviewBasePath, orthogplane) if isMultiPlane else subviewBasePath
                             os.makedirs(subviewPath, exist_ok=True)
 
-                            subviewImageFile = os.path.join(subviewPath, (str(index) if isMultiPlane else 'subview') + '.jpg')
+                            subviewImageFile = os.path.join(
+                                subviewPath, (str(index) if isMultiPlane else 'subview') + '.jpg')
 
                             # copy SVG to output dir
                             copyfile(defaultSubview, subviewImageFile)
+
+                    bar.next()
+            bar.finish()
 
         if 'first_access' not in config:
             config['first_access'] = {
@@ -418,17 +510,22 @@ def prepareImages(axisLayersFiles, config, ouput_path):
                 print(f"\t\t\t{index+1}/{nbImages}")
                 source = os.path.join(
                     overlay['path'], image['shortname'] + image['ext'])
-                output = os.path.join(overlay_ouputpath, 'Anno_' + str(index) + image['ext'])
+                output = os.path.join(
+                    overlay_ouputpath, 'Anno_' + str(index) + image['ext'])
                 # copy SVG to output dir
                 copyfile(source, output)
 
+    refImage = axisLayersFiles['axis'][referenceAxis]['layers'][referenceLayerName]['images'][0]
+
     if 'image_size' not in config:
-        # TODO set value depending on actual image
-        config['image_size'] = 1000
+        config['image_size'] = refImage['final_width']
 
     if 'matrix' not in config:
-        # TODO set value depending on actual image
-        config['matrix'] = ""
+        matrix = [0] * 16
+        # spacing along image dimensions, in millimeters
+        matrix[0] = refImage['spacing'][0] * phys_unit * 1E-3
+        matrix[10] = refImage['spacing'][1] * phys_unit * 1E-3
+        config['matrix'] = ','.join(str(v) for v in matrix)
 
 
 def saveConfig(config_filepath, prev_config, config):
@@ -488,11 +585,16 @@ def startGuidedImport():
         config['data_root_path'] = data_root_path
 
     input_path = getCleanedAndCheckedPath(
-        "Please path of the source images", "Path of the source images not found")
+        "Path of the source images", "Path of the source images not found")
 
-    axisLayersFiles = getLayersNFiles(input_path, config)
+    # physical unit used in the image spacing properties, hence can be used to determine physical size of the image
+    phys_unit = 1
+    phys_unit = float(input(
+        f"Physical unit used in images, in micrometer ({phys_unit}) : ") or phys_unit)
+
+    axisLayersFiles = getLayersNFiles(input_path, config, phys_unit)
     # print("axisLayersFiles :",  json.dumps(axisLayersFiles, indent=2))
-    prepareImages(axisLayersFiles, config, ouput_path)
+    prepareImages(axisLayersFiles, config, ouput_path, phys_unit)
     saveConfig(config_filepath, prev_config, config)
 
 

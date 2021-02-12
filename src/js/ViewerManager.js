@@ -110,9 +110,15 @@ class ViewerManager {
 
             currentSliceRegions: new Map(),
 
-            /** range pointer used to provide info for measuring line feature (image space coordinates) */
-            position: [{ x: 0, y: 0, c: 0 }, { x: 0, y: 0 }, { x: 0, y: 0 }],
-
+            /** info for measuring line feature  */
+            position: [
+                {
+                    x: 0, y: 0,        // last recorded position of mouse pointer in screen coordinates 
+                    c: 0               // number of recorded points 
+                },
+                { x: 0, y: 0 },        // image space coordinates of recorded point #1
+                { x: 0, y: 0 }         // image space coordinates of recorded point #2
+            ],
             /** couple of recorded pointer positions in physical space coordinates (used by measuring line feature) */
             markedPos: undefined,
             markedPosColors: ["#ff7", "#ff61b3"],
@@ -156,12 +162,15 @@ class ViewerManager {
                 : this.config.coronalChosenSlice,
 
             sagittalChosenSlice: (overridingConf.sliceNum && overridingPlane === ZAVConfig.SAGITTAL)
+            /** set to true when clip selection tool is activated  */
                 ? overridingConf.sliceNum
                 : this.config.sagittalChosenSlice,
 
             /** set to true when measuring tool is activated  */
             measureModeOn: false,
 
+            /** set to true when clip selection tool is activated  */
+            clippingModeOn: false,
 
             /** set to true when region editing mode is enabled */
             editModeOn: false,
@@ -550,6 +559,7 @@ class ViewerManager {
                 { tracker: 'viewer', handler: 'scrollHandler', hookHandler: this.onViewerScroll },
                 { tracker: 'viewer', handler: 'clickHandler', hookHandler: this.onViewerClick },
                 { tracker: 'viewer', handler: 'dragHandler', hookHandler: this.onViewerDrag.bind(this) },
+                { tracker: 'viewer', handler: 'keyHandler', hookHandler: this.onViewerKey },
             ]
         });
 
@@ -1142,7 +1152,7 @@ class ViewerManager {
             //offset based on (8000-5420)/2
             //original method (slow)
             // el.transform('s' + zoom + ',' + zoom + ',0,0t0,1290');
-            //fast method
+            this.refreshCanvasContent();
             //https://www.circuitlab.com/blog/2012/07/25/tuning-raphaeljs-for-high-performance-svg-interfaces/
             /*
             One caveat here is that the changes we applied only operate within the SVG module of Raphael. Since CircuitLab doesn't currently support Internet Explorer, this isn't a concern for us, however if you rely on Raphael for IE support you will also have to implement the setTransform() method appropriately in the VML module. Here is a link to the change set that shows the changes discussed in this post.*/
@@ -1563,20 +1573,29 @@ class ViewerManager {
 
     static mousemoveHandler(event) {
         if (this.viewer.currentOverlays[0] == null) { return; }
-        if (this.config.matrix) {
-            var rect = this.viewer.canvas.getBoundingClientRect();
-            var zoom = this.viewer.viewport.getZoom(true) * (this.viewer.canvas.clientWidth / this.config.imageSize);
-            // update current position of pointer in local (DOM content) coordinates
-            this.status.position[0].x = event.clientX;
-            this.status.position[0].y = event.clientY;
-            var orig = this.viewer.viewport.pixelFromPoint(new OpenSeadragon.Point(0, 0), true);
-            // convert to coordinates in image space
-            var x = (this.status.position[0].x - orig.x - rect.left) / zoom;
-            var y = (this.status.position[0].y - orig.y - rect.top) / zoom;
-            
-            this.status.livePosition = this.getPoint(x, y);
-            this.signalStatusChanged(this.status);
+        var rect = this.viewer.canvas.getBoundingClientRect();
+        var zoom = this.viewer.viewport.getZoom(true) * (this.viewer.canvas.clientWidth / this.config.imageSize);
+        // update current position of pointer in local (DOM content) coordinates
+        this.status.position[0].x = event.clientX;
+        this.status.position[0].y = event.clientY;
+        var orig = this.viewer.viewport.pixelFromPoint(new OpenSeadragon.Point(0, 0), true);
+        // convert to coordinates in image space
+        var x = (this.status.position[0].x - orig.x - rect.left) / zoom;
+        var y = (this.status.position[0].y - orig.y - rect.top) / zoom;
+
+        //update clipping box when clip selection has started
+        if (this.status.clippingModeOn && this.status.position[0].c == 1) {
+            this.status.position[2].x = x;
+            this.status.position[2].y = y;
+            this.displayClipBox();
         }
+
+        //update position in physical space
+        if (this.config.matrix) {
+            this.status.livePosition = this.getPoint(x, y);
+        }
+
+        this.signalStatusChanged(this.status);
     }
 
     static onViewerScroll(event) {
@@ -1598,6 +1617,12 @@ class ViewerManager {
         if (this.status.editModeOn && this.status.editRegionId) {
             event.preventDefaultAction = true;
         }
+    }
+
+    static onViewerKey(event) {
+        // Disable keyboard shortcuts on the viewer using event.preventDefaultAction
+        event.preventDefaultAction = true;
+        event.stopBubbling = true;
     }
 
 
@@ -1847,7 +1872,7 @@ class ViewerManager {
             'width': this.viewer.canvas.clientWidth,
             'height': this.viewer.canvas.clientHeight
         });
-        this.displayMeasureLine();
+        this.refreshCanvasContent();
 
         if (this.viewer.referenceStrip) {
             //FIXME resetReferenceStrip();
@@ -1872,13 +1897,13 @@ class ViewerManager {
             return;
         }
 
-        if (this.status.measureModeOn) {
+        if (this.status.measureModeOn || this.status.clippingModeOn) {
             //already 2 points recorded, reset measuring line
             if (this.status.position[0].c == 2) {
                 this.resetPositionview();
                 this.viewer.drawer.clear();
                 this.viewer.world.draw();
-                this.displayMeasureLine();
+                this.refreshCanvasContent();
                 return;
             }
 
@@ -1893,16 +1918,27 @@ class ViewerManager {
             this.status.position[0].c++
             this.status.position[this.status.position[0].c].x = x;
             this.status.position[this.status.position[0].c].y = y;
+            
+            //init second position with first one in order to draw initial clipbox 
+            if (1==this.status.position[0].c) {
+                this.status.position[2].x = x;
+                this.status.position[2].y = y;    
+            }
         }
 
         this.setPosition();
 
         // show canvas
-        this.displayMeasureLine();
+        this.refreshCanvasContent();
 
         this.signalStatusChanged(this.status);
     };
 
+
+    static refreshCanvasContent() {
+        this.displayMeasureLine();
+        this.displayClipBox();
+    };
 
     /** Draw the measure line widgets on the position canvas */
     static displayMeasureLine() {
@@ -1978,7 +2014,7 @@ class ViewerManager {
         this.resetPositionview();
         this.viewer.drawer.clear();
         this.viewer.world.draw();
-        this.displayMeasureLine();
+        this.refreshCanvasContent();
         return;
     }
 
@@ -1992,6 +2028,7 @@ class ViewerManager {
         if (active) {
             //measurement mode and display of regions are mutually exclusive
             this.hideRegions();
+            this.status.clippingModeOn = false;
         }
         this.status.measureModeOn = active;
         if (this.status.measureModeOn) {
@@ -2005,6 +2042,155 @@ class ViewerManager {
     static isMeasureModeOn() {
         return this.status && this.status.measureModeOn;
     }
+
+    static displayClipBox() {
+        if (this.viewer.currentOverlays[0] == null) { return; }
+        if (!this.status.clippingModeOn) { return; }
+        if (this.status.ctx == null) {
+            this.status.ctx = $("#poscanvas")[0].getContext('2d');
+        }
+
+        this.status.ctx.clearRect(0, 0, $("#poscanvas")[0].width, $("#poscanvas")[0].height);
+
+        //clip box
+        if (this.status.position[0].c != 0) {
+            var orig = this.viewer.viewport.pixelFromPoint(new OpenSeadragon.Point(0, 0), true);
+            var zoom = this.viewer.viewport.getZoom(true) * (this.viewer.canvas.clientWidth / this.config.imageSize);
+    
+            var px1 = Math.round((this.status.position[1].x * zoom) + orig.x + 0.5) - 0.5;
+            var py1 = Math.round((this.status.position[1].y * zoom) + orig.y + 0.5) - 0.5;
+
+            var px2 = Math.round((this.status.position[2].x * zoom) + orig.x + 0.5) - 0.5;
+            var py2 = Math.round((this.status.position[2].y * zoom) + orig.y + 0.5) - 0.5;
+
+            this.status.ctx.beginPath();
+            this.status.ctx.strokeStyle = "#ff00ef";
+            if (this.status.position[0].c == 2) {
+                this.status.ctx.setLineDash([]);
+                this.status.ctx.lineWidth = 1;
+
+                const lx = Math.min(px1, px2)
+                const rx = Math.max(px1, px2)
+                const ty = Math.min(py1, py2)
+                const by = Math.max(py1, py2)
+
+                this.status.clippedRegion = [lx, ty, rx - lx, by - ty]
+
+            } else {
+                this.status.ctx.setLineDash([1, 5]);
+                this.status.ctx.lineWidth = 3;
+            }
+            this.status.ctx.moveTo(px1, py1);
+            this.status.ctx.lineTo(px1, py2);
+            this.status.ctx.lineTo(px2, py2);
+            this.status.ctx.lineTo(px2, py1);
+            this.status.ctx.lineTo(px1, py1);
+            this.status.ctx.stroke();
+        }
+
+    };
+
+    static setSelectClip(active) {
+        this.claerPosition();
+
+        if (active) {
+            //this.viewer.zoomPerScroll =1;
+            this.hideRegions();
+            this.status.measureModeOn = false;
+        }
+        this.status.clippingModeOn = active;
+        if (active) {
+            $("#poscanvas").show();
+        } else {
+            $("#poscanvas").hide();
+        }
+        this.signalStatusChanged(this.status);
+    }
+
+    static isSelectClipModeOn() {
+        return this.status && this.status.clippingModeOn;
+    }
+
+    static isClipSelected() {
+        return this.status && this.status.clippingModeOn && this.status.position[0].c == 2;
+    }
+
+    static isZoomEnabled() {
+        return this.viewer && 1.0 != this.viewer.zoomPerScroll;
+    }
+
+    static setZoomEnabled(active) {
+        if (active) {
+            this.viewer.zoomPerScroll = this.status.prevZoomPerScroll;
+            this.viewer.zoomPerClick = this.status.prevZoomPerClick;
+        } else {
+            this.status.prevZoomPerScroll = this.viewer.zoomPerScroll;
+            this.viewer.zoomPerScroll = 1.0;
+            this.status.prevZoomPerClick = this.viewer.zoomPerClick;
+            this.viewer.zoomPerClick = 1.0;
+        }
+        this.signalStatusChanged(this.status);
+    }
+
+    static getZoomFactor() {
+        return (
+            this.viewer && this.viewer.world.getItemCount()
+                ? (100 * this.viewer.world.getItemAt(0).viewportToImageZoom(this.viewer.viewport.getZoom(true))).toFixed(3)
+                : 0
+        );
+    }
+
+    static setZoomFactor(zf) {
+        if (this.viewer) {
+            const animDuration = this.viewer.zoomPerSecond;
+            this.viewer.zoomPerSecond = 0.1;
+            const viewportZoom = this.viewer.viewport.imageToViewportZoom(zf / 100);
+            this.viewer.viewport.zoomTo(viewportZoom, null, true);
+            this.viewer.zoomPerSecond = animDuration;
+        }
+    }
+
+    static hasProcessingsModule() {
+        return typeof globalThis.ZAVProcessings != "undefined";
+    }
+
+    static hasProcessors() {
+        return this.hasProcessingsModule() && globalThis.ZAVProcessings.hasProcessors();
+    }
+
+    static getProcessors() {
+        return (
+            this.hasProcessingsModule()
+                ? globalThis.ZAVProcessings.getProcessors()
+                : []
+        )
+    }
+
+    static getProcessor(procIndex) {
+        if (this.hasProcessingsModule()) {
+            const procs = globalThis.ZAVProcessings.getProcessors();
+            return (procIndex < procs.length) ? procs[procIndex] : null;
+        } else {
+            return null;
+        }
+    }
+
+    static performProcessing(procIndex) {
+        if (this.isClipSelected()) {
+            this.getProcessors()
+            const proc = this.getProcessor(procIndex);
+            if (proc) {
+                console.info('Computing "' + proc.name + '"')
+
+                const tilescanvas = this.viewer.drawer.canvas;
+                const ctx = tilescanvas.getContext('2d');
+                const [lx, ty, w, h] = this.status.clippedRegion;
+                const imageData = ctx.getImageData(lx, ty, w, h);
+                const processedImageData = proc.processImageData(imageData)
+                ctx.putImageData(processedImageData, lx, ty);
+            }
+        }
+    };
 
 
     //record current viewer state in browser history

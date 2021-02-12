@@ -12,6 +12,7 @@ import Drawer from './Drawer.js';
 
 import OSDMain from './OSDMain.js';
 import MeasureInfoPanel from './MeasureInfoPanel.js';
+import ProcessingPanel from './ProcessingPanel.js';
 import SubViewPanel from './SubViewPanel.js';
 import SliderNavigatorPanel from './SliderNavigatorPanel.js';
 import RegionOptions from './RegionOptions.js';
@@ -156,6 +157,17 @@ class ViewerComposed extends React.Component {
                             hasDelineation={this.props.config && this.props.config.hasDelineation}
                             displaySettings={this.state.layerDisplaySettings} />
                     </TitledCard>
+
+                    {
+                        ViewerManager.hasProcessingsModule() ?
+                            <TitledCard header={"Processing"}>
+                                <ProcessingPanel
+                                    posCount={this.state.position ? this.state.position[0].c : 0}
+                                    pos={this.state.pos}
+                                />
+                            </TitledCard>
+                            : null
+                    }
 
                     {
                         this.props.config && this.props.config.hasDelineation ?

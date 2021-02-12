@@ -10,6 +10,7 @@ Table of Contents
   * [Online demo](#online-demo)
   * [Run it on your computer](#local-container)
   * [Vizualise your own data](#local-data)
+  * [**[DEV]** Custom processing](#dev-custproc)
   * [**[DEV]** Playing with the source code](#dev-buildfromsrc)
   * [**[DEV]** Detailed configuration settings](#dev-config)
   * [References](#references)
@@ -90,7 +91,7 @@ The provided Docker script will:
 
 
 
-4. Launch ZAViewer by opening the following URL in your web browser :
+4. <a id="run-localcont-remotedata"></a> Launch ZAViewer by opening the following URL in your web browser :
 
     [`http://localhost:9090/?datasrc=https://www.brainminds.riken.jp/ZAViewer_Reference_Brain_v2`](http://localhost:9090/?datasrc=https://www.brainminds.riken.jp/ZAViewer_Reference_Brain_v2)
 
@@ -158,7 +159,7 @@ Parameters:
         * any prefix,
         * an underscore separator ("`_`"), 
         * an integer to order the image slice in the UI, 
-        * the image file extension 
+        * the image file extension ("`.tif`" as it is currently the only supported format)
     * There is only 1 overlay directory (named `overlay0_Regions`) which contains SVG files defining region delineations for each slice.
     <br/>
     These SVG files must conform to the following rules:
@@ -167,6 +168,7 @@ Parameters:
         * Therefore, coordinates used for graphic elements directly map to pixels (1 user unit maps to 1 pixel), 
         * 🟠 TODO: add region identifier  attribute and explain link to region info 🟠
 
+3. physical unit used in images, in micrometer
 
 
     The overall structure of the input directory looks like this:
@@ -254,6 +256,41 @@ The same ZAViewer Docker image as before is used, but with different parameters 
 **Warning :** 
 
 * For MS-Windows, Docker might not be able to mount the ouput directory if it is located on a removable media.
+
+<br/>
+
+### 3. Implement custom processing on image clip within ZAViewer <a id="dev-custproc"></a>
+
+It is possible to create custom image processing routine that can be run on (part of) the images displaying in ZAViewer.
+These routine are Javascript code that can be easily plugged in without touching the main app source code.
+
+#### Step-by-step procedure :
+
+* declare your custom processsing code inside the following source file : `zaviewer/extension/ZAVProcessings.js`
+* insert the required dependencies in the inside the html fragment file : `zaviewer/extension/customProcessings.html`
+<br/>(the content of this file will be included in the main page header)
+* load ZAViewer and test your processing!
+
+The same ZAViewer Docker image as before is used, but with different parameters to allow runing custom processing code.
+
+1. Run the web-server container:
+    ```sh
+    docker run -it --rm \
+    -v /full/path/to/output/dir:/usr/share/nginx/html/data \
+    -v /full/path/to/zaviewer/extension/nginx_extra.conf:/etc/nginx/conf.d/nginx_extra.conf:ro \
+    -v /full/path/to/zaviewer/extension:/usr/share/nginx/html/ext \
+    -p 9090:80 zaviewer_ui:2.0.0
+    ```
+2. Launch ZAViewer by opening the following URL in your web browser :
+
+    [`http://localhost:9090/`](http://localhost:9090/)
+
+
+**Note**
+
+* ZAViewer needs to be manually reloaded (`[F5]` key) after changes of the custom processing code.
+
+
 
 <br/><br/>
 
@@ -371,10 +408,10 @@ When ZAViewer is used with images along a single axis (aka "single-plane mode") 
 | `first_access.plane` <sup>multi</sup> | plane displayed by default after loading (allowed values: `axial`,`coronal` or `sagittal` ) |
 | `first_access.slide` | initial slide to display |
 | `first_access.delineations` | set whether Atlas region area are displayed by default (allowed values: `show` or `hide` ) |
-| `matrix` | Matrix to convert image space coordinates to physical space coordinates (String representation of as a single dimensional vector with the entries in row major order)  |
+| `matrix` | Matrix to convert image space coordinates to physical space coordinates : String representation of a single dimensional vector with the entries (values expressed in meters) in row major order |
 | **[unused]** `gamma` | _not used_ |
 | **[unused]** `bright` | _not used_ |
-| `image_size` |  |
+| `image_size` | Size (width) of image in pixel. 🟠 Assumes that images are square  |
 | `slide_count` <sup>single</sup> | number of slides in the image set |
 | `slice_step` | <sup>single</sup> |
 | `axial_slice_step` <sup>multi</sup> |  |
