@@ -1690,16 +1690,15 @@ class ViewerManager {
         switch (this.status.activePlane) {
             case ZAVConfig.AXIAL:
                 slideNum -= this.config.axialFirstIndex;
-                return this.config.dataRootPath + "/" + key + (this.config.hasMultiPlanes ? "/" + ZAVConfig.AXIAL : "") + "/" + slideNum + "_files/" + level + "/" + x + "_" + y + ".jpg";
-
+                break;
             case ZAVConfig.CORONAL:
                 slideNum -= this.config.coronalFirstIndex;
-                return this.config.dataRootPath + "/" + key + (this.config.hasMultiPlanes ? "/" + ZAVConfig.CORONAL : "") + "/" + slideNum + "_files/" + level + "/" + x + "_" + y + ".jpg";
-
+                break;
             case ZAVConfig.SAGITTAL:
                 slideNum -= this.config.sagittalFirstIndex;
-                return this.config.dataRootPath + "/" + key + (this.config.hasMultiPlanes ? "/" + ZAVConfig.SAGITTAL : "") + "/" + slideNum + "_files/" + level + "/" + x + "_" + y + ".jpg";
+                break;
         }
+        return this.config.dataRootPath + "/" + key + (this.config.hasMultiPlanes ? "/" + ZAVConfig.getPlaneLabel(this.status.activePlane) : "") + "/" + slideNum + "_files/" + level + "/" + x + "_" + y + ".jpg";
     }
 
     static getIIIFTileSourceUrl(slideNum, key, ext) {
