@@ -119,6 +119,8 @@ class ViewerManager {
                 { x: 0, y: 0 },        // image space coordinates of recorded point #1
                 { x: 0, y: 0 }         // image space coordinates of recorded point #2
             ],
+
+
             /** couple of recorded pointer positions in physical space coordinates (used by measuring line feature) */
             markedPos: undefined,
             markedPosColors: ["#ff7", "#ff61b3"],
@@ -132,6 +134,9 @@ class ViewerManager {
 
             /** layers display values */
             layerDisplaySettings: initLayerDisplaySettings,
+
+            /** set to true when all tiles are loaded for the current view */
+            isAllLoaded : false,
 
             /** visibility of region delineations */
             showRegions: !this.config.bHideDelineation,
@@ -591,11 +596,25 @@ class ViewerManager {
         //--------------------------------------------------
         this.eventSource.addHandler('zav-layer-loading', (event) => {
             this.status.layerDisplaySettings[event.layer].loading = true;
+            if (this.status.isAllLoaded) {
+                this.eventSource.raiseEvent('zav-alllayers-loading');
+            }
+            this.status.isAllLoaded = false;
             this.signalStatusChanged(this.status);
         });
         this.eventSource.addHandler('zav-layer-loaded', (event) => {
             this.status.layerDisplaySettings[event.layer].loading = false;
+            const isAllLoaded = !_.findKey(this.status.layerDisplaySettings, function (val, key) { return val.loading; });
+            if (isAllLoaded && !this.status.isAllLoaded) {
+                this.eventSource.raiseEvent('zav-alllayers-loaded');
+            }
+            this.status.isAllLoaded = isAllLoaded;
             this.signalStatusChanged(this.status);
+        });
+        //all layers loaded 
+        this.eventSource.addHandler('zav-alllayers-loaded', (event) => {
+
+
         });
         //--------------------------------------------------
 
@@ -1152,7 +1171,7 @@ class ViewerManager {
             //offset based on (8000-5420)/2
             //original method (slow)
             // el.transform('s' + zoom + ',' + zoom + ',0,0t0,1290');
-            this.refreshCanvasContent();
+            //fast method
             //https://www.circuitlab.com/blog/2012/07/25/tuning-raphaeljs-for-high-performance-svg-interfaces/
             /*
             One caveat here is that the changes we applied only operate within the SVG module of Raphael. Since CircuitLab doesn't currently support Internet Explorer, this isn't a concern for us, however if you rely on Raphael for IE support you will also have to implement the setTransform() method appropriately in the VML module. Here is a link to the change set that shows the changes discussed in this post.*/
@@ -1162,7 +1181,7 @@ class ViewerManager {
             }
             //console.log('S' + zoom + ',' + zoom + ',0,0');
 
-            this.displayMeasureLine();
+            this.refreshCanvasContent();
 
             if (this.status.editModeOn) {
                 //scale edition overlay
