@@ -178,7 +178,7 @@ class ZAVConfig {
                 }
             },
 
-            /** matrix to convert image space to physical space */
+            /** matrix to convert image space to physical space (values expressed in millimeters) */
             matrix: undefined,
 
             imageSize: 1000,
@@ -190,15 +190,14 @@ class ZAVConfig {
             dzLayerWidth: 1000,
             dzLayerHeight: 1000,
 
+            //FIXME magic values
             /** zooming limits */
             //minImageZoom: 0.036,
             //maxImageZoom: 1.557,
             minImageZoom: 0.648,
             maxImageZoom: 28.026,
 
-
             layers: {},
-
 
             editLayers: {},
 
@@ -494,6 +493,7 @@ class ZAVConfig {
         }
 
         this.config.imageSize = response.image_size ? parseInt(response.image_size) : this.config.imageSize;
+        //FIXME assume that images are square
         this.config.dzWidth = this.config.imageSize;
         this.config.dzHeight = this.config.imageSize;
         this.config.dzLayerWidth = this.config.imageSize;

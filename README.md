@@ -262,9 +262,9 @@ The same ZAViewer Docker image as before is used, but with different parameters 
 ### 3. Implement custom processing on image clip within ZAViewer <a id="dev-custproc"></a>
 
 It is possible to create custom image processing routine that can be run on (part of) the images displaying in ZAViewer.
-These routine are Javascript code that can be easily plugged in without touching the main app source code.
+These routine are Javascript code that can be easily plugged in ZAViewer as explained below.
 
-#### Step-by-step procedure :
+#### Step-by-step procedure:
 
 * declare your custom processsing code inside the following source file : `zaviewer/extension/ZAVProcessings.js`
 * insert the required dependencies in the inside the html fragment file : `zaviewer/extension/customProcessings.html`
@@ -288,7 +288,7 @@ The same ZAViewer Docker image as before is used, but with different parameters 
 
 **Note**
 
-* ZAViewer needs to be manually reloaded (`[F5]` key) after changes of the custom processing code.
+* ZAViewer needs to be manually reloaded (press `[F5]` key) after changes of the custom processing code.
 
 
 
@@ -408,7 +408,7 @@ When ZAViewer is used with images along a single axis (aka "single-plane mode") 
 | `first_access.plane` <sup>multi</sup> | plane displayed by default after loading (allowed values: `axial`,`coronal` or `sagittal` ) |
 | `first_access.slide` | initial slide to display |
 | `first_access.delineations` | set whether Atlas region area are displayed by default (allowed values: `show` or `hide` ) |
-| `matrix` | Matrix to convert image space coordinates to physical space coordinates : String representation of a single dimensional vector with the entries (values expressed in meters) in row major order |
+| `matrix` | Matrix to convert image space coordinates to physical space coordinates : String representation of a single dimensional vector with the entries (values expressed in millimeters) in row major order |
 | **[unused]** `gamma` | _not used_ |
 | **[unused]** `bright` | _not used_ |
 | `image_size` | Size (width) of image in pixel. 🟠 Assumes that images are square  |
