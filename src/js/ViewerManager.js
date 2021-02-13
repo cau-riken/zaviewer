@@ -120,7 +120,6 @@ class ViewerManager {
                 { x: 0, y: 0 }         // image space coordinates of recorded point #2
             ],
 
-
             /** couple of recorded pointer positions in physical space coordinates (used by measuring line feature) */
             markedPos: undefined,
             markedPosColors: ["#ff7", "#ff61b3"],
@@ -167,7 +166,6 @@ class ViewerManager {
                 : this.config.coronalChosenSlice,
 
             sagittalChosenSlice: (overridingConf.sliceNum && overridingPlane === ZAVConfig.SAGITTAL)
-            /** set to true when clip selection tool is activated  */
                 ? overridingConf.sliceNum
                 : this.config.sagittalChosenSlice,
 
@@ -349,9 +347,10 @@ class ViewerManager {
         });
 
         if (this.config.matrix) {
+            const pixelsPerMeter = 1000 / this.config.matrix[0];
             this.viewer.scalebar({
                 type: OpenSeadragon.ScalebarType.MAP,
-                pixelsPerMeter: 1000 / (this.getPointXY(0, this.config.imageSize / 2).x - this.getPointXY(this.config.imageSize, this.config.imageSize / 2).x) * this.config.imageSize,
+                pixelsPerMeter: pixelsPerMeter,
                 minWidth: "150px",
                 location: OpenSeadragon.ScalebarLocation.BOTTOM_LEFT,
                 xOffset: 5,
@@ -1566,22 +1565,18 @@ class ViewerManager {
     }
 
 
-    //https://github.com/openseadragon/openseadragon/issues/1421 to improve caching
+    //get point in physical space coordinates from specified image coordinates
     static getPoint(x, y) {
-        var point;
-        var tx = this.config.imageSize - x;
-        var ty = this.config.imageSize - y;
-        point = new Array(tx, this.getPlaneChosenSlice(this.status.activePlane) * this.getPlaneSliceStep(this.status.activePlane), ty, 1);
-        //console.log(point);
-        //console.log(matrix);
+        const tx = this.config.imageSize - x;
+        const ty = this.config.imageSize - y;
+        const point = new Array(tx, this.getPlaneChosenSlice(this.status.activePlane) * this.getPlaneSliceStep(this.status.activePlane), ty, 1);
         //return multiplyMatrixAndPoint(point);
-        var result = [0, 0, 0, 0];
+        const result = [0, 0, 0, 0];
         for (var i = 0; i < 4; i++) {
             for (var j = 0; j < 4; j++) {
                 result[i] += (this.config.matrix[i * 4 + j] * point[j]);
             }
         }
-        //console.log(result);
         return result;
     }
 
@@ -2037,7 +2032,9 @@ class ViewerManager {
     }
 
     static setPosition() {
-        this.status.markedPos = [this.getPointXY(this.status.position[1].x, this.status.position[1].y), this.getPointXY(this.status.position[2].x, this.status.position[2].y)];
+        if (this.config.matrix) {
+            this.status.markedPos = [this.getPointXY(this.status.position[1].x, this.status.position[1].y), this.getPointXY(this.status.position[2].x, this.status.position[2].y)];
+        }
         this.signalStatusChanged(this.status);
     }
 
