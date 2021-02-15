@@ -1,11 +1,6 @@
 # temporary image used as build environment
 FROM node:14.15.4-alpine as build
 
-# install tools necessary for some node modules
-#RUN apk add --no-cache autoconf automake gcc zlib-dev
-#RUN apk add --no-cache autoconf automake gcc libc-dev libtool 
-
-#ENV LIBRARY_PATH=/lib:/usr/lib
 
 WORKDIR /app
 ENV PATH /app/node_modules/.bin:$PATH

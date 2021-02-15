@@ -135,7 +135,7 @@ class ViewerManager {
             layerDisplaySettings: initLayerDisplaySettings,
 
             /** set to true when all tiles are loaded for the current view */
-            isAllLoaded : false,
+            isAllLoaded: false,
 
             /** visibility of region delineations */
             showRegions: !this.config.bHideDelineation,
@@ -1931,11 +1931,11 @@ class ViewerManager {
             this.status.position[0].c++
             this.status.position[this.status.position[0].c].x = x;
             this.status.position[this.status.position[0].c].y = y;
-            
+
             //init second position with first one in order to draw initial clipbox 
-            if (1==this.status.position[0].c) {
+            if (1 == this.status.position[0].c) {
                 this.status.position[2].x = x;
-                this.status.position[2].y = y;    
+                this.status.position[2].y = y;
             }
         }
 
@@ -1961,8 +1961,6 @@ class ViewerManager {
             this.status.ctx = $("#poscanvas")[0].getContext('2d');
         }
 
-        this.status.ctx.clearRect(0, 0, $("#poscanvas")[0].width, $("#poscanvas")[0].height);
-
         var orig = this.viewer.viewport.pixelFromPoint(new OpenSeadragon.Point(0, 0), true);
         var rect = this.viewer.canvas.getBoundingClientRect();
 
@@ -1973,6 +1971,8 @@ class ViewerManager {
         this.status.livePosition = this.getPoint(x, y);
         this.signalStatusChanged(this.status);
         if (!this.status.measureModeOn) { return; }
+
+        this.status.ctx.clearRect(0, 0, $("#poscanvas")[0].width, $("#poscanvas")[0].height);
 
         // distance line
         if (this.status.position[0].c == 2) {
@@ -2018,6 +2018,7 @@ class ViewerManager {
 
     static resetPositionview() {
         this.status.position[0].c = 0;
+        this.status.processedImage = null;
         this.signalStatusChanged(this.status);
     }
 
@@ -2071,7 +2072,7 @@ class ViewerManager {
         if (this.status.position[0].c != 0) {
             var orig = this.viewer.viewport.pixelFromPoint(new OpenSeadragon.Point(0, 0), true);
             var zoom = this.viewer.viewport.getZoom(true) * (this.viewer.canvas.clientWidth / this.config.imageSize);
-    
+
             var px1 = Math.round((this.status.position[1].x * zoom) + orig.x + 0.5) - 0.5;
             var py1 = Math.round((this.status.position[1].y * zoom) + orig.y + 0.5) - 0.5;
 
@@ -2079,7 +2080,7 @@ class ViewerManager {
             var py2 = Math.round((this.status.position[2].y * zoom) + orig.y + 0.5) - 0.5;
 
             this.status.ctx.beginPath();
-            this.status.ctx.strokeStyle = "#ff00ef";
+            this.status.ctx.strokeStyle = "#00ffff";
             if (this.status.position[0].c == 2) {
                 this.status.ctx.setLineDash([]);
                 this.status.ctx.lineWidth = 1;
@@ -2088,6 +2089,29 @@ class ViewerManager {
                 const rx = Math.max(px1, px2)
                 const ty = Math.min(py1, py2)
                 const by = Math.max(py1, py2)
+
+                //if the result of previous processing is still available, display it on top of layers
+                if (this.status.processedImage) {
+
+                    const sf = this.getZoomFactor() / this.status.processedZoom;
+                    const deltaSF = 1 - sf;
+                    const needScaling = Math.abs(deltaSF) > Number.EPSILON;
+                    if (needScaling) {
+                        //image was computed at different scale factor, so it needs to be scaled
+                        this.status.ctx.translate(deltaSF * lx, deltaSF * ty);
+                        this.status.ctx.scale(sf, sf);
+                        //magenta border to warn user that it was computed at different zoom
+                        this.status.ctx.strokeStyle = "#ff00ef";
+                    } else {
+                        //image computed at that zoom factor: green border 
+                        this.status.ctx.strokeStyle = "#00ff00";
+                    }
+                    //draw computed image on top of layers
+                    this.status.ctx.drawImage(this.status.processedImage, lx, ty);
+                    if (needScaling) {
+                        this.status.ctx.resetTransform();
+                    }
+                }
 
                 this.status.clippedRegion = [lx, ty, rx - lx, by - ty]
 
@@ -2107,7 +2131,7 @@ class ViewerManager {
 
     static setSelectClip(active) {
         this.claerPosition();
-
+        this.status.processedImage = null;
         if (active) {
             //this.viewer.zoomPerScroll =1;
             this.hideRegions();
@@ -2195,14 +2219,38 @@ class ViewerManager {
             this.getProcessors()
             const proc = this.getProcessor(procIndex);
             if (proc) {
-                console.info('Computing "' + proc.name + '"')
+                console.info('Computing "' + proc.name + '"');
 
+                //store zoom factor of the image about to be processed
+                this.status.processedZoom = this.getZoomFactor();
+                this.status.processedRegion = this.status.clippedRegion;
+                this.status.processedImage = null;
+
+                //retrieve image data for custom processing
                 const tilescanvas = this.viewer.drawer.canvas;
                 const ctx = tilescanvas.getContext('2d');
-                const [lx, ty, w, h] = this.status.clippedRegion;
+                const [lx, ty, w, h] = this.status.processedRegion;
                 const imageData = ctx.getImageData(lx, ty, w, h);
-                const processedImageData = proc.processImageData(imageData)
-                ctx.putImageData(processedImageData, lx, ty);
+
+                //perform actual computation
+                const processedImageData = proc.processImageData(imageData);
+
+                //store computed result as image object:
+                // create temp canvas
+                const tmpCanvas = document.createElement("canvas");
+                tmpCanvas.setAttribute("width", imageData.width);
+                tmpCanvas.setAttribute("height", imageData.height);
+                // put image data into canvas
+                const tmpContext = tmpCanvas.getContext("2d");
+                tmpContext.putImageData(imageData, 0, 0);
+                // extract canvas data into an image object
+                const imageObj = new Image();
+                imageObj.src = tmpCanvas.toDataURL("image/png");
+
+                this.status.processedImage = imageObj;
+
+                //draw result on top of layers
+                this.status.ctx.putImageData(processedImageData, lx, ty);
             }
         }
     };
