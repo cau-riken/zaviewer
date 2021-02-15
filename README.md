@@ -65,8 +65,6 @@ The provided Docker script will:
 
 ### **Step by step procedure**
 
-🟠 Possible improvement: change procedure to avoid cloning repo in user's host, but inside a Docker image 🟠
-
 1. Clone this git repo to get the latest sources
 
     ```sh
@@ -114,7 +112,7 @@ The provided Docker script will:
 
 ## C) Vizualise your own data <a id="local-data"></a>
 
-ZAViewer is able to display sets of large slice images, along with several kind of optional secondary data, such as :
+ZAViewer is able to display sets of large slice images, along with several kinds of optional secondary data, such as :
 
 * region delineation images (SVG) sets (one for each slice),
 * region informations, and their hierarchical organization,
@@ -132,7 +130,7 @@ A script is provided to help with the preparation and setup of the data in the r
 
 The script expects a set of slice images (single axis with only 1 layer) as minimal input.
 
-If several layer are defined :
+If several layers are defined :
 
 * Within a specific axis, every layers must contains the same number of slice images.
 * All slice images of a specific axis/layer must have same size.
@@ -161,8 +159,8 @@ Parameters:
         * an integer to order the image slice in the UI, 
         * the image file extension ("`.tif`" as it is currently the only supported format)
     * There is only 1 overlay directory (named `overlay0_Regions`) which contains SVG files defining region delineations for each slice.
-    <br/>
-    These SVG files must conform to the following rules:
+
+        These SVG files must conform to the following rules:
         * SVG viewport (defined by `<svg>`'s `width` and `height` attributes) must be identical to corresponding raster image dimensions in pixels.
         * SVG user coordinate system must be identical to the viewport (i.e. it must not be redefined via a `viewBox` attribute, or by any `transform` attribute on container or graphic elements, since those will be lost when the SVG is imported in the UI).
         * Therefore, coordinates used for graphic elements directly map to pixels (1 user unit maps to 1 pixel), 
