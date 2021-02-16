@@ -2245,12 +2245,12 @@ class ViewerManager {
                 tmpContext.putImageData(imageData, 0, 0);
                 // extract canvas data into an image object
                 const imageObj = new Image();
+                this.status.processedImage = imageObj;
+                //prepare to asynchronously draw result on top of layers, once image is created from canvas 
+                imageObj.onload = () => this.displayClipBox(); 
+                //create image from canvas 
                 imageObj.src = tmpCanvas.toDataURL("image/png");
 
-                this.status.processedImage = imageObj;
-
-                //draw result on top of layers
-                this.status.ctx.putImageData(processedImageData, lx, ty);
             }
         }
     };
