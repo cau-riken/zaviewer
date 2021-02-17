@@ -76,7 +76,7 @@ The provided Docker script will:
     ```sh
     cd zaviewer
 
-    docker build --no-cache -f docker_scripts/Dockerfile.prod \
+    docker build --no-cache -f docker_scripts/Dockerfile.ui \
     -t zaviewer_ui:2.0.0 .
     ```
 
