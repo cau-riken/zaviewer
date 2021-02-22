@@ -14,7 +14,6 @@ Table of Contents
   * [**[DEV]** Playing with the source code](#dev-buildfromsrc)
   * [**[DEV]** Detailed configuration settings](#dev-config)
   * [References](#references)
-     
 
 ---
 
@@ -158,16 +157,9 @@ Parameters:
         * an underscore separator ("`_`"), 
         * an integer to order the image slice in the UI, 
         * the image file extension ("`.tif`" as it is currently the only supported format)
-    * There is only 1 overlay directory (named `overlay0_Regions`) which contains SVG files defining region delineations for each slice.
-
-        These SVG files must conform to the following rules:
-        * SVG viewport (defined by `<svg>`'s `width` and `height` attributes) must be identical to corresponding raster image dimensions in pixels.
-        * SVG user coordinate system must be identical to the viewport (i.e. it must not be redefined via a `viewBox` attribute, or by any `transform` attribute on container or graphic elements, since those will be lost when the SVG is imported in the UI).
-        * Therefore, coordinates used for graphic elements directly map to pixels (1 user unit maps to 1 pixel), 
-        * 🟠 TODO: add region identifier  attribute and explain link to region info 🟠
+    * There is only 1 overlay directory (named `overlay0_Regions`) which contains SVG files defining region delineations for each slice. These SVG files must conform to the following rules described [here](#dev-regionsvg):
 
 3. physical unit used in images, in micrometer
-
 
     The overall structure of the input directory looks like this:
 
@@ -200,7 +192,7 @@ Parameters:
 * In case of single axis image set, you may provide a small image from on an orthogonal plane which will be displayed in the subview wigdet (it allows to see the current slice position in the set)
 
 
-#### 1.2 Install script dependancies
+#### 1.2 Install script dependencies
 
 
 🟠 Possible improvement: change procedure to run script inside a Docker container 🟠
@@ -236,11 +228,13 @@ deactivate
 The same ZAViewer Docker image as before is used, but with different parameters to display local data.
 
 1. Run the web-server container:
+
     ```sh
     docker run -it --rm \
-    -v /full/path/to/output/dir:/usr/share/nginx/html/data \
+    -v /full/path/to/output/dir:/usr/share/nginx/html/data:ro \
     -p 9090:80 zaviewer_ui:2.0.0
     ```
+
 2. Launch ZAViewer by opening the following URL in your web browser :
 
     [`http://localhost:9090/`](http://localhost:9090/)
@@ -272,17 +266,60 @@ These routine are Javascript code that can be easily plugged in ZAViewer as expl
 The same ZAViewer Docker image as before is used, but with different parameters to allow runing custom processing code.
 
 1. Run the web-server container:
+
     ```sh
     docker run -it --rm \
-    -v /full/path/to/output/dir:/usr/share/nginx/html/data \
+    -v /full/path/to/output/dir:/usr/share/nginx/html/data:ro \
     -v /full/path/to/zaviewer/extension/nginx_extra.conf:/etc/nginx/conf.d/nginx_extra.conf:ro \
-    -v /full/path/to/zaviewer/extension:/usr/share/nginx/html/ext \
+    -v /full/path/to/zaviewer/extension:/usr/share/nginx/html/ext:ro \
     -p 9090:80 zaviewer_ui:2.0.0
     ```
+
 2. Launch ZAViewer by opening the following URL in your web browser :
 
     [`http://localhost:9090/`](http://localhost:9090/)
 
+**Note**
+
+* ZAViewer needs to be manually reloaded (press `[F5]` key) after changes of the custom processing code.
+
+<br/><br/>
+
+
+### 4. Editing region delineation within ZAViewer <a id="dev-regionedit"></a>
+
+ZAViewer alows to edit the region delineations displayed as an overlay to the image. In order to save edited regions as SVG files, a minimal backend component needs to be used, thus it is necessary to create a new Docker image based on the ZAViewer Docker image used so far.
+As before local data will be displayed, but this time the displayed/edited region SVG will be located in a different directory.
+
+1. Create the extended Docker image allowing to save region editing:
+
+    ```sh
+    docker build --no-cache -f docker_scripts/Dockerfile.ed -t zaviewer_ed:2.0.0 .
+    ```
+
+2. Run the UI+Editor container:
+
+    ```sh
+    docker run -it --rm \
+    -v /full/path/to/output/dir:/usr/share/nginx/html/data:rw \
+    -v /full/path/to/zaviewer/extension/nginx_extra.conf:/etc/nginx/conf.d/nginx_extra.conf:ro \
+    -v /full/path/to/editableSVGs/dir:/usr/share/nginx/html/data/SVGEdit:rw \
+    -p 9090:80 zaviewer_ud:2.0.0
+    ```
+
+    **Notes**
+
+    * When running in editing mode, ZAViewer works on an independant set of SVG files (basically copied and renamed version of the previously used SVG).
+    * These files will be retrieved from  `/full/path/to/editableSVGs/dir/` directory,and it must contain an **`ARCHIVE`** subfolder used to backup the previous version of the edited file each time modifications are saved. (**`ARCHIVE`** subfolder must be created before starting editing).
+    * The SVG file names should be `AtlasReg_`**`<N>`**`.svg`, where **`<N>`** is the slice number, which is a bit different from the one used for display, but their internal structure follow the same rules (as explained [here](#dev-regionsvg)).
+    * All files and directory must be readeable & writeable from the Docker container. (🟠 add more details here).
+
+
+3. Launch ZAViewer by opening the following URL in your web browser :
+
+    [`http://localhost:9090/?mode=edit`](http://localhost:9090/?mode=edit)
+
+---
 
 **Note**
 
@@ -333,26 +370,22 @@ gulp builproddall
 
 <br/>
 
-# Detailed configuration settings [DEV] <a id="dev-config"></a>
-
+## Detailed configuration settings [DEV] <a id="dev-config"></a>
 
 The viewer is flexible thanks to its detailed configuration descriptors which describe the data to display, according to which the UI adapts its behavior.
 Since ZAViewer may run with or without a backend, the configuration 
 
-
 This configuration is loaded  in several steps when ZAViewer runs with a backend, 
 This configuration is loaded in a single step when ZAViewer runs with or without a backend, the configuration is merged as a single simplified descriptor.
 
-
-## Descriptors when using a backend
+### Descriptors when using a backend
 
 In this mode, the configuration needs to be loaded in several sequential steps.
 
-## 1. `path.json`
+### 1. `path.json`
 
 This configuration descriptor is the first one loaded when the UI starts, and it is retrieved from the root URL of the UI.
 It contains base URLs used to retrieve data, metadata and extended configuration descriptors.  
-
 
 |entry|description|
 | --- | --- |
@@ -360,10 +393,10 @@ It contains base URLs used to retrieve data, metadata and extended configuration
 | `iipserver_path` | URL prefix of the image server used to retrieved raster images  |
 | `publish_path` | relative base URL where subview images, detailed region's information and SVG region delineations can be retrieved from |  
 
-
 <br/>
 
 _Example:_
+
 ```json
 {
 	"admin_path":"./admin/",
@@ -372,13 +405,12 @@ _Example:_
 }
 ```
 
-## 2. `json.php`
+### 2. `json.php`
 
 This configuration descriptor is loaded in a 2nd step from the `admin_path` specified in the `path.json` configuration.
 It contains information to display slices images for the 3 possible orthogonal axis.
 
 When ZAViewer is used with images along a single axis (aka "single-plane mode") some descriptor field names are slightly simplified compared to multi-plane mode, as indicated respectively by <sup>single</sup> vs <sup>multi</sup> indicators.
-
 
 |entry|description|
 | --- | --- |
@@ -426,12 +458,10 @@ When ZAViewer is used with images along a single axis (aka "single-plane mode") 
  <sup>single</sup> : single-plane mode only  
  <sup>multi</sup> : multi-plane mode only  
 
-
-
-
 <br/>
 
 _Example:_
+
 ```json
 {
     "data_root_path": "1",
@@ -471,12 +501,11 @@ _Example:_
 }
 ```
 
-
-## Descriptors when not using a backend
+### Descriptors when not using a backend
 
 In this simple mode, the configuration is loaded in a single step.
 
-## 1. `viewer.json`
+### 1. `viewer.json`
 
 This configuration descriptor is retrieved from the root URL of the UI.
 Since its contents is almost identical to `json.php` of descriptors described above, one should refers to the explanation above.  
@@ -517,7 +546,6 @@ Since its contents is almost identical to `json.php` of descriptors described ab
  <sup>1</sup> : at least one axis image set must be defined!  
  <sup>single</sup> : single-plane mode only  
  <sup>multi</sup> : multi-plane mode only  
-
 
 <br/>
 
@@ -566,9 +594,40 @@ _Example:_
 }
 ```
 
-# References <a id="references"></a>
+## Region specific data [DEV] <a id="dev-regions"></a>
 
-## Creating Deep Zoom Images
+### Region delineations overlay <a id="dev-regionsvg"></a>
+
+Region delineations display on top of images are defined in SVG files that must conform to the following rules :
+
+* SVG viewport (defined by `<svg>`'s `width` and `height` attributes) must be identical to corresponding raster image dimensions in pixels.
+* SVG user coordinate system must be identical to the viewport (i.e. it must not be redefined via a `viewBox` attribute, or by any `transform` attribute on container or graphic elements, since those will be lost when the SVG is imported in the UI).
+* Therefore, coordinates used for graphic elements directly map to pixels (1 user unit maps to 1 pixel), 
+* Region delineations are represented by `<path>` elements, which must have a unique value for their `id` attribute, and a region id in the custom attribute `bma:regionId` (declared namespace `xmlns:bma="https://www.brainminds.riken.jp/Atlas"`). The region hemisphere is indicated by a 2 characters suffix in the region id: an underscore separator `_` and the side letter (`L` or `R`).
+* One path defining a closed rectangle the size of the image must be defined with `id="backgound"`.
+
+```svg
+<?xml version="1.0"?>
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:bma="https://www.brainminds.riken.jp/Atlas" width="18500" height="18500">
+<g>
+    <path id="background" style="fill:#000000;stroke:#00000000;stroke-width:0;" d="M 0 0 L 0 18500 18500 18500 18500 0Z"/>
+    <path id="A8aD_L-1" bma:regionId="A8aD_L" style="fill:#a3c2f2;stroke:#a3c2f2;stroke-width:1;" d=" M 6381 3847 ..."/>
+    ... 
+</g>
+</svg>
+```
+
+### Region structure and extended information <a id="dev-regiondata"></a>
+
+
+🟠 TODO 🟠
+
+<br/><br/>
+---
+
+## References <a id="references"></a>
+
+### Creating Deep Zoom Images
 
 A list of software tools to create [Deep Zoom Images](http://msdn.microsoft.com/en-us/library/cc645077(v=vs.95).aspx) can be found [here](http://openseadragon.github.io/examples/creating-zooming-images/)
 

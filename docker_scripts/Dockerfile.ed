@@ -1,0 +1,28 @@
+FROM zaviewer_ui:2.0.0
+
+WORKDIR /usr/share/nginx
+
+#backend script to store edited SVG
+COPY ./admin/SVG.php /usr/share/nginx/html/
+#nginx config files for server-side include and fastcgi
+COPY ./extension/nginx_extra.conf /etc/nginx/conf.d/nginx_extra.conf 
+COPY ./extension/nginx_php.conf /etc/nginx/conf.d/nginx_php.conf 
+
+#install php & required modules + fastcgi, 
+#disable default nginx conf,
+#append option to start nginx in foreground
+RUN apk update  && \
+apk add php7 php7-json php7-mbstring php7-dom php7-xml php7-fpm php7-opcache  && \
+mv /etc/nginx/conf.d/default.conf /etc/nginx/conf.d/default.confBACK && \
+echo "daemon off;" >> /etc/nginx/nginx.conf
+
+
+LABEL jp.riken.cau.product="ZAViewer User Interface + minimal backend for region editor" \
+    jp.riken.cau.version="2.0.0" \
+    jp.riken.cau.release-date="2021-02-16"
+
+
+EXPOSE 80
+
+#run php-fpm as daemon and nginx in foreground.
+CMD /usr/sbin/php-fpm7 -D; nginx;
