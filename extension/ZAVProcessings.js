@@ -21,29 +21,76 @@ ZAVProcessings = function () { };
 
             name: "invert image",
 
-            processImageData: (imageData) => {
+            processImageDataSync: (imageData) => {
                 for (let i = 0; i < imageData.data.length; i += 4) {
                     for (let c = 0; c < 3; c += 1) {
                         imageData.data[i + c] = 255 - imageData.data[i + c];
                     }
                 }
                 return imageData;
-            }
+            },
 
+            processImageData: function (imageData) {
+                return new Promise(
+                    (resolve, reject) =>
+                        resolve(this.processImageDataSync(imageData))
+                );
+            },
         }
     );
 
     //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-    addProcessor(
-        // example : non-operation
-        {
 
-            name: "NOp",
+    addProcessor(
+        // Processor based on Pix2Pix from ml5.js - https://learn.ml5js.org/#/reference/pix2pix
+        {
+            name: "pix2pix - Pikachu model",
 
             processImageData: function (imageData) {
-                return imageData;
-            }
+                return (
+                    // initialize a pix2pix method with a pre-trained model
+                    ml5.pix2pix("ext/models/edges2pikachu.pict")
+                        .then(pix2pixModel => {
+                            console.debug("Pix2pix: Model Loaded!");
 
+                            // The Edges2Pikachu model was trained with 256x256 pixels images, so input images must be this size or integer multiple of it
+                            const PixelPerBlock = 256;
+                            const nbBlocks = Math.max(
+                                Math.min(
+                                    Math.floor(imageData.width / PixelPerBlock),
+                                    Math.floor(imageData.height / PixelPerBlock)
+                                ), 1
+                            );
+
+                            //prepare canvas from clipped image data
+                            return {
+                                model: pix2pixModel,
+                                canvas: $.imageDataToCanvas(imageData, { width: nbBlocks * PixelPerBlock, height: nbBlocks * PixelPerBlock })
+                            };
+                        })
+                        .then((params) => {
+                            console.debug("Pix2pix: Image prepared!");
+                            // Apply pix2pix transformation
+                            return params.model.transfer(params.canvas);
+                        })
+                        .then(result => {
+                            console.debug("Pix2pix: Transfer done!");
+                            // Create an image based on the result
+                            const imageObj = new Image();
+                            const imgPromise = new Promise(
+                                (resolve, reject) => {
+                                    imageObj.onload = () => {
+                                        console.debug("Pix2pix: Result exported!");
+                                        resolve(imageObj);
+                                    }
+                                }
+                            );
+                            //trigger image loading
+                            imageObj.src = result.src;
+                            return imgPromise;
+                        })
+                );
+            }
         }
     );
     //=========================================================================
@@ -53,6 +100,37 @@ ZAVProcessings = function () { };
     $.hasProcessors = () => processors.length;
 
     $.getProcessors = () => processors;
+
+
+    $.imageDataToCanvas = (imageData, size) => {
+        // create temp canvas
+        const tmpCanvas = document.createElement("canvas");
+        const width = size && size.width ? size.width : imageData.width;
+        const height = size && size.height ? size.height : imageData.height;
+        tmpCanvas.setAttribute("width", width);
+        tmpCanvas.setAttribute("height", height);
+        // put image data into canvas
+        const tmpContext = tmpCanvas.getContext("2d");
+        tmpContext.putImageData(imageData, 0, 0);
+        return tmpCanvas;
+    };
+
+    $.imageDataToImage = (imageData) => {
+        return new Promise((resolve, reject) => {
+            try {
+                const tmpCanvas = $.imageDataToCanvas(imageData);
+                // extract canvas data into an image object
+                const imageObj = new Image();
+                //prepare to asynchronously draw result on top of layers, once image is created from canvas 
+                imageObj.onload = () => resolve(imageObj);
+                //create image from canvas 
+                imageObj.src = tmpCanvas.toDataURL("image/png");
+
+            } catch (msg) {
+                reject(msg);
+            }
+        });
+    };
 
 }(ZAVProcessings));
 
