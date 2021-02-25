@@ -362,7 +362,7 @@ class ZAVConfig {
 
                             that.config.imageGroupListData = data;
                             _.each(data, function (value, key) {
-                                that.config.editLayers[this["publish_id"]] = { "name": this["display_name"], "ext": "." + this["extension"] };
+                                that.config.editLayers[value["publish_id"]] = { "name": value["display_name"], "ext": "." + value["extension"] };
                             });
 
                         } else {

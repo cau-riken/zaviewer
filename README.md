@@ -288,7 +288,7 @@ The same ZAViewer Docker image as before is used, but with different parameters 
 
 ### 4. Editing region delineation within ZAViewer <a id="dev-regionedit"></a>
 
-ZAViewer alows to edit the region delineations displayed as an overlay to the image. In order to save edited regions as SVG files, a minimal backend component needs to be used, thus it is necessary to create a new Docker image based on the ZAViewer Docker image used so far.
+ZAViewer alows to edit the region delineations displayed on top of the slice images. In order to save edited regions as SVG files, a minimal backend component needs to be used, thus it is necessary to create a new Docker image based on the ZAViewer Docker image used so far.
 As before local data will be displayed, but this time the displayed/edited region SVG will be located in a different directory.
 
 1. Create the extended Docker image allowing to save region editing:
@@ -310,7 +310,7 @@ As before local data will be displayed, but this time the displayed/edited regio
     **Notes**
 
     * When running in editing mode, ZAViewer works on an independant set of SVG files (basically copied and renamed version of the previously used SVG).
-    * These files will be retrieved from  `/full/path/to/editableSVGs/dir/` directory,and it must contain an **`ARCHIVE`** subfolder used to backup the previous version of the edited file each time modifications are saved. (**`ARCHIVE`** subfolder must be created before starting editing).
+    * These files will be retrieved from  `/full/path/to/editableSVGs/dir/` directory, and it must contain an **`ARCHIVE`** subfolder used to backup the previous version of the edited file each time modifications are saved. (**`ARCHIVE`** subfolder must be created before starting editing).
     * The SVG file names should be `AtlasReg_`**`<N>`**`.svg`, where **`<N>`** is the slice number, which is a bit different from the one used for display, but their internal structure follow the same rules (as explained [here](#dev-regionsvg)).
     * All files and directory must be readeable & writeable from the Docker container. (🟠 add more details here).
 

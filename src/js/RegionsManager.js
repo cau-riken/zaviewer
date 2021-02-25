@@ -133,7 +133,7 @@ class RegionsManager {
     }
 
     static isReady() {
-        return (typeof this.status !== "undefined");
+        return (typeof this.status !== "undefined" && this.regionsData);
     }
 
     static getActionner(actionGroupId) {
@@ -240,7 +240,10 @@ class RegionsManager {
     }
 
     static _expandFromRootTo(regionId) {
-        this.getRegion(regionId).trail.forEach(ancestorId => this.status.expanded.set(ancestorId, true));
+        const region = this.getRegion(regionId);
+        if (region) {
+            region.trail.forEach(ancestorId => this.status.expanded.set(ancestorId, true));
+        }
     }
 
     static _expandCollapseAllFrom(actionGroupId, regionId, expanded, silent) {
@@ -404,9 +407,11 @@ class RegionsManager {
     }
 
     static setCurrentSliceRegions(regions) {
-        this.status.currentSliceRegions = regions;
-        if (this.isAutoHighlightingOn()) {
-            this._higlightCurrentSliceRegions()
+        if (this.status) {
+            this.status.currentSliceRegions = regions;
+            if (this.isAutoHighlightingOn()) {
+                this._higlightCurrentSliceRegions()
+            }
         }
     }
 
@@ -474,45 +479,65 @@ class Actionner {
     }
 
     setExpanded(regionId, expanded) {
-        RegionsManager._setExpanded(this.actionGroupId, regionId, expanded);
+        if (RegionsManager.isReady()) {
+            RegionsManager._setExpanded(this.actionGroupId, regionId, expanded);
+        }
     }
 
     toogleExpanded(regionId) {
-        RegionsManager._toogleExpanded(this.actionGroupId, regionId);
+        if (RegionsManager.isReady()) {
+            RegionsManager._toogleExpanded(this.actionGroupId, regionId);
+        }
     }
 
     toogleExpandedAllFrom(regionId) {
-        RegionsManager._expandCollapseAllFrom(this.actionGroupId, regionId, !RegionsManager.isExpanded(regionId));
+        if (RegionsManager.isReady()) {
+            RegionsManager._expandCollapseAllFrom(this.actionGroupId, regionId, !RegionsManager.isExpanded(regionId));
+        }
     }
 
     expandCollapseAllFrom(regionId, expanded) {
-        RegionsManager._expandCollapseAllFrom(this.actionGroupId, regionId, expanded);
+        if (RegionsManager.isReady()) {
+            RegionsManager._expandCollapseAllFrom(this.actionGroupId, regionId, expanded);
+        }
     }
 
     lockHighlighting() {
-        RegionsManager._lockHighlighting(this.actionGroupId);
+        if (RegionsManager.isReady()) {
+            RegionsManager._lockHighlighting(this.actionGroupId);
+        }
     }
 
     unlockHighlighting() {
-        RegionsManager._unlockHighlighting(this.actionGroupId);
+        if (RegionsManager.isReady()) {
+            RegionsManager._unlockHighlighting(this.actionGroupId);
+        }
     }
 
     higlightByName(pattern) {
-        // even though actual process is debounced, change of Actionner must be recorded immediately
-        RegionsManager._setLastActionSource(this.actionGroupId);
-        this.debouncedHiglightByName(this.actionGroupId, pattern);
+        if (RegionsManager.isReady()) {
+            // even though actual process is debounced, change of Actionner must be recorded immediately
+            RegionsManager._setLastActionSource(this.actionGroupId);
+            this.debouncedHiglightByName(this.actionGroupId, pattern);
+        }
     }
 
     higlightByGrouping(scheme, active) {
-        RegionsManager._higlightByGrouping(this.actionGroupId, scheme, active);
+        if (RegionsManager.isReady()) {
+            RegionsManager._higlightByGrouping(this.actionGroupId, scheme, active);
+        }
     }
 
     toggleAutoHighlighting() {
-        RegionsManager._toggleAutoHighlighting(this.actionGroupId);
+        if (RegionsManager.isReady()) {
+            RegionsManager._toggleAutoHighlighting(this.actionGroupId);
+        }
     }
 
     higlightRegions(regionSet) {
-        RegionsManager._higlightRegionSet(this.actionGroupId, regionSet);
+        if (RegionsManager.isReady()) {
+            RegionsManager._higlightRegionSet(this.actionGroupId, regionSet);
+        }
     }
 
     /** non-operation, just to reset the actionGroupId who takes the initiative (e.g. get focus) */
@@ -521,7 +546,9 @@ class Actionner {
     }
 
     lastActionInitiatedByOther() {
-        return RegionsManager.lastActionInitiatedByOther(this.actionGroupId);
+        if (RegionsManager.isReady()) {
+            return RegionsManager.lastActionInitiatedByOther(this.actionGroupId);
+        }
     }
 
 

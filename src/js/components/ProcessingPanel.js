@@ -3,7 +3,8 @@ import React from 'react';
 import {
     AnchorButton,
     HTMLSelect,
-    NumericInput
+    NumericInput,
+    ProgressBar
 } from "@blueprintjs/core";
 
 import ViewerManager from '../ViewerManager.js'
@@ -54,11 +55,14 @@ class ProcessingPanel extends React.Component {
                         />
                     </div>
                     <div>
+                        <div style={{ height: 5, margin: "5px 0" }}>
+                            {ViewerManager.isProcessingActive() ? <ProgressBar className="zav-thinProgressBar" /> : null}
+                        </div>
                         <AnchorButton
                             title={"perform processing on selected clip"}
                             small
                             icon="derive-column"
-                            disabled={!ViewerManager.isClipSelected()}
+                            disabled={!ViewerManager.isClipSelected() && ViewerManager.isProcessingActive()}
                             onClick={this.handleStartProcessing}
                         />
                         {
@@ -69,6 +73,7 @@ class ProcessingPanel extends React.Component {
                                     <HTMLSelect
                                         fill={true}
                                         onChange={this.handleSelectProcessing}
+                                        disabled={ViewerManager.isProcessingActive()}
                                     >
                                         {ViewerManager.getProcessors().map(
                                             (p, index) => <option key={'proc-' + index} value={index}>{p.name}</option>

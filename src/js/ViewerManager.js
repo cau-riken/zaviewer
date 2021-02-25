@@ -545,6 +545,11 @@ class ViewerManager {
 
         });
 
+        this.viewer.addHandler('page', (zoomEvent) => {
+            //discard previous custom processing result if any
+            that.status.processedImage = null;
+        });
+
         this.viewer.addHandler('zoom', (zoomEvent) => {
             //change must be recorded in browser's history
             that.makeHistoryStep();
@@ -900,7 +905,7 @@ class ViewerManager {
                 })
                 .catch((error) => {
                     //FIXME alert user
-                    console.error('Error when saving region path ' + pathId, data);
+                    console.error('Error when saving region path ' + pathId);
                 });
 
             this.signalStatusChanged(this.status);
@@ -1669,7 +1674,13 @@ class ViewerManager {
     static getRegionsSVGEditUrl(extraParams) {
         const sliceNum = this.getCurrentPlaneChosenSlice();
         const url = new URL(Utils.makePath("../", this.config.ADMIN_PATH, 'SVG.php'), window.location);
-        const params = { dataset: this.config.paramId, plane: this.status.activePlane, slice: this.getCurrentPlaneChosenSlice() };
+        const params = this.config.paramId ?
+            {
+                dataset: this.config.paramId,
+                plane: this.status.activePlane
+            }
+            : {};
+        _.extend(params, { slice: this.getCurrentPlaneChosenSlice() });
         if (extraParams) {
             _.extend(params, extraParams);
         }
@@ -1957,8 +1968,9 @@ class ViewerManager {
     static displayMeasureLine() {
         if (this.viewer.currentOverlays[0] == null) { return; }
         if (!this.config.matrix) { return; }
-        if (this.status.ctx == null) {
-            this.status.ctx = $("#poscanvas")[0].getContext('2d');
+        const posCanvas = document.getElementById('poscanvas');
+        if (this.status.ctx == null && posCanvas) {
+            this.status.ctx = posCanvas.getContext('2d');
         }
 
         var orig = this.viewer.viewport.pixelFromPoint(new OpenSeadragon.Point(0, 0), true);
@@ -1972,7 +1984,7 @@ class ViewerManager {
         this.signalStatusChanged(this.status);
         if (!this.status.measureModeOn) { return; }
 
-        this.status.ctx.clearRect(0, 0, $("#poscanvas")[0].width, $("#poscanvas")[0].height);
+        this.status.ctx.clearRect(0, 0, posCanvas.width, posCanvas.height);
 
         // distance line
         if (this.status.position[0].c == 2) {
@@ -2062,11 +2074,12 @@ class ViewerManager {
     static displayClipBox() {
         if (this.viewer.currentOverlays[0] == null) { return; }
         if (!this.status.clippingModeOn) { return; }
+        const posCanvas = document.getElementById('poscanvas');
         if (this.status.ctx == null) {
-            this.status.ctx = $("#poscanvas")[0].getContext('2d');
+            this.status.ctx = posCanvas.getContext('2d');
         }
 
-        this.status.ctx.clearRect(0, 0, $("#poscanvas")[0].width, $("#poscanvas")[0].height);
+        this.status.ctx.clearRect(0, 0, posCanvas.width, posCanvas.height);
 
         //clip box
         if (this.status.position[0].c != 0) {
@@ -2090,31 +2103,17 @@ class ViewerManager {
                 const ty = Math.min(py1, py2)
                 const by = Math.max(py1, py2)
 
-                //if the result of previous processing is still available, display it on top of layers
-                if (this.status.processedImage) {
-
-                    const sf = this.getZoomFactor() / this.status.processedZoom;
-                    const deltaSF = 1 - sf;
-                    const needScaling = Math.abs(deltaSF) > Number.EPSILON;
-                    if (needScaling) {
-                        //image was computed at different scale factor, so it needs to be scaled
-                        this.status.ctx.translate(deltaSF * lx, deltaSF * ty);
-                        this.status.ctx.scale(sf, sf);
-                        //magenta border to warn user that it was computed at different zoom
-                        this.status.ctx.strokeStyle = "#ff00ef";
-                    } else {
-                        //image computed at that zoom factor: green border 
-                        this.status.ctx.strokeStyle = "#00ff00";
-                    }
-                    //draw computed image on top of layers
-                    this.status.ctx.drawImage(this.status.processedImage, lx, ty);
-                    if (needScaling) {
-                        this.status.ctx.resetTransform();
-                    }
+                const clipWidth = rx - lx;
+                const clipHeight = by - ty;
+                if (this.drawProcessingResult(lx, ty, clipWidth, clipHeight)) {
+                    //image computed at that zoom factor: green border 
+                    this.status.ctx.strokeStyle = "#00ff00";
+                } else {
+                    //magenta border to warn user that it was computed at different zoom
+                    this.status.ctx.strokeStyle = "#ff00ef";
                 }
 
-                this.status.clippedRegion = [lx, ty, rx - lx, by - ty]
-
+                this.status.clippedRegion = [lx, ty, clipWidth, clipHeight]
             } else {
                 this.status.ctx.setLineDash([1, 5]);
                 this.status.ctx.lineWidth = 3;
@@ -2128,6 +2127,28 @@ class ViewerManager {
         }
 
     };
+
+    static drawProcessingResult(clipOrigX, clipOrigY, clipWidth, clipHeight) {
+        //if the result of previous processing is still available, display it on top of layers
+        if (this.status.processedImage) {
+
+            const sf = this.getZoomFactor() / this.status.processedZoom;
+            const deltaSF = 1 - sf;
+            const needScaling = Math.abs(deltaSF) > Number.EPSILON;
+            if (needScaling) {
+                //image was computed at different scale factor, so it needs to be scaled
+                this.status.ctx.translate(deltaSF * clipOrigX, deltaSF * clipOrigY);
+                this.status.ctx.scale(sf, sf);
+            }
+            //draw computed image on top of layers
+            this.status.ctx.drawImage(this.status.processedImage, clipOrigX, clipOrigY);
+            
+            if (needScaling) {
+                this.status.ctx.resetTransform();
+            }
+            return !needScaling;
+        }
+    }
 
     static setSelectClip(active) {
         this.claerPosition();
@@ -2214,6 +2235,10 @@ class ViewerManager {
         }
     }
 
+    static isProcessingActive() {
+        return this.status && this.status.processingActive;
+    }
+
     static performProcessing(procIndex) {
         if (this.isClipSelected()) {
             this.getProcessors()
@@ -2233,28 +2258,36 @@ class ViewerManager {
                 const imageData = ctx.getImageData(lx, ty, w, h);
 
                 //perform actual computation
-                const processedImageData = proc.processImageData(imageData);
-
-                //store computed result as image object:
-                // create temp canvas
-                const tmpCanvas = document.createElement("canvas");
-                tmpCanvas.setAttribute("width", imageData.width);
-                tmpCanvas.setAttribute("height", imageData.height);
-                // put image data into canvas
-                const tmpContext = tmpCanvas.getContext("2d");
-                tmpContext.putImageData(imageData, 0, 0);
-                // extract canvas data into an image object
-                const imageObj = new Image();
-                this.status.processedImage = imageObj;
-                //prepare to asynchronously draw result on top of layers, once image is created from canvas 
-                imageObj.onload = () => this.displayClipBox(); 
-                //create image from canvas 
-                imageObj.src = tmpCanvas.toDataURL("image/png");
-
+                this.status.processingActive = true;
+                this.signalStatusChanged(this.status);
+                proc.processImageData(imageData)
+                    .then((processedImageData) => {
+                        //if result is already an image, no conversion necessary
+                        if (Image.prototype.isPrototypeOf(processedImageData)) {
+                            return processedImageData;
+                        } else {
+                            //convert computed result as image object
+                            return this.imageDataToImage(processedImageData)
+                        }
+                    })
+                    .then((imageObj) => {
+                        this.status.processedImage = imageObj;
+                        this.displayClipBox();
+                    })
+                    .catch((error) => {
+                        console.error(error);
+                    })
+                    .finally(() => {
+                        this.status.processingActive = false;
+                        this.signalStatusChanged(this.status);
+                    });
             }
         }
     };
 
+    static imageDataToImage(imageData) {
+        return globalThis.ZAVProcessings.imageDataToImage(imageData);
+    };
 
     //record current viewer state in browser history
     static makeActualHistoryStep(explicitParams) {
