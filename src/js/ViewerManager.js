@@ -2105,7 +2105,9 @@ class ViewerManager {
 
                 const clipWidth = rx - lx;
                 const clipHeight = by - ty;
-                if (this.drawProcessingResult(lx, ty, clipWidth, clipHeight)) {
+                if (!this.status.processedImage) {
+                    this.status.ctx.strokeStyle = "#0000ff";
+                } else if (this.drawProcessingResult(lx, ty, clipWidth, clipHeight)) {
                     //image computed at that zoom factor: green border 
                     this.status.ctx.strokeStyle = "#00ff00";
                 } else {
@@ -2123,6 +2125,23 @@ class ViewerManager {
             this.status.ctx.lineTo(px2, py2);
             this.status.ctx.lineTo(px2, py1);
             this.status.ctx.lineTo(px1, py1);
+            this.status.ctx.stroke();
+
+            //inner grid 
+            const blockSize = 64;
+            this.status.ctx.strokeStyle = "#ffffff";
+            this.status.ctx.setLineDash([1, 2]);
+            this.status.ctx.lineWidth = 1;
+            for (var offX = blockSize; px1 + offX < px2; offX += blockSize) {
+
+                this.status.ctx.moveTo(px1 + offX, py1);
+                this.status.ctx.lineTo(px1 + offX, py2);
+            }
+            for (var offY = blockSize; py1 + offY < py2; offY += blockSize) {
+                this.status.ctx.moveTo(px1, py1 + offY);
+                this.status.ctx.lineTo(px2, py1 + offY);
+
+            }
             this.status.ctx.stroke();
         }
 
