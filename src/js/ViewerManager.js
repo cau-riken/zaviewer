@@ -418,8 +418,11 @@ class ViewerManager {
             });
 
 
-            $(that.viewer.canvas).off('.posview');
-            $(that.viewer.canvas).on('mousemove.posview', that.mousemoveHandler.bind(that));
+            if (that.status.mousemoveHandler) {
+                that.viewer.canvas.removeEventListener('mousemove', that.status.mousemoveHandler);
+            }
+            that.status.mousemoveHandler = that.mousemoveHandler.bind(that);
+            that.viewer.canvas.addEventListener('mousemove', that.status.mousemoveHandler);
         });
 
 
@@ -1892,10 +1895,9 @@ class ViewerManager {
     //--------------------------------------------------
     // position
     static resizeCanvas() {
-        $("#poscanvas").attr({
-            'width': this.viewer.canvas.clientWidth,
-            'height': this.viewer.canvas.clientHeight
-        });
+        const posCanvas = document.getElementById('poscanvas');
+        posCanvas.setAttribute('width', this.viewer.canvas.clientWidth);
+        posCanvas.setAttribute('height', this.viewer.canvas.clientHeight);
         this.refreshCanvasContent();
 
         if (this.viewer.referenceStrip) {
@@ -1911,7 +1913,8 @@ class ViewerManager {
 
     static pointerupHandler(event) {
         //
-        if (this.viewer.currentOverlays.length == 0 || $("#poscanvas").is(":hidden")) {
+        const posCanvas = document.getElementById('poscanvas');
+        if (this.viewer.currentOverlays.length == 0 || posCanvas.style.display== "none") {
             return;
         }
 
@@ -1993,6 +1996,9 @@ class ViewerManager {
             var px2 = Math.round((this.status.position[2].x * zoom) + orig.x + 0.5) - 0.5;
             var py2 = Math.round((this.status.position[2].y * zoom) + orig.y + 0.5) - 0.5;
             this.status.ctx.beginPath();
+            this.status.ctx.setLineDash([]);
+            this.status.ctx.lineWidth = 2;
+            this.status.ctx.lineCap = "butt";
             this.status.ctx.strokeStyle = "#888";
             this.status.ctx.moveTo(px1, py1);
             this.status.ctx.lineTo(px2, py2);
@@ -2001,6 +2007,9 @@ class ViewerManager {
         // cross
         if (this.status.position[0].c != 0) {
             this.status.ctx.beginPath();
+            this.status.ctx.setLineDash([]);
+            this.status.ctx.lineWidth = 1;
+            this.status.ctx.lineCap = "butt";
             this.status.ctx.strokeStyle = "#000";
             for (var i = 1; i <= this.status.position[0].c; i++) {
                 var px = Math.round((this.status.position[i].x * zoom) + orig.x + 0.5) + 0.5;
@@ -2059,10 +2068,11 @@ class ViewerManager {
             this.status.clippingModeOn = false;
         }
         this.status.measureModeOn = active;
+        const posCanvas = document.getElementById('poscanvas');
         if (this.status.measureModeOn) {
-            $("#poscanvas").show();
+            posCanvas.style.display = "block";
         } else {
-            $("#poscanvas").hide();
+            posCanvas.style.display = "none";
         }
         this.signalStatusChanged(this.status);
     }
@@ -2181,6 +2191,7 @@ class ViewerManager {
                 this.status.ctx.lineTo(rx, ty + offY);
             }
             this.status.ctx.stroke();
+            this.status.ctx.setLineDash([]);
         }
 
     };
@@ -2216,10 +2227,11 @@ class ViewerManager {
             this.status.measureModeOn = false;
         }
         this.status.clippingModeOn = active;
+        const posCanvas = document.getElementById('poscanvas');
         if (active) {
-            $("#poscanvas").show();
+            posCanvas.style.display = "block";
         } else {
-            $("#poscanvas").hide();
+            posCanvas.style.display = "none";
         }
         this.signalStatusChanged(this.status);
     }
