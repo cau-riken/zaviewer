@@ -2083,25 +2083,63 @@ class ViewerManager {
 
         //clip box
         if (this.status.position[0].c != 0) {
-            var orig = this.viewer.viewport.pixelFromPoint(new OpenSeadragon.Point(0, 0), true);
-            var zoom = this.viewer.viewport.getZoom(true) * (this.viewer.canvas.clientWidth / this.config.imageSize);
+            const orig = this.viewer.viewport.pixelFromPoint(new OpenSeadragon.Point(0, 0), true);
+            const zoom = this.viewer.viewport.getZoom(true) * (this.viewer.canvas.clientWidth / this.config.imageSize);
 
-            var px1 = Math.round((this.status.position[1].x * zoom) + orig.x + 0.5) - 0.5;
-            var py1 = Math.round((this.status.position[1].y * zoom) + orig.y + 0.5) - 0.5;
+            const px1 = Math.round((this.status.position[1].x * zoom) + orig.x + 0.5) - 0.5;
+            const py1 = Math.round((this.status.position[1].y * zoom) + orig.y + 0.5) - 0.5;
 
-            var px2 = Math.round((this.status.position[2].x * zoom) + orig.x + 0.5) - 0.5;
-            var py2 = Math.round((this.status.position[2].y * zoom) + orig.y + 0.5) - 0.5;
+            const px2 = Math.round((this.status.position[2].x * zoom) + orig.x + 0.5) - 0.5;
+            const py2 = Math.round((this.status.position[2].y * zoom) + orig.y + 0.5) - 0.5;
+
+            const lx = Math.min(px1, px2)
+            const rx = Math.max(px1, px2)
+            const ty = Math.min(py1, py2)
+            const by = Math.max(py1, py2)
+
+            const vlx = Math.max(0, lx);
+            const vrx = Math.min(rx, this.viewer.canvas.clientWidth);
+            const vty = Math.max(0, ty);
+            const vby = Math.min(by, this.viewer.canvas.clientHeight);
+
+            //visible clip
+            this.status.ctx.beginPath();
+            this.status.ctx.strokeStyle = "#ff0000";
+            this.status.ctx.setLineDash([1, 2]);
+            this.status.ctx.lineWidth = 5;
+            this.status.ctx.lineCap = "butt";
+
+            if (vty != ty) {
+                //top border
+                this.status.ctx.moveTo(vlx, vty);
+                this.status.ctx.lineTo(vrx, vty);
+                this.status.ctx.stroke();
+            }
+            if (vlx != lx) {
+                //left border
+                this.status.ctx.moveTo(vlx, vty);
+                this.status.ctx.lineTo(vlx, vby);
+                this.status.ctx.stroke();
+            }
+            if (vby != by) {
+                //bottom border
+                this.status.ctx.moveTo(vlx, vby);
+                this.status.ctx.lineTo(vrx, vby);
+                this.status.ctx.stroke();
+            }
+            if (vrx != rx) {
+                //right border
+                this.status.ctx.moveTo(vrx, vty);
+                this.status.ctx.lineTo(vrx, vby);
+                this.status.ctx.stroke();
+            }
 
             this.status.ctx.beginPath();
             this.status.ctx.strokeStyle = "#00ffff";
+            this.status.ctx.lineCap = "butt";
             if (this.status.position[0].c == 2) {
                 this.status.ctx.setLineDash([]);
                 this.status.ctx.lineWidth = 1;
-
-                const lx = Math.min(px1, px2)
-                const rx = Math.max(px1, px2)
-                const ty = Math.min(py1, py2)
-                const by = Math.max(py1, py2)
 
                 const clipWidth = rx - lx;
                 const clipHeight = by - ty;
@@ -2129,18 +2167,18 @@ class ViewerManager {
 
             //inner grid 
             const blockSize = 64;
-            this.status.ctx.strokeStyle = "#ffffff";
-            this.status.ctx.setLineDash([1, 2]);
-            this.status.ctx.lineWidth = 1;
-            for (var offX = blockSize; px1 + offX < px2; offX += blockSize) {
-
-                this.status.ctx.moveTo(px1 + offX, py1);
-                this.status.ctx.lineTo(px1 + offX, py2);
+            this.status.ctx.beginPath();
+            this.status.ctx.strokeStyle = "#ffffff66";
+            this.status.ctx.setLineDash([1, 7]);
+            this.status.ctx.lineWidth = 3;
+            this.status.ctx.lineCap = "round";
+            for (var offX = blockSize; lx + offX < rx; offX += blockSize) {
+                this.status.ctx.moveTo(lx + offX, ty);
+                this.status.ctx.lineTo(lx + offX, by);
             }
-            for (var offY = blockSize; py1 + offY < py2; offY += blockSize) {
-                this.status.ctx.moveTo(px1, py1 + offY);
-                this.status.ctx.lineTo(px2, py1 + offY);
-
+            for (var offY = blockSize; ty + offY < by; offY += blockSize) {
+                this.status.ctx.moveTo(lx, ty + offY);
+                this.status.ctx.lineTo(rx, ty + offY);
             }
             this.status.ctx.stroke();
         }
@@ -2161,7 +2199,7 @@ class ViewerManager {
             }
             //draw computed image on top of layers
             this.status.ctx.drawImage(this.status.processedImage, clipOrigX, clipOrigY);
-            
+
             if (needScaling) {
                 this.status.ctx.resetTransform();
             }
