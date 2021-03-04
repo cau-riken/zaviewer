@@ -1914,7 +1914,7 @@ class ViewerManager {
     static pointerupHandler(event) {
         //
         const posCanvas = document.getElementById('poscanvas');
-        if (this.viewer.currentOverlays.length == 0 || posCanvas.style.display== "none") {
+        if (this.viewer.currentOverlays.length == 0 || posCanvas.style.display == "none") {
             return;
         }
 
@@ -2112,38 +2112,6 @@ class ViewerManager {
             const vty = Math.max(0, ty);
             const vby = Math.min(by, this.viewer.canvas.clientHeight);
 
-            //visible clip
-            this.status.ctx.beginPath();
-            this.status.ctx.strokeStyle = "#ff0000";
-            this.status.ctx.setLineDash([1, 2]);
-            this.status.ctx.lineWidth = 5;
-            this.status.ctx.lineCap = "butt";
-
-            if (vty != ty) {
-                //top border
-                this.status.ctx.moveTo(vlx, vty);
-                this.status.ctx.lineTo(vrx, vty);
-                this.status.ctx.stroke();
-            }
-            if (vlx != lx) {
-                //left border
-                this.status.ctx.moveTo(vlx, vty);
-                this.status.ctx.lineTo(vlx, vby);
-                this.status.ctx.stroke();
-            }
-            if (vby != by) {
-                //bottom border
-                this.status.ctx.moveTo(vlx, vby);
-                this.status.ctx.lineTo(vrx, vby);
-                this.status.ctx.stroke();
-            }
-            if (vrx != rx) {
-                //right border
-                this.status.ctx.moveTo(vrx, vty);
-                this.status.ctx.lineTo(vrx, vby);
-                this.status.ctx.stroke();
-            }
-
             this.status.ctx.beginPath();
             this.status.ctx.strokeStyle = "#00ffff";
             this.status.ctx.lineCap = "butt";
@@ -2191,6 +2159,42 @@ class ViewerManager {
                 this.status.ctx.lineTo(rx, ty + offY);
             }
             this.status.ctx.stroke();
+
+            //if clipbox spans outside the viewport, display some warning red lines to show where it will be cropped
+            this.status.ctx.beginPath();
+            this.status.ctx.strokeStyle = "#ff0000";
+            this.status.ctx.setLineDash([1, 2]);
+            this.status.ctx.lineWidth = 5;
+            this.status.ctx.lineCap = "butt";
+
+            if (vty != ty) {
+                //top border
+                this.status.ctx.moveTo(vlx, vty);
+                this.status.ctx.lineTo(vrx, vty);
+                this.status.ctx.stroke();
+            }
+            if (vlx != lx) {
+                //left border
+                this.status.ctx.moveTo(vlx, vty);
+                this.status.ctx.lineTo(vlx, vby);
+                this.status.ctx.stroke();
+            }
+            if (vby != by) {
+                //bottom border
+                this.status.ctx.moveTo(vlx, vby);
+                this.status.ctx.lineTo(vrx, vby);
+                this.status.ctx.stroke();
+            }
+            if (vrx != rx) {
+                //right border
+
+                //right panel might be covering OSD canvas, so warning line should be drawn at the panel limit
+                const rightPanelWidth = document.getElementById("ZAV-rightPanel").getBoundingClientRect().width;
+                this.status.ctx.moveTo(vrx - rightPanelWidth, vty);
+                this.status.ctx.lineTo(vrx - rightPanelWidth, vby);
+                this.status.ctx.stroke();
+            }
+
             this.status.ctx.setLineDash([]);
         }
 
@@ -2323,33 +2327,206 @@ class ViewerManager {
                 //retrieve image data for custom processing
                 const tilescanvas = this.viewer.drawer.canvas;
                 const ctx = tilescanvas.getContext('2d');
-                const [lx, ty, w, h] = this.status.processedRegion;
-                const imageData = ctx.getImageData(lx, ty, w, h);
 
-                //perform actual computation
-                this.status.processingActive = true;
-                this.signalStatusChanged(this.status);
-                proc.processImageData(imageData)
-                    .then((processedImageData) => {
-                        //if result is already an image, no conversion necessary
-                        if (Image.prototype.isPrototypeOf(processedImageData)) {
-                            return processedImageData;
-                        } else {
-                            //convert computed result as image object
-                            return this.imageDataToImage(processedImageData)
+                //routine to perform processing on specified imageData
+                const startProcessor = (imageData) => {
+                    console.debug("start processing ", imageData);
+
+                    //perform actual computation
+                    this.status.processingActive = true;
+                    this.signalStatusChanged(this.status);
+
+                    proc.processImageData(imageData)
+                        .then((processedImageData) => {
+                            //if result is already an image, no conversion necessary
+                            if (Image.prototype.isPrototypeOf(processedImageData)) {
+                                return processedImageData;
+                            } else {
+                                //convert computed result as image object
+                                return this.imageDataToImage(processedImageData)
+                            }
+                        })
+                        .then((imageObj) => {
+                            this.status.processedImage = imageObj;
+                            this.displayClipBox();
+                        })
+                        .catch((error) => {
+                            console.error(error);
+                        })
+                        .finally(() => {
+                            this.status.processingActive = false;
+                            this.signalStatusChanged(this.status);
+                        });
+
+                };
+
+                //collect info to check if part of the clipped region is outside of the screen
+                const bounds = this.viewer.viewport.getBounds(true);
+                const vpCoord1 = this.viewer.viewport.imageToViewportCoordinates(this.status.position[1].x, this.status.position[1].y);
+                const vpCoord2 = this.viewer.viewport.imageToViewportCoordinates(this.status.position[2].x, this.status.position[2].y);
+                const vlx = Math.min(vpCoord1.x, vpCoord2.x)
+                const vrx = Math.max(vpCoord1.x, vpCoord2.x)
+                const vty = Math.min(vpCoord1.y, vpCoord2.y)
+                const vby = Math.max(vpCoord1.y, vpCoord2.y)
+
+                const [lx, ty, w, h] = this.status.processedRegion;
+
+
+                if (vlx >= bounds.x && vty >= bounds.y && vrx >= (bounds.x + bounds.width) && vby >= (bounds.y + bounds.height)) {
+                    //clipped regions within viewport boundaries, complete clipped region imageData is available
+                    const imageData = ctx.getImageData(lx, ty, w, h);
+                    startProcessor(imageData);
+                } else {
+                    //part of the clip is outside of the screen, necessary to pan the viewport to retreive complete imageData 
+
+                    {
+                        //compute the panning moves (in row-major order) necessary to cover the clipped region at the current zoom level 
+                        const panMoves = [];
+                        const halfWidth = bounds.width / 2;
+                        const halfHeight = bounds.height / 2;
+                        let row = 0;
+                        for (let panY = vty; panY < vby; panY += bounds.height, row++) {
+                            let col = 0;
+                            for (let panX = vlx; panX < vrx; panX += bounds.width, col++) {
+                                panMoves.push(
+                                    {
+                                        col: col,
+                                        row: row,
+                                        lastRow: (panY + bounds.height) >= vby,
+                                        lastCol: (panX + bounds.width) >= vrx,
+                                        point: new OpenSeadragon.Point(panX + halfWidth, panY + halfHeight)
+                                    }
+                                );
+                            }
                         }
-                    })
-                    .then((imageObj) => {
-                        this.status.processedImage = imageObj;
-                        this.displayClipBox();
-                    })
-                    .catch((error) => {
-                        console.error(error);
-                    })
-                    .finally(() => {
-                        this.status.processingActive = false;
-                        this.signalStatusChanged(this.status);
-                    });
+
+                        //dimension of imageData that can be collect at once
+                        const canvasWidth = tilescanvas.clientWidth;
+                        const canvasHeight = tilescanvas.clientHeight;
+
+                        //return a promise which collect image data 
+                        const getDeferedCollectImageDataPromise = (imageDataArray, panMove) => {
+
+                            const collectImageData = () => {
+                                //collect only the necessary part of the canvas where the viewport is currently panned
+                                const partWidth = panMove.lastCol ? (w - panMove.col * canvasWidth) : canvasWidth;
+                                const partHeight = panMove.lastRow ? (w - panMove.row * canvasHeight) : canvasHeight;
+                                const imageData = ctx.getImageData(0, 0, partWidth, partHeight);
+                                imageDataArray.push({
+                                    data: imageData,
+                                    col: panMove.col,
+                                    row: panMove.row,
+                                });
+                                return imageDataArray;
+                            };
+
+                            return new Promise(
+                                //resolution deferred to give exta time to browser to finish drawing canvas...
+                                (resolve) => setTimeout(() => resolve(collectImageData()), 200)
+                            );
+                        };
+
+                        //return a promise chain which trigger next pan move and image data collection
+                        const getNextPanPromise = (imageDataArray) => new Promise((resolve, reject) => {
+                            //while there is panning moves left
+                            if (panMoves.length) {
+                                const panMove = panMoves.shift();
+
+                                //Since image loading and drawing is asynchrously handled by OSD, 
+                                //we rely on OSD events to detect when the promise can be resolved
+
+                                //event handler to detect when panning has been performed
+                                this.viewer.addOnceHandler('pan', (pannedEvent) => {
+
+                                    //FIXME currently only checking if first layer is fully loaded
+                                    const tiledImage = pannedEvent.eventSource.world.getItemAt(0);
+
+                                    //check if image is already fully loaded
+                                    if (!tiledImage.getFullyLoaded()) {
+
+                                        //event handler to detect when tiled image has been fully loaded (for current viewport)
+                                        const hnd = (fullyLoadedChangeEvent) => {
+                                            if (fullyLoadedChangeEvent.fullyLoaded) {
+                                                tiledImage.removeHandler('fully-loaded-change', hnd);
+
+                                                resolve(getDeferedCollectImageDataPromise(imageDataArray, panMove)
+                                                    .then((imgDtaArr) => getNextPanPromise(imgDtaArr))
+                                                );
+                                            }
+                                        };
+                                        tiledImage.addHandler('fully-loaded-change', hnd);
+                                    } else {
+                                        resolve(
+                                            getDeferedCollectImageDataPromise(imageDataArray, panMove)
+                                                .then((imgDtaArr) => getNextPanPromise(imgDtaArr))
+                                        );
+                                    }
+
+                                });
+
+                                // trigger next Panning 
+                                this.viewer.viewport.panTo(panMove.point, true);
+                            } else {
+                                //console.debug("Resolving Last PanPromise");
+                                resolve(imageDataArray);
+                            }
+
+                        });
+
+                        //create (and execute) Panning and collection Promises chain
+                        getNextPanPromise([])
+                            .then(
+                                // create full ImageData by joining collected ImageData parts
+                                (imageDataArray) => {
+                                    const fullImgDataSizeByte = w * h * 4;
+                                    const joinedImgDataPx = new Uint8ClampedArray(fullImgDataSizeByte);
+                                    imageDataArray.forEach(
+                                        (imageDataInfo, index) => {
+                                            const partImgData = imageDataInfo.data;
+                                            for (let x = 0; x < partImgData.width; x++) {
+                                                for (let y = 0; y < partImgData.height; y++) {
+                                                    for (let c = 0; c < 4; c += 1) {
+                                                        //vertical pixel offset, filled by parts in above rows
+                                                        const vOffset = imageDataInfo.row * canvasHeight * w;
+                                                        //horizontal pixel offset, filled by parts in left cols
+                                                        const hOffset = imageDataInfo.col * canvasWidth;
+                                                        //current line pixel offset for full image
+                                                        const fullImgLineOffset = y * w;
+                                                        //current line pixel offset for part image
+                                                        const partImgLineOffset = y * partImgData.width;
+
+                                                        joinedImgDataPx[(vOffset + hOffset + fullImgLineOffset + x) * 4 + c] =
+                                                            partImgData.data[(partImgLineOffset + x) * 4 + c];
+                                                    }
+                                                }
+                                            }
+                                        }
+                                    );
+                                    //clear imageData parts
+                                    imageDataArray.length = 0;
+
+                                    const joinedImageData = new ImageData(joinedImgDataPx, w, h);
+                                    return joinedImageData;
+                                }
+                            )
+                            .then(
+                                (joinedImageData) => {
+                                    //pan back to original position
+                                    this.viewer.viewport.fitBounds(bounds);
+                                    return joinedImageData;
+                                }
+                            )
+                            .then(
+                                //launch custom processing
+                                (joinedImageData) => startProcessor(joinedImageData)
+                            )
+                            .catch((error) => {
+                                console.error(error);
+                            });
+                    }
+
+                }
+
             }
         }
     };
