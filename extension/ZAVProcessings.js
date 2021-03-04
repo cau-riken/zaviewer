@@ -3,7 +3,7 @@
 */
 ZAVProcessings = function () { };
 
-(function ($) {
+(function (modfn) {
 
     'use strict';
 
@@ -14,7 +14,16 @@ ZAVProcessings = function () { };
 
     //=========================================================================
     // Add your processors' code here.
-
+    /**
+     * Declared Processors must minimally expose :
+     * - a name property, 
+     *      the readable name of the process that is displayed in the UI.
+     * - a processImageData(imageData) function, 
+     *      that takes an ImageData object as single parameter (https://developer.mozilla.org/en-US/docs/Web/API/ImageData)
+     *      and returns a Promise which resolves as an Image or an ImageData object
+     */
+    
+    //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     addProcessor(
         // example : image color inversion
         {
@@ -44,7 +53,7 @@ ZAVProcessings = function () { };
     addProcessor(
         // Processor based on Pix2Pix from ml5.js - https://learn.ml5js.org/#/reference/pix2pix
         {
-            name: "pix2pix - Pikachu model",
+            name: "pix2pix /Pikachu 256px",
 
             processImageData: function (imageData) {
                 return (
@@ -65,7 +74,7 @@ ZAVProcessings = function () { };
                             //prepare canvas from clipped image data
                             return {
                                 model: pix2pixModel,
-                                canvas: $.imageDataToCanvas(imageData, { width: nbBlocks * PixelPerBlock, height: nbBlocks * PixelPerBlock })
+                                canvas: modfn.imageDataToCanvas(imageData, { width: nbBlocks * PixelPerBlock, height: nbBlocks * PixelPerBlock })
                             };
                         })
                         .then((params) => {
@@ -97,12 +106,12 @@ ZAVProcessings = function () { };
 
 
 
-    $.hasProcessors = () => processors.length;
+    modfn.hasProcessors = () => processors.length;
 
-    $.getProcessors = () => processors;
+    modfn.getProcessors = () => processors;
 
 
-    $.imageDataToCanvas = (imageData, size) => {
+    modfn.imageDataToCanvas = (imageData, size) => {
         // create temp canvas
         const tmpCanvas = document.createElement("canvas");
         const width = size && size.width ? size.width : imageData.width;
@@ -115,10 +124,10 @@ ZAVProcessings = function () { };
         return tmpCanvas;
     };
 
-    $.imageDataToImage = (imageData) => {
+    modfn.imageDataToImage = (imageData) => {
         return new Promise((resolve, reject) => {
             try {
-                const tmpCanvas = $.imageDataToCanvas(imageData);
+                const tmpCanvas = modfn.imageDataToCanvas(imageData);
                 // extract canvas data into an image object
                 const imageObj = new Image();
                 //prepare to asynchronously draw result on top of layers, once image is created from canvas 
