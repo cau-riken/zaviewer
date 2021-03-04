@@ -1,7 +1,10 @@
 import React from 'react';
+import classNames from "classnames";
 
 import {
+    Classes,
     Icon,
+    Overlay,
     Popover,
     PopoverInteractionKind,
     Position,
@@ -44,6 +47,11 @@ class ViewerComposed extends React.Component {
     }
 
     render() {
+
+        const classes = classNames(
+            Classes.CARD,
+            Classes.ELEVATION_4
+        );
 
         if (this.props.config && !this.initialized) {
             ViewerManager.init(
@@ -119,6 +127,19 @@ class ViewerComposed extends React.Component {
                 </div>
 
                 <OSDMain />
+                <Overlay
+                    className={Classes.OVERLAY_SCROLL_CONTAINER}
+                    isOpen={this.state.longRunningMessage}
+                >
+                    <div
+                     style={{ left: "calc(50vw - 200px)", margin: "10vh 0", top: 0, width: 400 }} 
+                    className={classes} >
+                        <h3><Icon icon="pulse"/>{" Please wait"}</h3>
+                        <p>
+                            {this.state.longRunningMessage}
+                        </p>
+                    </div>
+                </Overlay>
 
                 <Drawer
                     id="ZAV-rightPanel"

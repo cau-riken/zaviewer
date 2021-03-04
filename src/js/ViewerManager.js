@@ -2317,7 +2317,7 @@ class ViewerManager {
             this.getProcessors()
             const proc = this.getProcessor(procIndex);
             if (proc) {
-                console.info('Computing "' + proc.name + '"');
+                console.debug('Computing "' + proc.name + '"');
 
                 //store zoom factor of the image about to be processed
                 this.status.processedZoom = this.getZoomFactor();
@@ -2334,6 +2334,7 @@ class ViewerManager {
 
                     //perform actual computation
                     this.status.processingActive = true;
+                    this.status.longRunningMessage = "Performing custom processing...";
                     this.signalStatusChanged(this.status);
 
                     proc.processImageData(imageData)
@@ -2355,6 +2356,7 @@ class ViewerManager {
                         })
                         .finally(() => {
                             this.status.processingActive = false;
+                            this.status.longRunningMessage = null;
                             this.signalStatusChanged(this.status);
                         });
 
@@ -2372,7 +2374,7 @@ class ViewerManager {
                 const [lx, ty, w, h] = this.status.processedRegion;
 
 
-                if (vlx >= bounds.x && vty >= bounds.y && vrx >= (bounds.x + bounds.width) && vby >= (bounds.y + bounds.height)) {
+                if (vlx >= bounds.x && vty >= bounds.y && vrx <= (bounds.x + bounds.width) && vby <= (bounds.y + bounds.height)) {
                     //clipped regions within viewport boundaries, complete clipped region imageData is available
                     const imageData = ctx.getImageData(lx, ty, w, h);
                     startProcessor(imageData);
@@ -2474,6 +2476,9 @@ class ViewerManager {
                         });
 
                         //create (and execute) Panning and collection Promises chain
+                        this.status.longRunningMessage = "Collecting data...";
+                        this.signalStatusChanged(this.status);
+
                         getNextPanPromise([])
                             .then(
                                 // create full ImageData by joining collected ImageData parts
