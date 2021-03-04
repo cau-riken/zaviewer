@@ -321,9 +321,6 @@ As before local data will be displayed, but this time the displayed/edited regio
 
 ---
 
-**Note**
-
-* ZAViewer needs to be manually reloaded (press `[F5]` key) after changes of the custom processing code.
 
 
 

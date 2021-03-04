@@ -2412,7 +2412,7 @@ class ViewerManager {
                             const collectImageData = () => {
                                 //collect only the necessary part of the canvas where the viewport is currently panned
                                 const partWidth = panMove.lastCol ? (w - panMove.col * canvasWidth) : canvasWidth;
-                                const partHeight = panMove.lastRow ? (w - panMove.row * canvasHeight) : canvasHeight;
+                                const partHeight = panMove.lastRow ? (h - panMove.row * canvasHeight) : canvasHeight;
                                 const imageData = ctx.getImageData(0, 0, partWidth, partHeight);
                                 imageDataArray.push({
                                     data: imageData,
