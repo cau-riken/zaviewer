@@ -175,6 +175,30 @@ class ViewerManager {
             /** set to true when clip selection tool is activated  */
             clippingModeOn: false,
 
+            /** [topleft.x, topleft.y, width, height] in pixels */
+            clippedRegion: undefined,
+            /** topleft corner of the previous respecting selected processor size constrtaint  */
+            constrainedClippedRegion: undefined,
+
+            /** index of currently selected custom processor */
+            selectedprocIndex: undefined,
+
+            /** image resulting of last processing */
+            processedImage: undefined,
+            /** zoom factor at which the processing has been preformed  */
+            processedZoom: undefined,
+            /** clip definition used for last processing */
+            processedRegion: undefined,
+
+            /** set to true while processing is being computed */
+            processingActive: undefined,
+            /** message to display as model */
+            longRunningMessage: undefined,
+
+            /** previous values of gesture to zoom factors stored while zoon is locked */
+            prevZoomPerScroll: undefined,
+            prevZoomPerClick: undefined,
+    
             /** set to true when region editing mode is enabled */
             editModeOn: false,
             /** set to true when a region is being edited */
@@ -2418,6 +2442,11 @@ class ViewerManager {
             return null;
         }
     }
+
+    static getProcessedImage() {
+        return this.status && this.status.processedImage;
+    }    
+
     static isProcessingActive() {
         return this.status && this.status.processingActive;
     }
@@ -2458,6 +2487,7 @@ class ViewerManager {
                             }
                         })
                         .then((imageObj) => {
+                            imageObj.name = proc.name + ' -' + new Date().toISOString().slice(0,19).replaceAll(/[:\-]/g, '');                            ;
                             this.status.processedImage = imageObj;
                             this.displayClipBox();
                         })

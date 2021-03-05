@@ -15,6 +15,7 @@ class ProcessingPanel extends React.Component {
         super(props);
         this.handleSelectProcessing = this.handleSelectProcessing.bind(this);
         this.handleStartProcessing = this.handleStartProcessing.bind(this);
+        this.handleSaveProcessedImage = this.handleSaveProcessedImage.bind(this);
     }
 
     render() {
@@ -74,20 +75,24 @@ class ProcessingPanel extends React.Component {
                                         fill={true}
                                         onChange={this.handleSelectProcessing}
                                         disabled={ViewerManager.isProcessingActive()}
+                                        defaultValue={selectProcIndex}
                                     >
                                         {ViewerManager.getProcessors().map(
-                                            (p, index) =>
-                                                <option
-                                                    key={'proc-' + index}
-                                                    value={index}
-                                                    selected={index == selectProcIndex}
-                                                >{p.name}</option>
+                                            (p, index) => <option key={'proc-' + index} value={index}>{p.name}</option>
                                         )}
                                     </HTMLSelect>
 
                                 </div>
                                 : null
                         }
+                        <AnchorButton
+                            title={"save result image"}
+                            small
+                            icon="floppy-disk"
+                            disabled={!ViewerManager.getProcessedImage()}
+                            onClick={this.handleSaveProcessedImage}
+                        />
+
                     </div>
                 </div>
             </React.Fragment>
@@ -102,6 +107,18 @@ class ProcessingPanel extends React.Component {
     handleStartProcessing() {
         ViewerManager.performProcessing(ViewerManager.getSelectedProcessorIndex());
     };
+
+    handleSaveProcessedImage() {
+        const imageObj = ViewerManager.getProcessedImage();
+        if (imageObj) {
+            //trigger "download" of processed image
+            const link = document.createElement('a');
+            link.download = imageObj.name ? imageObj.name + '.png' : 'customprocessing-image.png';
+            link.href = imageObj.src;
+            link.click();
+        }
+    };
+
 }
 
 export default ProcessingPanel;
