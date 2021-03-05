@@ -13,12 +13,12 @@ class ProcessingPanel extends React.Component {
 
     constructor(props) {
         super(props);
-        this.state = { selectedProcIndex: 0 };
         this.handleSelectProcessing = this.handleSelectProcessing.bind(this);
         this.handleStartProcessing = this.handleStartProcessing.bind(this);
     }
 
     render() {
+        const selectProcIndex = ViewerManager.getSelectedProcessorIndex();
         return (
             <React.Fragment>
                 <div>
@@ -76,7 +76,12 @@ class ProcessingPanel extends React.Component {
                                         disabled={ViewerManager.isProcessingActive()}
                                     >
                                         {ViewerManager.getProcessors().map(
-                                            (p, index) => <option key={'proc-' + index} value={index}>{p.name}</option>
+                                            (p, index) =>
+                                                <option
+                                                    key={'proc-' + index}
+                                                    value={index}
+                                                    selected={index == selectProcIndex}
+                                                >{p.name}</option>
                                         )}
                                     </HTMLSelect>
 
@@ -91,11 +96,11 @@ class ProcessingPanel extends React.Component {
 
     handleSelectProcessing(event) {
         const selectedProcIndex = parseInt(event.currentTarget.value);
-        this.setState({ selectedProcIndex: selectedProcIndex });
+        ViewerManager.setSelectedProcessorIndex(selectedProcIndex);
     };
 
     handleStartProcessing() {
-        ViewerManager.performProcessing(this.state.selectedProcIndex);
+        ViewerManager.performProcessing(ViewerManager.getSelectedProcessorIndex());
     };
 }
 

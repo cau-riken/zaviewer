@@ -21,6 +21,12 @@ ZAVProcessings = function () { };
      * - a processImageData(imageData) function, 
      *      that takes an ImageData object as single parameter (https://developer.mozilla.org/en-US/docs/Web/API/ImageData)
      *      and returns a Promise which resolves as an Image or an ImageData object
+     * 
+     * Processors may optionally expose :
+     * - some input size constraints, in the form {width: XX, height: YY, constraint: "fixed"|"ratio"|"none" },
+     *      when constraint="none", or unspecified, the input image dimensions will be limited to specified number of pixels, or integer multiples of those values.
+     *      when constraint="ratio", width and height values will correspond to same integer multiple of respective specified values.
+     *      when constraint="fixed", width and height values will equal the respective specified values.
      */
     
     //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -49,11 +55,57 @@ ZAVProcessings = function () { };
     );
 
     //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    addProcessor(
+        // Processor based on UNET from ml5.js
+        {
+            name: "UNET /Face 128px",
+
+            inputSize: {width: 128, height: 128, constraint: "fixed"},
+
+            processImageData: function (imageData) {
+                // initialize a UNET method with a pre-trained model
+                // (local copy of default model, https://github.com/zaidalyafeai/HostedModels)
+                const options = {
+                    modelPath: "ext/models/unet-128/model.json"
+                }
+                return (
+                    ml5.uNet("", options).ready
+                        .then(uNetModel => {
+                            console.debug("UNET: Model Loaded!");
+                            //prepare canvas from clipped image data
+                            return {
+                                model: uNetModel,
+                                canvas: modfn.imageDataToCanvas(imageData)
+                            };
+                        })
+                        .then((params) => {
+                            console.debug("UNET: Image prepared!");
+
+                            // Apply UNET segmentation
+                            return params.model.segment(params.canvas);
+                        })
+                        .then(result => {
+                            console.debug("UNET: segmentation done!");
+
+                            //return new ImageData(result.raw.featureMask, 128, 128);
+                            //return new ImageData(result.raw.backgroundMask, 128, 128);
+                            // UNET image is 128x128
+                            return new ImageData(result.segmentation, 128, 128);
+                        })
+                );
+            }
+        }
+    );
+
+
+    //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
     addProcessor(
         // Processor based on Pix2Pix from ml5.js - https://learn.ml5js.org/#/reference/pix2pix
         {
             name: "pix2pix /Pikachu 256px",
+
+            inputSize: {width: 256, height: 256, constraint: "ratio"},
 
             processImageData: function (imageData) {
                 return (
@@ -106,7 +158,7 @@ ZAVProcessings = function () { };
 
 
 
-    modfn.hasProcessors = () => processors.length;
+    modfn.nbProcessors = () => processors.length;
 
     modfn.getProcessors = () => processors;
 

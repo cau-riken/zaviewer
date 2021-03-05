@@ -2112,6 +2112,9 @@ class ViewerManager {
             const vty = Math.max(0, ty);
             const vby = Math.min(by, this.viewer.canvas.clientHeight);
 
+            let clipWidth = rx - lx;
+            let clipHeight = by - ty;
+
             this.status.ctx.beginPath();
             this.status.ctx.strokeStyle = "#00ffff";
             this.status.ctx.lineCap = "butt";
@@ -2119,16 +2122,22 @@ class ViewerManager {
                 this.status.ctx.setLineDash([]);
                 this.status.ctx.lineWidth = 1;
 
-                const clipWidth = rx - lx;
-                const clipHeight = by - ty;
                 if (!this.status.processedImage) {
                     this.status.ctx.strokeStyle = "#0000ff";
-                } else if (this.drawProcessingResult(lx, ty, clipWidth, clipHeight)) {
-                    //image computed at that zoom factor: green border 
-                    this.status.ctx.strokeStyle = "#00ff00";
                 } else {
-                    //magenta border to warn user that it was computed at different zoom
-                    this.status.ctx.strokeStyle = "#ff00ef";
+
+                    //override clip dimension by actually computed result (scaled to current zoom factor)
+                    const sf = this.getZoomFactor() / this.status.processedZoom;
+                    clipWidth = Math.round(this.status.processedImage.width * sf);
+                    clipHeight = Math.round(this.status.processedImage.height * sf);
+
+                    if (this.drawProcessingResult(lx, ty, clipWidth, clipHeight)) {
+                        //image computed at that zoom factor: green border 
+                        this.status.ctx.strokeStyle = "#00ff00";
+                    } else {
+                        //magenta border to warn user that it was computed at different zoom
+                        this.status.ctx.strokeStyle = "#ff00ef";
+                    }
                 }
 
                 this.status.clippedRegion = [lx, ty, clipWidth, clipHeight]
@@ -2136,11 +2145,76 @@ class ViewerManager {
                 this.status.ctx.setLineDash([1, 5]);
                 this.status.ctx.lineWidth = 3;
             }
-            this.status.ctx.moveTo(px1, py1);
-            this.status.ctx.lineTo(px1, py2);
-            this.status.ctx.lineTo(px2, py2);
-            this.status.ctx.lineTo(px2, py1);
-            this.status.ctx.lineTo(px1, py1);
+
+            const selectedProc = this.getSelectedProcessor();
+            const clipSizeConstraints = selectedProc && selectedProc.inputSize ? selectedProc.inputSize : null;
+            const constraintType = clipSizeConstraints ? (clipSizeConstraints.constraint ? clipSizeConstraints.constraint : "none") : null;
+
+            //extra right-bottom space of the clipped area that won't be used for actual processing 
+            let extraWidth = 0;
+            let extraHeight = 0;
+
+            //take into account size constraints, unless processings already done
+            if (constraintType && !this.status.processedImage) {
+                if (constraintType == "fixed") {
+                    extraWidth = clipSizeConstraints.width ? ((clipWidth - clipSizeConstraints.width) >= 0 ? (clipWidth - clipSizeConstraints.width) : clipWidth) : 0;
+                    extraHeight = clipSizeConstraints.height ? ((clipHeight - clipSizeConstraints.height) >= 0 ? (clipHeight - clipSizeConstraints.height) : clipHeight) : 0;
+                } else if (constraintType == "ratio") {
+                    // keep constant width/height ratio 
+                    const multW = clipSizeConstraints.width ? Math.floor(clipWidth / clipSizeConstraints.width) : Infinity;
+                    const multH = clipSizeConstraints.height ? Math.floor(clipHeight / clipSizeConstraints.height) : Infinity;
+                    const mult = Math.min(multW, multH);
+                    if (mult == Infinity) {
+                        extraWidth = clipWidth;
+                        extraHeight = clipHeight;
+                    } else {
+                        extraWidth = clipWidth - clipSizeConstraints.width * mult;
+                        extraHeight = clipHeight - clipSizeConstraints.height * mult;
+                    }
+                } else {
+                    // no constraint other than using multiple of specified width & height
+                    extraWidth = clipSizeConstraints.width ? (clipWidth % clipSizeConstraints.width) : 0;
+                    extraHeight = clipSizeConstraints.height ? (clipHeight % clipSizeConstraints.height) : 0;
+                }
+            }
+
+            //constrained clip is the one who will be processed
+            const constrainedClipWidth = clipWidth - extraWidth;
+            const constrainedClipHeight = clipHeight - extraHeight;
+            this.status.constrainedClippedRegion = [lx, ty, constrainedClipWidth, constrainedClipHeight]
+
+            //constrained clip border
+            this.status.ctx.moveTo(lx, ty);
+            this.status.ctx.lineTo(lx, ty + constrainedClipHeight);
+            this.status.ctx.lineTo(lx + constrainedClipWidth, ty + constrainedClipHeight);
+            this.status.ctx.lineTo(lx + constrainedClipWidth, ty);
+            this.status.ctx.lineTo(lx, ty);
+            this.status.ctx.stroke();
+
+
+            //border of the extra space
+            this.status.ctx.beginPath();
+            this.status.ctx.strokeStyle = "#ffff0066";
+            this.status.ctx.lineWidth = 3;
+            this.status.ctx.setLineDash([1, 2]);
+            if (extraHeight) {
+                //part at the bottom of constrained clip
+                this.status.ctx.moveTo(lx, ty + constrainedClipHeight);
+                this.status.ctx.lineTo(lx, by);
+                this.status.ctx.lineTo(lx + constrainedClipWidth, by);
+            } else {
+                this.status.ctx.moveTo(lx + constrainedClipWidth, by);
+            }
+            if (extraHeight || extraWidth) {
+                //bottom-right corner
+                this.status.ctx.lineTo(rx, by);
+                this.status.ctx.lineTo(rx, ty + constrainedClipHeight);
+            }
+            if (extraWidth) {
+                //part at the right of constrained clip
+                this.status.ctx.lineTo(rx, ty);
+                this.status.ctx.lineTo(lx + constrainedClipWidth, ty);
+            }
             this.status.ctx.stroke();
 
             //inner grid 
@@ -2150,17 +2224,17 @@ class ViewerManager {
             this.status.ctx.setLineDash([1, 7]);
             this.status.ctx.lineWidth = 3;
             this.status.ctx.lineCap = "round";
-            for (var offX = blockSize; lx + offX < rx; offX += blockSize) {
+            for (var offX = blockSize; offX < constrainedClipWidth; offX += blockSize) {
                 this.status.ctx.moveTo(lx + offX, ty);
-                this.status.ctx.lineTo(lx + offX, by);
+                this.status.ctx.lineTo(lx + offX, ty + constrainedClipHeight);
             }
-            for (var offY = blockSize; ty + offY < by; offY += blockSize) {
+            for (var offY = blockSize; offY < constrainedClipHeight; offY += blockSize) {
                 this.status.ctx.moveTo(lx, ty + offY);
-                this.status.ctx.lineTo(rx, ty + offY);
+                this.status.ctx.lineTo(lx + constrainedClipWidth, ty + offY);
             }
             this.status.ctx.stroke();
 
-            //if clipbox spans outside the viewport, display some warning red lines to show where it will be cropped
+            //if clipbox spans outside the viewport, display some warning red lines to show where it is cropped
             this.status.ctx.beginPath();
             this.status.ctx.strokeStyle = "#ff0000";
             this.status.ctx.setLineDash([1, 2]);
@@ -2288,7 +2362,7 @@ class ViewerManager {
     }
 
     static hasProcessors() {
-        return this.hasProcessingsModule() && globalThis.ZAVProcessings.hasProcessors();
+        return this.hasProcessingsModule() && globalThis.ZAVProcessings.nbProcessors();
     }
 
     static getProcessors() {
@@ -2308,6 +2382,39 @@ class ViewerManager {
         }
     }
 
+    static setSelectedProcessorIndex(procIndex) {
+        const nbProcessors = this.hasProcessingsModule() ? globalThis.ZAVProcessings.nbProcessors() : 0;
+        if (procIndex < nbProcessors) {
+            if (this.status.selectedprocIndex != procIndex) {
+                this.status.selectedprocIndex = procIndex
+                //reset previous result and its associated clip box if any 
+                if (this.status.processedImage) {
+                    this.resetPositionview();
+                }
+                this.displayClipBox();
+            }
+        }
+    }
+
+    static getSelectedProcessorIndex() {
+        if (this.hasProcessors() && this.status) {
+            if (typeof this.status.selectedprocIndex == "undefined") {
+                this.status.selectedprocIndex = 0;
+            }
+            return this.status.selectedprocIndex;
+        } else {
+            return -1;
+        }
+    }
+
+    static getSelectedProcessor() {
+        const procIndex = this.getSelectedProcessorIndex();
+        if (procIndex >= 0) {
+            return this.getProcessor(procIndex);
+        } else {
+            return null;
+        }
+    }
     static isProcessingActive() {
         return this.status && this.status.processingActive;
     }
@@ -2321,7 +2428,7 @@ class ViewerManager {
 
                 //store zoom factor of the image about to be processed
                 this.status.processedZoom = this.getZoomFactor();
-                this.status.processedRegion = this.status.clippedRegion;
+                this.status.processedRegion = this.status.constrainedClippedRegion;
                 this.status.processedImage = null;
 
                 //retrieve image data for custom processing
@@ -2330,7 +2437,7 @@ class ViewerManager {
 
                 //routine to perform processing on specified imageData
                 const startProcessor = (imageData) => {
-                    console.debug("start processing ", imageData);
+                    console.debug(`start processor "${proc.name}" on ${imageData.width} x ${imageData.height} pixels`);
 
                     //perform actual computation
                     this.status.processingActive = true;
@@ -2401,6 +2508,7 @@ class ViewerManager {
                                 );
                             }
                         }
+                        const nbParts = panMoves.length;
 
                         //dimension of imageData that can be collect at once
                         const canvasWidth = tilescanvas.clientWidth;
@@ -2433,6 +2541,7 @@ class ViewerManager {
                             //while there is panning moves left
                             if (panMoves.length) {
                                 const panMove = panMoves.shift();
+                                this.status.longRunningMessage = `Collecting data... (${nbParts - panMoves.length}/${nbParts})`;
 
                                 //Since image loading and drawing is asynchrously handled by OSD, 
                                 //we rely on OSD events to detect when the promise can be resolved
@@ -2483,7 +2592,10 @@ class ViewerManager {
                             .then(
                                 // create full ImageData by joining collected ImageData parts
                                 (imageDataArray) => {
+                                    this.status.longRunningMessage = "Aggregating data...";
+
                                     const fullImgDataSizeByte = w * h * 4;
+                                    console.debug(`allocating ${fullImgDataSizeByte} bytes`)
                                     const joinedImgDataPx = new Uint8ClampedArray(fullImgDataSizeByte);
                                     imageDataArray.forEach(
                                         (imageDataInfo, index) => {
@@ -2526,7 +2638,14 @@ class ViewerManager {
                                 (joinedImageData) => startProcessor(joinedImageData)
                             )
                             .catch((error) => {
-                                console.error(error);
+                                console.error("Error while processing:", error);
+
+                                this.status.longRunningMessage = error;
+                                this.signalStatusChanged(this.status);
+                                setTimeout(() => {
+                                    this.status.longRunningMessage = error;
+                                    this.signalStatusChanged(this.status);
+                                }, 1500);
                             });
                     }
 
