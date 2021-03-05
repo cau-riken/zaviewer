@@ -343,7 +343,10 @@ class ViewerManager {
             showNavigator: true,
             navigatorId: NAVIGATOR_ID,
             showReferenceStrip: false,
-            showFullPageControl: false
+            showFullPageControl: false,
+            //keep image size (and zoom) when container/window is resized
+            preserveImageSizeOnResize: true,
+            autoResize: true,
         });
 
         if (this.config.matrix) {
