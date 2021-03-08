@@ -3,7 +3,8 @@ FROM zaviewer_ui:2.0.0
 WORKDIR /usr/share/nginx
 
 #backend script to store edited SVG
-COPY ./admin/SVG.php /usr/share/nginx/html/
+COPY ./admin/SVG.php /usr/share/nginx/html/admin/
+
 #nginx config files for server-side include and fastcgi
 COPY ./extension/nginx_extra.conf /etc/nginx/conf.d/nginx_extra.conf 
 COPY ./extension/nginx_php.conf /etc/nginx/conf.d/nginx_php.conf 

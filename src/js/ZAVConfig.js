@@ -264,6 +264,8 @@ class ZAVConfig {
             this.config.dataRootPath = this.config.baseConfigPath ? Utils.makePath(this.config.baseConfigPath, 'data') : undefined;
             /** base URL for region infos, region SVGs, ... */
             this.config.PUBLISH_PATH = undefined;
+            /** base URL for SVG edit webservice ... */
+            this.config.ADMIN_PATH = 'admin';
 
             this.config.fallbackExtension = 'dzi';
 
