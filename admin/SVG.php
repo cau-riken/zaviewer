@@ -98,7 +98,7 @@ if ($requestMethod === "GET") {
 <svg xmlns="$SVGnsURI" xmlns:bma="$BMINDSnsURI" width="$width" height="$height">
   <rect width="$width" height="$height" style="fill:rgb(0,0,0);"/>
   <g transform="scale(1.0)">
-    <path id="background-0" bma:regionId="background" style="fill:#000000;stroke:#00000000;stroke-width:0;stroke-antialiasing:false" d="M 0 0 L 0 $height $width $height $width 0Z"/>
+    <path id="background" style="fill:#00000000;stroke:#00000000;stroke-width:0;stroke-antialiasing:false" d="M 0 0 L 0 $height $width $height $width 0Z"/>
   </g>
 </svg>
 SVGLIT;
@@ -154,40 +154,56 @@ SVGLIT;
             //locate the edited path in the source SVG document 
             $xpath = new DOMXPath($domSVG);
             $xpath->registerNamespace("svg", $SVGns);
-            $oldPath = $xpath->query("//svg:path[@id='$pathId']")->item(0);
 
-            if ($oldPath) {
+            //load Path from the paylod
+            $newPathDom = new DomDocument();
+            //suppress warnings when loading path including custom namespace attributes
+            $newPathDom->loadXML($data->{'pathSVG'}, LIBXML_NOERROR | LIBXML_NOWARNING);
+            $editedPath = $newPathDom->getElementsByTagName('path')->item(0);
+            if ($editedPath) {
 
-                $newPathDom = new DomDocument();
-                //suppress warnings when loading path including custom namespace attributes
-                $newPathDom->loadXML($data->{'pathSVG'}, LIBXML_NOERROR | LIBXML_NOWARNING);
-                $editedPath = $newPathDom->getElementsByTagName('path')->item(0);
-                if ($editedPath) {
+                $mode = $data->{'mode'};
+                //create region mode
+                if ($mode && $mode == 'cr') {
 
-                    // since the editing process just changed the 'd' attribute, let's simply replace it
-                    $oldPath->setAttribute('d', $editedPath->getAttribute('d'));
+                    //append new Path in the first group below <svg>
+                    $group = $xpath->query("//svg:g")->item(0);
+                    $node = $domSVG->importNode($editedPath, true);
+                    $group->appendChild($node);
 
-                    // save modified SVG
-                    if ($domSVG->save($fullpath)) {
-                        echo json_encode(array("message" => 'saved!'));
-                        http_response_code(200);
-                        exit;
+                } 
+                //update region mode
+                elseif ($mode && $mode == 'up') {
+
+                    $oldPath = $xpath->query("//svg:path[@id='$pathId']")->item(0);
+                    if ($oldPath) {
+                        // Edited region may have changes in its 'd', path id and/or region id attributes
+                        $oldPath->setAttribute('d', $editedPath->getAttribute('d'));
+                        $oldPath->setAttribute('id', $editedPath->getAttribute('id'));
+                        $oldPath->setAttribute('bma:regionId', $editedPath->getAttribute('bma:regionId'));
                     } else {
-                        echo json_encode(array("message" => 'Failed to save new version of SVG'));
-                        http_response_code(500);
+                        //NOT FOUND
+                        echo json_encode(array("message" => 'Edited region not found in SVG.'));
+                        http_response_code(404);
                         exit;
                     }
+                }
+
+                // save modified SVG
+                if ($domSVG->save($fullpath)) {
+                    echo json_encode(array("message" => 'saved!'));
+                    http_response_code(200);
+                    exit;
                 } else {
-                    // invalid input payload
-                    //BAD REQUEST
-                    echo json_encode(array("message" => 'Invalid editor payload.'));
-                    http_response_code(400);
+                    echo json_encode(array("message" => 'Failed to save new version of SVG'));
+                    http_response_code(500);
                     exit;
                 }
             } else {
-                //NOT FOUND
-                echo json_encode(array("message" => 'Edited region not found in SVG.'));
-                http_response_code(404);
+                // invalid input payload
+                //BAD REQUEST
+                echo json_encode(array("message" => 'Invalid editor payload.'));
+                http_response_code(400);
                 exit;
             }
         }

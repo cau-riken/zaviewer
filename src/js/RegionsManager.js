@@ -46,6 +46,7 @@ class RegionsManager {
             /** source of the last modification  */
             lastActionSource: '',
 
+            loadedRegions: false,
         }
         const that = this;
 
@@ -53,17 +54,17 @@ class RegionsManager {
         if (config.treeUrlPath) {
 
             const treeDataUrl =
-            config.hasBackend
-            ? Utils.makePath(config.PUBLISH_PATH, config.treeUrlPath, "regionTreeGroup_" + config.paramId + ".json")
-            : config.fallbackTreeUrl;
-            
+                config.hasBackend
+                    ? Utils.makePath(config.PUBLISH_PATH, config.treeUrlPath, "regionTreeGroup_" + config.paramId + ".json")
+                    : config.fallbackTreeUrl;
+
             $.ajax({
                 url: treeDataUrl,
                 type: config.hasBackend ? "POST" : "GET",
                 async: true,
                 dataType: 'json',
                 success: function (data) {
-                    
+
                     that.prepareData(data);
                     that.signalListeners();
                 },
@@ -108,6 +109,7 @@ class RegionsManager {
 
         addTrailToRegion(this.regionsData.root, []);
 
+        this.status.loadedRegions = true;
 
         /** only first level expanded at startup */
         this._collapseAll();

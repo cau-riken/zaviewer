@@ -157,7 +157,7 @@ Parameters:
         * an underscore separator ("`_`"), 
         * an integer to order the image slice in the UI, 
         * the image file extension ("`.tif`" as it is currently the only supported format)
-    * There is only 1 overlay directory (named `overlay0_Regions`) which contains SVG files defining region delineations for each slice. These SVG files must conform to the following rules described [here](#dev-regionsvg):
+    * There is only 1 overlay directory (named `overlay0_Regions`) which contains SVG files defining region delineations for each slice. These SVG files must conform to the following rules described [here](#dev-regionsvg). ZAViever includes a simple region editing feature to interactively create those SVG files and edit their content (see [here](#dev-regionedit)).
 
 3. physical unit used in images, in micrometer
 
@@ -288,7 +288,7 @@ The same ZAViewer Docker image as before is used, but with different parameters 
 
 ### 4. Editing region delineation within ZAViewer <a id="dev-regionedit"></a>
 
-ZAViewer alows to edit the region delineations displayed on top of the slice images. In order to save edited regions as SVG files, a minimal backend component needs to be used, thus it is necessary to create a new Docker image based on the ZAViewer Docker image used so far.
+ZAViewer allows to edit the region delineations displayed on top of the slice images. In order to save edited regions as SVG files, a minimal backend component needs to be used, thus it is necessary to create a new Docker image based on the ZAViewer Docker image used so far.
 As before local data will be displayed, but this time the displayed/edited region SVG will be located in a different directory.
 
 1. Create the extended Docker image allowing to save region editing:
@@ -607,7 +607,7 @@ Region delineations display on top of images are defined in SVG files that must 
 <?xml version="1.0"?>
 <svg xmlns="http://www.w3.org/2000/svg" xmlns:bma="https://www.brainminds.riken.jp/Atlas" width="18500" height="18500">
 <g>
-    <path id="background" style="fill:#000000;stroke:#00000000;stroke-width:0;" d="M 0 0 L 0 18500 18500 18500 18500 0Z"/>
+    <path id="background" style="fill:#00000000;stroke:#00000000;stroke-width:0;" d="M 0 0 L 0 18500 18500 18500 18500 0Z"/>
     <path id="A8aD_L-1" bma:regionId="A8aD_L" style="fill:#a3c2f2;stroke:#a3c2f2;stroke-width:1;" d=" M 6381 3847 ..."/>
     ... 
 </g>
@@ -627,9 +627,5 @@ Region delineations display on top of images are defined in SVG files that must 
 ### Creating Deep Zoom Images
 
 A list of software tools to create [Deep Zoom Images](http://msdn.microsoft.com/en-us/library/cc645077(v=vs.95).aspx) can be found [here](http://openseadragon.github.io/examples/creating-zooming-images/)
-
-
-
-
 
 

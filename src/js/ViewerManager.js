@@ -17,6 +17,8 @@ export const NAVIGATOR_ID = "navigatorDiv";
 const VIEWER_ACTIONSOURCEID = 'VIEWER';
 const BACKGROUND_PATHID = 'background';
 
+const SVGNS = "http://www.w3.org/2000/svg";
+
 /** Class in charge of managing viewer's main display (OSD) and state of related elements */
 class ViewerManager {
 
@@ -99,6 +101,8 @@ class ViewerManager {
 
             /** url of the last requested regions area SVG file */
             currentSVGName: undefined,
+            /** set to true if the above one correspond to an actual (and loaded) SVG */
+            hasCurrentSVG: false,
 
             /** 2D context of canvas used to draw measuring tape */
             ctx: null,
@@ -108,6 +112,7 @@ class ViewerManager {
 
             disableAutoPanZoom: true,
 
+            /** region info indexed by SVG path id for the current slice (retrieved from SVG) */
             currentSliceRegions: new Map(),
 
             /** info for measuring line feature  */
@@ -146,6 +151,9 @@ class ViewerManager {
             /** info about region currently hovered by mouse cursor */
             hoveredRegion: null,
             hoveredRegionSide: null,
+
+            /** path id of the last selected region */
+            lastSelectedPath: null,
 
             /** (reusable) mouse event listeners for region contained in the current slice */
             regionEventListeners: {},
@@ -198,7 +206,7 @@ class ViewerManager {
             /** previous values of gesture to zoom factors stored while zoon is locked */
             prevZoomPerScroll: undefined,
             prevZoomPerClick: undefined,
-    
+
             /** set to true when region editing mode is enabled */
             editModeOn: false,
             /** set to true when a region is being edited */
@@ -208,8 +216,11 @@ class ViewerManager {
             /** current editing tool radius */
             editingToolRadius: 60,
 
-            /** ID of the region being edited */
-            editRegionId: undefined,
+            /** original ID of the region path being edited */
+            editOrigPathId: undefined,
+            /** current ID of the region path being edited */
+            editPathId: undefined,
+
             /** source path element to be edited (in the region overlay) */
             editRegion: undefined,
             /** root SVG element containing region being edited */
@@ -309,12 +320,6 @@ class ViewerManager {
             }
         } else {
             //no backend image server
-            /*
-            if (this.config.data) {
-                const flayer = _.findWhere(this.config.layers, { index: 0 });
-                this.status.tileSources = this.getTileSourceDef(flayer.key, flayer.ext);
-            }
-            */
 
             //in case of multiplanes, first layer tiles source for all defined planes are appended in tileSources array
             const tileSources = [];
@@ -336,10 +341,35 @@ class ViewerManager {
                         tileSources.push(this.getFileTileSourceUrl(j, flayer.key, flayer.ext, this.config.hasMultiPlanes ? ZAVConfig.SAGITTAL : null));
                     }
                 }
-            }
-            this.status.tileSources = tileSources;
 
-            this.init2ndStage(overridingConf);
+                this.status.tileSources = tileSources;
+
+                //prerequisite: all page have same image size and tile composition, so pyramidal infos for first image is reused for all
+                const that = this;
+                $.ajax({
+                    //FIXME use specified plane
+                    url: tileSources[0],
+                    async: true,
+                    dataType: "xml",
+                    success: (dziInfo) => {
+                        const sizeNodes = dziInfo.getElementsByTagNameNS("http://schemas.microsoft.com/deepzoom/2008", "Size");
+                        if (sizeNodes.length) {
+                            const sizeNode = sizeNodes.item(0);
+                            const widthAttr = sizeNode.attributes["Width"];
+                            if (widthAttr) {
+                                that.status.imageWidth = parseInt(widthAttr.value);
+                            }
+                            const heightAttr = sizeNode.attributes["Height"];
+                            if (heightAttr) {
+                                that.status.imageHeight = parseInt(heightAttr.value);
+                            }
+                        }
+                        that.init2ndStage(overridingConf);
+                    }
+                });
+
+            }
+
         }
 
     }
@@ -399,6 +429,7 @@ class ViewerManager {
                 //load region delineations in the dedicated overlay
                 if (event.element.id === 'svgDelineationOverlay') {
                     if (that.config.hasDelineation) {
+                        that.status.hasCurrentSVG = false;
                         const svgPath = that.getRegionsSVGUrl();
                         that.addSVGData(svgPath, event.element);
                     }
@@ -667,7 +698,7 @@ class ViewerManager {
             const editOverlay = document.getElementById('svgEditOverlay');
             const regionSVG = document.getElementById('svgDelineationOverlay').getElementsByTagName('svg')[0];
 
-            const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+            const svg = document.createElementNS(SVGNS, "svg");
             //same size a region delineation SVG
             svg.setAttribute('height', regionSVG.getAttribute('height'));
             svg.setAttribute('width', regionSVG.getAttribute('width'));
@@ -685,7 +716,7 @@ class ViewerManager {
 
                 dblClickHandler: (event) => {
                     //double-clicking outside a region stop the current region being edited
-                    if (this.status.editRegionId) {
+                    if (this.status.editPathId) {
                         this.stopEditingRegion(event);
                     }
                 },
@@ -746,7 +777,7 @@ class ViewerManager {
  width="${scaledWidth}" 
  height="${scaledWidth}" 
  viewBox="0 0 ${2 * (brushRadius + brushBorder)} ${2 * (brushRadius + brushBorder)}" 
- xmlns="http://www.w3.org/2000/svg" 
+ xmlns="${SVGNS}" 
  style="background-color: transparent;"
  >
   <g>
@@ -769,7 +800,7 @@ class ViewerManager {
 
     //set up specific mouse cursor for edit  
     static updateEditCursor() {
-        if (this.status.editRegionId) {
+        if (this.status.editPathId) {
             const inlinedCursor = this.getEditCursorSVG(this.status.editingTool);
             this.status.editSVG.style.cursor = inlinedCursor;
         }
@@ -785,12 +816,19 @@ class ViewerManager {
         return { x: Math.round(x / zoom), y: Math.round(y / zoom) };
     }
 
-    static selectEditRegion(e) {
+    static startEditRegionPath(pathId) {
+        this.stopEditingRegion();
+        const regionInDom = document.getElementById(pathId);
+        if (regionInDom) {
+            this.selectEditRegion(regionInDom);
+        }
+    }
+
+    static selectEditRegion(targetElt) {
         //
-        const targetElt = e.target;
         if (targetElt.id && !targetElt.id.startsWith(BACKGROUND_PATHID)) {
 
-            this.status.editRegionId = targetElt.id;
+            this.status.editOrigPathId = this.status.editPathId = targetElt.id;
             this.status.editRegion = targetElt;
             this.status.editRegionColor = targetElt.getAttribute("fill");
 
@@ -832,6 +870,26 @@ class ViewerManager {
         this.doEdit(e, true);
     }
 
+    static changeEditedRegionName(newRegionId) {
+        const oldPathId = this.status.editPathId;
+
+        const regionInfo = this.status.currentSliceRegions.get(oldPathId);
+        this.status.currentSliceRegions.delete(oldPathId);
+
+        const sepIndex = oldPathId.lastIndexOf('-');
+        const pathIdSuffix = oldPathId.substr(sepIndex);
+        const newPathId = newRegionId + pathIdSuffix;
+
+        const { suffix, side, abbrev } = this._splitRegionId(newRegionId);
+        regionInfo.pathId = newPathId;
+        regionInfo.abbrev = abbrev;
+        regionInfo.regionId = newRegionId;
+        this.status.currentSliceRegions.set(newPathId, regionInfo);
+        this.status.editPathId = newPathId;
+
+        this.signalStatusChanged(this.status);
+    }
+
     static suspendEdit(e) {
         this.status.editingActive = false;
     }
@@ -870,42 +928,56 @@ class ViewerManager {
 
     static stopEditingRegion() {
         this.status.editingActive = false;
-        if (this.status.editRegionId) {
+        if (this.status.editPathId) {
 
             //restore region overlay above edition
             const editOverlay = document.getElementById('svgEditOverlay');
             editOverlay.style.zIndex = 0;
 
             this.removeEditCursor();
-            this.status.editRegionId = null;
-
+            const newPathId = this.status.editPathId;
+            this.status.editPathId = null;
 
             //replace exisiting region by edited one
 
             //remove un-edited source region from Raphaël set
             this.status.set.exclude(this.status.editRegion);
             const regionId = this.status.editRegion.getAttribute('bma:regionId');
-            const pathId = this.status.editRegion.id;
+
+            const origPathId = this.status.editRegion.id;
+
             //remove from DOM
             this.status.editRegion.remove();
 
             //import edited region in Raphaël  
             const modifiedRegion = this.status.editRegionPath.exportSVG();
-            modifiedRegion.setAttribute('id', pathId);
+            modifiedRegion.setAttribute('id', newPathId);
 
             //FIXME region order is not conserved, Raphaël will place the newly imported region at the end 
             const newRaphElt = this.status.paper.importSVG(modifiedRegion);
             this.status.set.push(newRaphElt);
 
             //once modified path is added to DOM, restore lost attributes
-            const modifiedRegionInDom = document.getElementById(pathId);
+            const modifiedRegionInDom = document.getElementById(newPathId);
             //restore non-scaling strocke attribute
             modifiedRegionInDom.setAttribute("vector-effect", "non-scaling-stroke");
-            //restore region Id
-            modifiedRegionInDom.setAttribute('bma:regionId', regionId);
 
-            //reuse region event listener
-            this.connectRegionListeners(newRaphElt, this.status.regionEventListeners[pathId]);
+            //in case region id was modified
+            const regionInfo = this.status.currentSliceRegions.get(newPathId);
+            const newRegionId = regionInfo.regionId ? regionInfo.regionId : regionId;
+
+            //restore region Id
+            modifiedRegionInDom.setAttribute('bma:regionId', newRegionId);
+
+            if (newRegionId == regionId) {
+                //reuse region event listener
+                this.connectRegionListeners(newRaphElt, this.status.regionEventListeners[origPathId]);
+            } else {
+                //change listener since id has been modified
+                delete this.status.regionEventListeners[origPathId];
+                this._addNActivateRegion(newPathId, newRegionId, newRaphElt);
+            }
+
             this.applyUnselectedPresentation(newRaphElt);
 
             this.status.editLivePath.remove();
@@ -914,40 +986,141 @@ class ViewerManager {
             this.status.editPos = null;
             this.status.editRegion = null;
 
-            const url = this.getRegionsSVGEditUrl({ region: pathId });
-            fetch(
-                url,
-                {
-                    method: 'PUT',
-                    headers: {
-                        "Accept": "application/json",
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({
-                        pathId: pathId,
-                        regionId: regionId,
-                        pathSVG: modifiedRegionInDom.outerHTML,
-                    }),
-                })
-                .then(response => response.json())
-                .then(data => {
-                    console.log('Modified region path ' + pathId + ' successfully saved!', data);
-                })
-                .catch((error) => {
-                    //FIXME alert user
-                    console.error('Error when saving region path ' + pathId);
-                });
+            //call WS to remotely save
+            this.updateSVGRegion(modifiedRegionInDom, this.status.editOrigPathId);
+            this.status.editOrigPathId = null;
 
             this.signalStatusChanged(this.status);
         }
     }
 
+    static createOrUpdateSVGRegion(regionInDom, create, origPathId) {
+        const pathId = regionInDom.getAttribute('id');
+        const regionId = regionInDom.getAttribute('bma:regionId');
+
+        const url = this.getRegionsSVGEditUrl({ region: pathId });
+        fetch(
+            url,
+            {
+                method: 'PUT',
+                headers: {
+                    "Accept": "application/json",
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    mode: (create ? "cr" : "up"),
+                    //original path id in case of id modification
+                    pathId: origPathId ? origPathId : pathId,
+                    regionId: regionId,
+                    pathSVG: regionInDom.outerHTML,
+                }),
+            })
+            .then(response => {
+                if (response.ok) {
+                    return Promise.resolve(response.json());
+                } else {
+                    throw new Error(response.status + ' - ' + response.message);
+                }
+            })
+            .then(data => {
+                //console.debug((create ? 'New' : 'Modified') + ' region path ' + pathId + ' successfully saved!', data);
+            })
+            .catch((error) => {
+                //FIXME alert user
+                console.error('Error when saving region path ' + pathId);
+            });
+
+    }
+
+    static updateSVGRegion(regionInDom, origPathId) {
+        this.createOrUpdateSVGRegion(regionInDom, false, origPathId);
+    }
+
+    static createSVGRegion(regionInDom) {
+        this.createOrUpdateSVGRegion(regionInDom, true);
+    }
+
+    static createPathForRegion(regionId, fill, stroke) {
+
+        const maxPathIndex = Array.from(this.getCurrentSliceRegions().keys())
+            .reduce(
+                (maxIndex, pathId) => {
+                    const sepPos = pathId.lastIndexOf('-')
+                    return Math.max(0, sepPos > 0 ? parseInt(pathId.substr(sepPos + 1)) : -1)
+                },
+                0
+            )
+        const pathId = regionId + '-' + (maxPathIndex + 1);
+        const newPath = document.createElementNS(SVGNS, "path");
+        newPath.id = pathId;
+        newPath.setAttribute('fill', fill);
+        newPath.setAttribute('stroke', stroke);
+
+        //import in Raphael
+        const newRaphElt = this.status.paper.importSVG(newPath);
+        this.status.set.push(newRaphElt);
+        //locate DOM element created by Raphael
+        const regionInDom = document.getElementById(pathId);
+
+        //restore attributes stripped by Raphael import
+        regionInDom.setAttribute("vector-effect", "non-scaling-stroke");
+        regionInDom.setAttribute('bma:regionId', regionId);
+
+        this._addNActivateRegion(pathId, regionId, newRaphElt);
+
+        //call WS to remotely save
+        this.createOrUpdateSVGRegion(regionInDom, true);
+
+        //start editing the new region
+        this.selectEditRegion(regionInDom);
+
+        this.signalStatusChanged(this.status);
+    }
+
+    static createSVGForRegions() {
+        const url = this.getRegionsSVGEditUrl();
+        fetch(
+            url,
+            {
+                method: 'POST',
+                headers: {
+                    "Accept": "application/json",
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({
+                    width: this.status.imageWidth,
+                    height: this.status.imageHeight
+                }),
+            })
+            .then(response => {
+                if (response.ok) {
+                    return Promise.resolve(response.json());
+                } else {
+                    throw new Error(response.status + ' - ' + response.message);
+                }
+            })
+            .then(data => {
+                //FIXME reload newly created SVG
+
+                //console.debug('New SVG successfully created!');
+            })
+            .catch((error) => {
+                //FIXME alert user
+                console.error('Error while creating new SVG:' + error);
+            });
+
+    }
+
     static startEditingClickedRegion() {
-        this.status.acquiringRegionToEdit = true;
+        if (this.status.lastSelectedPath) {
+            this.startEditRegionPath(this.status.lastSelectedPath);
+        } else {
+            this.status.acquiringRegionToEdit = true;
+        }
     }
 
     static simplifyEditedRegion() {
-        if (this.status.editRegionId) {
+        if (this.status.editPathId) {
 
             if (this.status.editRegionPath.simplify()) {
                 const newLivPath = this.status.editRegionPath.exportSVG();
@@ -960,10 +1133,10 @@ class ViewerManager {
 
     static extendRegionListenerForEdit(listener) {
         listener.dblclick = (e) => {
-            if (this.status.editRegionId) {
+            if (this.status.editPathId) {
                 this.stopEditingRegion(e);
             } else {
-                this.selectEditRegion(e);
+                this.selectEditRegion(e.target);
             }
         };
 
@@ -972,7 +1145,7 @@ class ViewerManager {
             (e, raphElt) => {
                 if (this.status.acquiringRegionToEdit) {
                     this.status.acquiringRegionToEdit = false;
-                    this.selectEditRegion(e);
+                    this.selectEditRegion(e.target);
                 }
             }
         ];
@@ -1026,12 +1199,11 @@ class ViewerManager {
         this.status.set = this.status.paper.set();
         //clear the set if necessary
         this.status.set.remove();
-        //load from a file
-        var strReturn = "";
-        this.status.currentSVGName = svgName;
-        console.log("svg " + svgName);
 
-        //Create SVG element dedecated to edition
+        this.status.currentSVGName = svgName;
+        //console.log("svg " + svgName);
+
+        //Create SVG element dedicated to edition
         this.createEditSVGElement();
 
         const that = this;
@@ -1040,12 +1212,12 @@ class ViewerManager {
         $.ajax({
             url: svgName,
             async: true,
-            success: function (html) {
+            success: function (svgFile) {
                 // process retrieved data only if it's the last one requested to ensure current slice SVG is loaded
                 if (svgName === that.status.currentSVGName) {
 
-                    strReturn = html;
-                    var root = strReturn.getElementsByTagName('svg')[0];
+                    const root = svgFile.getElementsByTagName('svg')[0];
+                    that.status.hasCurrentSVG = (root != "undefined");
                     var paths = root.getElementsByTagName('path');
 
                     that.status.currentSliceRegions.clear();
@@ -1083,6 +1255,7 @@ class ViewerManager {
                                 if (that.status.showRegions) {
                                     that.unselectRegions();
                                     that.regionActionner.unSelectAll();
+                                    that.status.lastSelectedPath = null;
                                 }
                             });
 
@@ -1091,73 +1264,9 @@ class ViewerManager {
 
                         } else {
                             newPathElt.id = pathId;
-                            //extract hemisphere side from region id 
-                            const suffix = regionId ? regionId.substring(regionId.length - 2) : "";
-                            const side = (suffix === "_L") ? "(left)" : (suffix === "_R") ? "(right)" : "";
-                            //region abbreviation without hemisphere side
-                            const abbrev = side ? regionId.substring(0, regionId.length - 2) : regionId;
 
-                            that.status.currentSliceRegions.set(pathId, abbrev);
+                            that._addNActivateRegion(pathId, regionId, newPathElt);
 
-                            //grouped listeners so they can be easily reused
-                            const regionListener = {
-                                abbrev: abbrev,
-                                side: side,
-
-                                mouseover: (e, raphElt) => {
-                                    //highlight border and display info about hovered region
-                                    if (that.status.showRegions) {
-                                        that.applyMouseOverPresentation(raphElt);
-                                    }
-                                    that.status.hoveredRegion = abbrev;
-                                    that.status.hoveredRegionSide = side;
-                                    that.signalStatusChanged(that.status);
-                                },
-
-                                mouseout: (e, raphElt) => {
-                                    //remove highlighted border and info when cursor move out of region
-                                    if (that.status.showRegions) {
-                                        that.applyMouseOutPresentation(raphElt, RegionsManager.isSelected(abbrev));
-                                    }
-                                    that.status.hoveredRegion = null;
-                                    that.status.hoveredRegionSide = null;
-                                    that.signalStatusChanged(that.status);
-                                },
-
-                                click: (e, raphElt) => {
-
-                                    if (that.status.showRegions) {
-                                        that.unselectRegions();
-                                        if (e.ctrlKey) {
-                                            //when Ctrl key is pressed, allow multi-select or toogle of currently selected region 
-                                            if (RegionsManager.isSelected(abbrev)) {
-                                                that.regionActionner.unSelect(abbrev);
-                                            } else {
-                                                that.regionActionner.addToSelection(abbrev);
-                                            }
-                                        } else {
-                                            that.regionActionner.replaceSelected(abbrev);
-                                        }
-                                        that.status.userClickedRegion = true;
-                                        that.selectRegions(RegionsManager.getSelectedRegions());
-
-                                    } else if (e.shiftKey) {
-
-                                        that.applyMouseOverPresentation(raphElt, true);
-                                        setTimeout(() => that.applyUnselectedPresentation(raphElt), 2500);
-                                    }
-                                },
-
-                            };
-
-                            that.status.regionEventListeners[pathId] = regionListener;
-
-                            //Add event listener related to edit mode
-                            if (that.status.editModeOn) {
-                                that.status.regionEventListeners[pathId] = that.extendRegionListenerForEdit(regionListener);
-                            }
-
-                            that.connectRegionListeners(newPathElt, that.status.regionEventListeners[pathId]);
                             that.applyUnselectedPresentation(newPathElt);
                         }
 
@@ -1167,10 +1276,12 @@ class ViewerManager {
 
                             //once path elements are added to the DOM
                             const modifiedRegionInDom = svgElement.getElementById(pathId);
-                            //restore custom attribute lost when imported in Raphaël
-                            modifiedRegionInDom.setAttribute('bma:regionId', regionId);
-                            //make path's stroke width independant of scaling transformations 
-                            modifiedRegionInDom.setAttribute("vector-effect", "non-scaling-stroke");
+                            if (modifiedRegionInDom) {
+                                //restore custom attribute lost when imported in Raphaël
+                                modifiedRegionInDom.setAttribute('bma:regionId', regionId);
+                                //make path's stroke width independant of scaling transformations 
+                                modifiedRegionInDom.setAttribute("vector-effect", "non-scaling-stroke");
+                            }
                         }
                     }
 
@@ -1185,13 +1296,106 @@ class ViewerManager {
                         that.hideDelineation();
                     }
 
-                    RegionsManager.setCurrentSliceRegions(Array.from(that.status.currentSliceRegions.values()));
+                    RegionsManager.setCurrentSliceRegions(
+                        Array.from(that.status.currentSliceRegions.values())
+                            .map((r) => r.abbrev)
+                    );
 
                     that.signalStatusChanged(that.status);
                 }
             }
         });
 
+
+    }
+
+    static _splitRegionId(regionId) {
+        //extract hemisphere side from region id 
+        const suffix = regionId ? regionId.substring(regionId.length - 2) : "";
+        const side = (suffix === "_L") ? "(left)" : (suffix === "_R") ? "(right)" : "";
+        //region abbreviation without hemisphere side
+        const abbrev = side ? regionId.substring(0, regionId.length - 2) : regionId;
+        return { suffix, side, abbrev };
+    }
+
+    static _addNActivateRegion(pathId, regionId, newPathElt) {
+        const that = this;
+        const { suffix, side, abbrev } = this._splitRegionId(regionId);
+
+        const pathElt = newPathElt.items[0];
+        that.status.currentSliceRegions.set(pathId, {
+            abbrev: abbrev,
+            pathId: pathId,
+            fill: pathElt.attr("fill"),
+            stroke: pathElt.attr("stroke"),
+        });
+
+        //grouped listeners so they can be easily reused
+        const regionListener = {
+            abbrev: abbrev,
+            side: side,
+
+            mouseover: (e, raphElt) => {
+                //highlight border and display info about hovered region
+                if (that.status.showRegions) {
+                    that.applyMouseOverPresentation(raphElt);
+                }
+                that.status.hoveredRegion = abbrev;
+                that.status.hoveredRegionSide = side;
+                that.signalStatusChanged(that.status);
+            },
+
+            mouseout: (e, raphElt) => {
+                //remove highlighted border and info when cursor move out of region
+                if (that.status.showRegions) {
+                    that.applyMouseOutPresentation(raphElt, RegionsManager.isSelected(abbrev));
+                }
+                that.status.hoveredRegion = null;
+                that.status.hoveredRegionSide = null;
+                that.signalStatusChanged(that.status);
+            },
+
+            click: (e, raphElt) => {
+
+                if (that.status.showRegions) {
+                    that.unselectRegions();
+                    if (e.ctrlKey) {
+                        //when Ctrl key is pressed, allow multi-select or toogle of currently selected region 
+                        if (RegionsManager.isSelected(abbrev)) {
+                            that.regionActionner.unSelect(abbrev);
+                            if (that.status.lastSelectedPath == pathId) {
+                                that.status.lastSelectedPath = null;
+                            } else {
+                                that.status.lastSelectedPath = pathId;
+                            }
+                        } else {
+                            that.regionActionner.addToSelection(abbrev);
+                            that.status.lastSelectedPath = pathId;
+                        }
+                    } else {
+                        that.regionActionner.replaceSelected(abbrev);
+                        that.status.lastSelectedPath = pathId;
+                    }
+                    that.status.userClickedRegion = true;
+                    that.selectRegions(RegionsManager.getSelectedRegions());
+
+                } else if (e.shiftKey) {
+
+                    that.applyMouseOverPresentation(raphElt, true);
+                    setTimeout(() => that.applyUnselectedPresentation(raphElt), 2500);
+                }
+            },
+
+        };
+
+        that.status.regionEventListeners[pathId] = regionListener;
+
+        //Add event listener related to edit mode
+        if (that.status.editModeOn) {
+            that.status.regionEventListeners[pathId] = that.extendRegionListenerForEdit(regionListener);
+        }
+
+        that.connectRegionListeners(newPathElt, that.status.regionEventListeners[pathId]);
 
     }
 
@@ -1261,7 +1465,8 @@ class ViewerManager {
             const that = this;
             this.status.set.forEach(function (el) {
                 if (el.id !== BACKGROUND_PATHID) {
-                    var abbrev = that.status.currentSliceRegions.get(el.id);
+                    const regionInfo = that.status.currentSliceRegions.get(el.id);
+                    const abbrev = regionInfo ? regionInfo.abbrev : null;
                     if (selectedRegions.includes(abbrev)) {
                         that.applySelectedPresentation(el);
                     } else {
@@ -1385,7 +1590,8 @@ class ViewerManager {
 
             // apply presentation for selected regions
             this.status.set.forEach(function (el) {
-                var abbrev = that.status.currentSliceRegions.get(el.id);
+                const regionInfo = that.status.currentSliceRegions.get(el.id);
+                const abbrev = regionInfo ? regionInfo.abbrev : null;
                 if (nameList.includes(abbrev)) {
                     that.applySelectedPresentation(el);
                 }
@@ -1409,10 +1615,11 @@ class ViewerManager {
         for (var k = 0; k < nameList.length; k++) {
             //try to find the nodes -> slow way!
             this.status.set.forEach(function (el) {
-                var subNode = el[0];
-                if (that.status.currentSliceRegions.get(el.id) == nameList[k]) {
+                const subNode = el[0];
+                const regionInfo = that.status.currentSliceRegions.get(el.id);
+                if (regionInfo && regionInfo.abbrev == nameList[k]) {
                     snCount++;
-                    var bbox = subNode.getBBox();
+                    const bbox = subNode.getBBox();
                     newX += (bbox.x2 - bbox.width / 2) / that.config.dzWidth;
                     newY += (that.config.dzDiff + bbox.y2 - bbox.height / 2) / that.config.dzHeight;
                 }
@@ -1429,6 +1636,18 @@ class ViewerManager {
 
     static centerOnSelectedRegions() {
         this.centerOnRegions(RegionsManager.getSelectedRegions());
+    }
+
+    static getLastSelectedPath() {
+        return this.status ? this.status.lastSelectedPath : null;
+    }
+
+    static setLastSelectedPath(pathId) {
+        this.status.lastSelectedPath = pathId;
+    }
+
+    static getCurrentSliceRegions() {
+        return this.status ? this.status.currentSliceRegions : null;
     }
 
     static switchPlane(newPlane) {
@@ -1663,7 +1882,7 @@ class ViewerManager {
 
     static onViewerDrag(event) {
         // Disable panning on the viewer when a region is selected for edition
-        if (this.status.editModeOn && this.status.editRegionId) {
+        if (this.status.editModeOn && this.status.editPathId) {
             event.preventDefaultAction = true;
         }
     }
@@ -2445,7 +2664,7 @@ class ViewerManager {
 
     static getProcessedImage() {
         return this.status && this.status.processedImage;
-    }    
+    }
 
     static isProcessingActive() {
         return this.status && this.status.processingActive;
@@ -2487,7 +2706,7 @@ class ViewerManager {
                             }
                         })
                         .then((imageObj) => {
-                            imageObj.name = proc.name + ' -' + new Date().toISOString().slice(0,19).replaceAll(/[:\-]/g, '');                            ;
+                            imageObj.name = proc.name + ' -' + new Date().toISOString().slice(0, 19).replaceAll(/[:\-]/g, '');;
                             this.status.processedImage = imageObj;
                             this.displayClipBox();
                         })

@@ -19,6 +19,7 @@ import ProcessingPanel from './ProcessingPanel.js';
 import SubViewPanel from './SubViewPanel.js';
 import SliderNavigatorPanel from './SliderNavigatorPanel.js';
 import RegionOptions from './RegionOptions.js';
+import RegionEditPanel from './RegionEditPanel.js';
 import QuickActionButtons from './QuickActionButtons.js';
 
 import ViewerManager from '../ViewerManager.js'
@@ -132,9 +133,9 @@ class ViewerComposed extends React.Component {
                     isOpen={this.state.longRunningMessage}
                 >
                     <div
-                     style={{ left: "calc(50vw - 200px)", margin: "10vh 0", top: 0, width: 400 }} 
-                    className={classes} >
-                        <h3><Icon icon="pulse"/>{" Please wait"}</h3>
+                        style={{ left: "calc(50vw - 200px)", margin: "10vh 0", top: 0, width: 400 }}
+                        className={classes} >
+                        <h3><Icon icon="pulse" />{" Please wait"}</h3>
                         <p>
                             {this.state.longRunningMessage}
                         </p>
@@ -198,13 +199,25 @@ class ViewerComposed extends React.Component {
                                     regionsOpacity={this.state.regionsOpacity}
                                     displayAreas={this.state.displayAreas}
                                     displayBorders={this.state.displayBorders}
-                                    editModeOn={this.state.editModeOn}
-                                    editingActive={this.state.editingActive}
-                                    editRegionId={this.state.editRegionId}
-                                    editRegionColor={this.state.editRegionColor}
-                                    editingTool={this.state.editingTool}
-                                    editingToolRadius={this.state.editingToolRadius}
                                 />
+                                {
+                                    this.state.editModeOn
+                                        ?
+                                        <React.Fragment>
+                                            <div style={{ borderBottom: "dotted 1px #8a8a8a", margin: "3px 0" }} />
+                                            <RegionEditPanel
+                                                lastSelectedPath={this.state.lastSelectedPath}
+                                                editModeOn={this.state.editModeOn}
+                                                editingActive={this.state.editingActive}
+                                                editPathId={this.state.editPathId}
+                                                editRegionColor={this.state.editRegionColor}
+                                                editingTool={this.state.editingTool}
+                                                editingToolRadius={this.state.editingToolRadius}
+                                            />
+                                        </React.Fragment>
+                                        :
+                                        null
+                                }
                             </TitledCard>
                             : null
                     }

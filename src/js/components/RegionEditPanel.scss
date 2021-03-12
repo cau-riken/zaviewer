@@ -1,0 +1,23 @@
+.zav-colorbullet {
+    display: inline-block;
+    width: 12px;
+    height: 14px;
+    vertical-align: middle;
+    border: solid 1px rgb(224, 224, 224);
+    border-radius: 4px;
+}
+
+
+.zav-regiongrid-item {
+    cursor: pointer;
+}
+
+.zav-regiongrid-label {
+    text-align: right;
+}
+
+.zav-regiongrid-label:hover {
+    background-color: rgb(238, 238, 238);
+}
+
+
