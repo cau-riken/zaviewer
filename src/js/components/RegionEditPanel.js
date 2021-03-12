@@ -18,6 +18,8 @@ import {
     PopperPlacements
 } from "@blueprintjs/popover2";
 
+import { HuePicker } from 'react-color';
+
 import RegionsManager from '../RegionsManager.js'
 import ViewerManager from '../ViewerManager.js'
 
@@ -61,7 +63,7 @@ class RegionGrid extends React.Component {
                                     key={"lbl-" + ri.pathId}
                                     className="zav-regiongrid-item zav-regiongrid-label"
                                     onClick={this.onSelectClick.bind(this, ri)}
-                                    onDblClick={this.onCenterClick.bind(this, ri)}
+                                    onDoubleClick={this.onCenterClick.bind(this, ri)}
                                 >{ri.pathId}</div>
                                 <div
                                     key={"clr-" + ri.pathId}
@@ -121,6 +123,7 @@ class RegionEditPanel extends React.Component {
         if (this.props.editPathId) {
             //edit mode: display path being edited
             displayedPathId = this.props.editPathId;
+            color = this.props.editPathFillColor;
         } else {
             //not in edit mode: display last selected path 
             displayedPathId = ViewerManager.getLastSelectedPath();
@@ -177,9 +180,25 @@ class RegionEditPanel extends React.Component {
                             disabled={true}
                             value={pathIdSuffix}
                         />
-                        <ColorBullet
-                            color={color}
-                        />
+                        <Popover2
+                            interactionKind={Popover2InteractionKind.HOVER}
+                            placement={"left"}
+                            popoverClassName={Classes.POPOVER2_CONTENT_SIZING}
+                            disabled={!isEditing}
+                            content={
+                                    <HuePicker
+                                        width={200}
+                                        color={color}
+                                        onChangeComplete={(color, event) => 
+                                            ViewerManager.changeEditedRegionFill(color.hex)
+                                        }
+                                    />
+                            }
+                        >
+                            <ColorBullet
+                                color={color}
+                            />
+                        </Popover2>
                     </div>
                 </div>
 

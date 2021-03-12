@@ -210,7 +210,7 @@ class ViewerComposed extends React.Component {
                                                 editModeOn={this.state.editModeOn}
                                                 editingActive={this.state.editingActive}
                                                 editPathId={this.state.editPathId}
-                                                editRegionColor={this.state.editRegionColor}
+                                                editPathFillColor={this.state.editPathFillColor}
                                                 editingTool={this.state.editingTool}
                                                 editingToolRadius={this.state.editingToolRadius}
                                             />

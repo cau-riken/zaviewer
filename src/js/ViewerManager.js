@@ -225,8 +225,9 @@ class ViewerManager {
             editRegion: undefined,
             /** root SVG element containing region being edited */
             editSVG: undefined,
-            /** color of the edited region */
-            editRegionColor: undefined,
+            /** color of the edited path */
+            editPathFillColor: undefined,
+            editPathStrokeColor: undefined,
             /** path element representing the region being edited */
             editLivePath: undefined,
             /** last recorder position of cursor during region editing*/
@@ -762,7 +763,7 @@ class ViewerManager {
         //
         const brushRadius = this.status.editingToolRadius;
         const brushBorder = 8;
-        const color = Color(this.status.editRegionColor);
+        const color = Color(this.status.editPathFillColor);
         const invcolor = color.negate();
         const zoom = this.viewer.world.getItemAt(0).viewportToImageZoom(this.viewer.viewport.getZoom(true));
         const scaledWidth = 2 * brushRadius * zoom;
@@ -830,8 +831,9 @@ class ViewerManager {
 
             this.status.editOrigPathId = this.status.editPathId = targetElt.id;
             this.status.editRegion = targetElt;
-            this.status.editRegionColor = targetElt.getAttribute("fill");
-
+            this.status.editPathFillColor = targetElt.getAttribute("fill");
+            this.status.editPathStrokeColor = targetElt.getAttribute("stroke");
+            
             const editGroup = this.status.editSVG.getElementById('svgEditGroup');
             //copy region svg as a base for edit 
             const newLivPath = targetElt.cloneNode();
@@ -839,7 +841,7 @@ class ViewerManager {
 
             //insert in DOM
             editGroup.appendChild(newLivPath);
-            newLivPath.setAttribute("stroke", Color(this.status.editRegionColor).negate());
+            newLivPath.setAttribute("stroke", Color(this.status.editPathFillColor).negate());
             newLivPath.removeAttribute("style");
             newLivPath.setAttribute("fill-opacity", 0.35);
             newLivPath.setAttribute("stroke-opacity", 0.2);
@@ -886,6 +888,19 @@ class ViewerManager {
         regionInfo.regionId = newRegionId;
         this.status.currentSliceRegions.set(newPathId, regionInfo);
         this.status.editPathId = newPathId;
+
+        this.signalStatusChanged(this.status);
+    }
+
+    static changeEditedRegionFill(newFill) {
+        const regionInfo = this.status.currentSliceRegions.get(this.status.editPathId);
+        regionInfo.fill = newFill;
+        this.status.editPathFillColor = newFill;
+        this.status.editLivePath.setAttribute('fill', newFill);
+        this.status.editLivePath.setAttribute("stroke", Color(newFill).negate());
+
+        //stop/start edit to save change
+        this.startEditRegionPath(this.status.editPathId);
 
         this.signalStatusChanged(this.status);
     }
@@ -955,6 +970,8 @@ class ViewerManager {
 
             //FIXME region order is not conserved, Raphaël will place the newly imported region at the end 
             const newRaphElt = this.status.paper.importSVG(modifiedRegion);
+            newRaphElt.attr('fill', this.status.editPathFillColor);
+            newRaphElt.attr('stroke', this.status.editPathStrokeColor);    
             this.status.set.push(newRaphElt);
 
             //once modified path is added to DOM, restore lost attributes
