@@ -971,7 +971,7 @@ class ViewerManager {
             //FIXME region order is not conserved, Raphaël will place the newly imported region at the end 
             const newRaphElt = this.status.paper.importSVG(modifiedRegion);
             newRaphElt.attr('fill', this.status.editPathFillColor);
-            newRaphElt.attr('stroke', this.status.editPathStrokeColor);    
+            newRaphElt.attr('stroke', this.status.editPathStrokeColor);
             this.status.set.push(newRaphElt);
 
             //once modified path is added to DOM, restore lost attributes
@@ -1117,9 +1117,10 @@ class ViewerManager {
                 }
             })
             .then(data => {
-                //FIXME reload newly created SVG
-
                 //console.debug('New SVG successfully created!');
+
+                //Reload (newly created) SVG
+                this.shiftToSlice(0, true);
             })
             .catch((error) => {
                 //FIXME alert user
@@ -1784,9 +1785,9 @@ class ViewerManager {
     /**  
     * @public
     */
-    static goToPlaneSlice(plane, chosenSlice, regionsToCenterOn) {
+    static goToPlaneSlice(plane, chosenSlice, regionsToCenterOn, force) {
         //TODO use plane 
-        if (plane != this.status.activePlane || chosenSlice != this.getCurrentPlaneChosenSlice()) {
+        if (force || plane != this.status.activePlane || chosenSlice != this.getCurrentPlaneChosenSlice()) {
             this.status.activePlane = plane;
             chosenSlice = this.checkNSetChosenSlice(plane, chosenSlice);
             this.status.chosenSlice = chosenSlice;
@@ -1809,12 +1810,12 @@ class ViewerManager {
         }
     }
 
-    static goToSlice(chosenSlice, regionsToCenterOn) {
-        this.goToPlaneSlice(this.status.activePlane, chosenSlice, regionsToCenterOn);
+    static goToSlice(chosenSlice, regionsToCenterOn, force) {
+        this.goToPlaneSlice(this.status.activePlane, chosenSlice, regionsToCenterOn, force);
     }
 
-    static shiftToSlice(increment) {
-        this.goToPlaneSlice(this.status.activePlane, this.status.chosenSlice + increment);
+    static shiftToSlice(increment, force) {
+        this.goToPlaneSlice(this.status.activePlane, this.status.chosenSlice + increment, null, force);
     }
 
     static changeSlices(slicesByPlane) {
