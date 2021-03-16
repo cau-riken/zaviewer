@@ -2482,21 +2482,25 @@ class ViewerManager {
             this.status.ctx.stroke();
 
             //inner grid 
-            const blockSize = 64;
-            this.status.ctx.beginPath();
-            this.status.ctx.strokeStyle = "#ffffff66";
-            this.status.ctx.setLineDash([1, 7]);
-            this.status.ctx.lineWidth = 3;
-            this.status.ctx.lineCap = "round";
-            for (var offX = blockSize; offX < constrainedClipWidth; offX += blockSize) {
-                this.status.ctx.moveTo(lx + offX, ty);
-                this.status.ctx.lineTo(lx + offX, ty + constrainedClipHeight);
+            if (!this.status.processedImage) {
+
+                const blockSize = 64;
+                this.status.ctx.beginPath();
+                this.status.ctx.strokeStyle = "#ffffff66";
+                this.status.ctx.setLineDash([1, 7]);
+                this.status.ctx.lineWidth = 3;
+                this.status.ctx.lineCap = "round";
+                for (var offX = blockSize; offX < constrainedClipWidth; offX += blockSize) {
+                    this.status.ctx.moveTo(lx + offX, ty);
+                    this.status.ctx.lineTo(lx + offX, ty + constrainedClipHeight);
+                }
+                for (var offY = blockSize; offY < constrainedClipHeight; offY += blockSize) {
+                    this.status.ctx.moveTo(lx, ty + offY);
+                    this.status.ctx.lineTo(lx + constrainedClipWidth, ty + offY);
+                }
+                this.status.ctx.stroke();
             }
-            for (var offY = blockSize; offY < constrainedClipHeight; offY += blockSize) {
-                this.status.ctx.moveTo(lx, ty + offY);
-                this.status.ctx.lineTo(lx + constrainedClipWidth, ty + offY);
-            }
-            this.status.ctx.stroke();
+
 
             //if clipbox spans outside the viewport, display some warning red lines to show where it is cropped
             this.status.ctx.beginPath();
