@@ -258,8 +258,8 @@ These routine are Javascript code that can be easily plugged in ZAViewer as expl
 
 #### Step-by-step procedure:
 
-* declare your custom processsing code inside the following source file : `zaviewer/extension/ZAVProcessings.js`
-* insert the required dependencies in the inside the html fragment file : `zaviewer/extension/customProcessings.html`
+* declare your custom processsing code inside the following source file : [`zaviewer/extension/ZAVProcessings.js`](https://github.com/cau-riken/zaviewer/blob/master/extension/ZAVProcessings.js)
+* insert the required dependencies in the inside the html fragment file : [`zaviewer/extension/customProcessings.html`](https://github.com/cau-riken/zaviewer/blob/master/extension/customProcessings.html)
 <br/>(the content of this file will be included in the main page header)
 * load ZAViewer and test your processing!
 
