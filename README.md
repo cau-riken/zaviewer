@@ -159,9 +159,7 @@ Parameters:
         * the image file extension ("`.tif`" as it is currently the only supported format)
     * There is only 1 overlay directory (named `overlay0_Regions`) which contains SVG files defining region delineations for each slice. These SVG files must conform to the following rules described [here](#dev-regionsvg). ZAViever includes a simple region editing feature to interactively create those SVG files and edit their content (see [here](#dev-regionedit)).
 
-3. physical unit used in images, in micrometer
-
-    The overall structure of the input directory looks like this:
+3. The overall structure of the input directory looks like this:
 
     ```
     .
@@ -253,7 +251,7 @@ The same ZAViewer Docker image as before is used, but with different parameters 
 
 ### 3. Implement custom processing on image clip within ZAViewer <a id="dev-custproc"></a>
 
-It is possible to create custom image processing routine that can be run on (part of) the images displaying in ZAViewer.
+It is possible to create custom image processing routine that can be run on (part of) the images displayed in ZAViewer.
 These routine are Javascript code that can be easily plugged in ZAViewer as explained below.
 
 #### Step-by-step procedure:
