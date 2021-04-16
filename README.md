@@ -302,7 +302,7 @@ As before local data will be displayed, but this time the displayed/edited regio
     -v /full/path/to/output/dir:/usr/share/nginx/html/data:rw \
     -v /full/path/to/zaviewer/extension/nginx_extra.conf:/etc/nginx/conf.d/nginx_extra.conf:ro \
     -v /full/path/to/editableSVGs/dir:/usr/share/nginx/html/data/SVGEdit:rw \
-    -p 9090:80 zaviewer_ud:2.0.0
+    -p 9090:80 zaviewer_ed:2.0.0
     ```
 
     **Notes**

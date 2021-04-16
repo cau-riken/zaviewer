@@ -1,6 +1,4 @@
-admin/
 docker_scripts/
-extension/
 node_modules/
 *.md
 .git
