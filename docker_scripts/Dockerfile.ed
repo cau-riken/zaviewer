@@ -17,6 +17,8 @@ apk add php7 php7-json php7-mbstring php7-dom php7-xml php7-fpm php7-opcache  &&
 mv /etc/nginx/conf.d/default.conf /etc/nginx/conf.d/default.confBACK && \
 echo "daemon off;" >> /etc/nginx/nginx.conf
 
+RUN find /usr/share/nginx/html/ -type d -exec chmod 755 {} \;
+RUN find /usr/share/nginx/html/ -type f -exec chmod 644 {} \;
 
 LABEL jp.riken.cau.product="ZAViewer User Interface + minimal backend for region editor" \
     jp.riken.cau.version="2.0.0" \

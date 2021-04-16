@@ -32,6 +32,9 @@ LABEL jp.riken.cau.product="ZAViewer User Interface" \
 COPY --from=build /app/index.html /usr/share/nginx/html
 COPY --from=build /app/assets /usr/share/nginx/html/assets
 
+RUN find /usr/share/nginx/html/ -type d -exec chmod 755 {} \;
+RUN find /usr/share/nginx/html/ -type f -exec chmod 644 {} \;
+
 # link to configuration descriptor used when displaying data located in mounted directory
 RUN ln -s /usr/share/nginx/html/data/viewer.json /usr/share/nginx/html/viewer.json
 
