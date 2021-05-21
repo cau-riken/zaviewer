@@ -208,6 +208,8 @@ git clone https://github.com/openzoom/deepzoom.py.git
 cd deepzoom.py
 
 python3 setup.py install
+
+pip3 install progress SimpleITK numpy
 ```
 
 #### 1.3 Run the script

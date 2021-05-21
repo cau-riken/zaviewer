@@ -1,7 +1,3 @@
-#!/usr/bin/env python3
-
-from typing import Final
-
 import logging
 #logging.basicConfig(format='%(asctime)s : %(message)s')
 
@@ -92,8 +88,8 @@ def changeSize(in_filename, out_filename, scale_factor=0.1, desired_size=None):
 
 
 # -----------------------------------------------------------------------------
-AXIS: Final = ('coronal', 'sagittal', 'axial')
-DELINEATION_RELPATH: Final = "SVGs"
+AXIS = ('coronal', 'sagittal', 'axial')
+DELINEATION_RELPATH = "SVGs"
 
 
 def getCleanedAndCheckedPath(input_query, error_message, default_path=None):
@@ -573,9 +569,11 @@ def startGuidedImport():
         logging.debug("pre-exisiting config:",
                       json.dumps(prev_config, indent=2))
 
+    # Docker instructions require data_root_path = "data"
     # data_root_path
     (base_outpath, data_root_path) = os.path.split(ouput_path)
-    data_root_path = './' + data_root_path
+    #data_root_path = './' + data_root_path
+    data_root_path = './data'
 
     if prev_config is not None and prev_config['data_root_path'] != data_root_path:
         print(
