@@ -181,13 +181,6 @@ def getLayersNFiles(input_path, config, phys_unit):
 
                 images = []
 
-                axisLayersFiles['axis'][axis]['layers'][layerName] = {
-                    'name': layerName,
-                    'path': axis_layerpath,
-                    'safename': layer['safename'],
-                    'images': images
-                }
-
                 # retrieve image file in input folder : image name must contain a number as suffix (before extension)
                 imageFile_re = re.compile(
                     '((?:.+_)?(\d+))(\.(?:tif))$', re.IGNORECASE)
@@ -252,7 +245,13 @@ def getLayersNFiles(input_path, config, phys_unit):
                 # TODO check that same ordnums are used in every layers
 
                 # images are ordered by their ordinal number
-                images = sorted(images, key=lambda image: image['ordnum'])
+                images = sorted(images, key=lambda image: int(image['ordnum']))
+                axisLayersFiles['axis'][axis]['layers'][layerName] = {
+                    'name': layerName,
+                    'path': axis_layerpath,
+                    'safename': layer['safename'],
+                    'images': images
+                }
 
                 print(
                     f"\t{len(images)} images(s) found in layer '{layer['name']}'\n")
@@ -274,13 +273,6 @@ def getLayersNFiles(input_path, config, phys_unit):
 
                 images = []
 
-                axisLayersFiles['axis'][axis]['overlays'][overlayName] = {
-                    'name': overlayName,
-                    'path': axis_overlaypath,
-                    'safename': overlay['safename'],
-                    'images': images
-                }
-
                 svgFile_re = re.compile(
                     '((?:.+_)?(\d+))(\.svg)$', re.IGNORECASE)
                 for svgEntry in [f for f in os.scandir(axis_overlaypath) if f.is_file()]:
@@ -291,6 +283,15 @@ def getLayersNFiles(input_path, config, phys_unit):
                             'shortname': svgFile_search.group(1),
                             'ext': svgFile_search.group(3),
                         })
+
+                # images are ordered by their ordinal number
+                images = sorted(images, key=lambda image: int(image['ordnum']))
+                axisLayersFiles['axis'][axis]['overlays'][overlayName] = {
+                    'name': overlayName,
+                    'path': axis_overlaypath,
+                    'safename': overlay['safename'],
+                    'images': images
+                }
 
                 # TODO check that same ordnums are used as in layers
                 # TODO check that same same number of overlay file as number of slice
