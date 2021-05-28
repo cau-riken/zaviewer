@@ -138,13 +138,15 @@ Moreover, in case of multiplane configuration:
 
 * All axis must have the same layer/overlay composition.
 
+##### 1.1.2 Parameters
 
-Parameters:
+The script will ask you the following parameters:
 
-1. output directory, where the generated files will be saved,
-2. input directory, where the source files are stored:
+* output directory, where the generated files will be saved,
+* input directory, where the source files are stored as explained below:
 
-    The following conventions must be followed so the script will access your data :
+    The conventions detailed below must be followed so the script will be able to import your data :
+
     * axis directories are located in the input directory, at least 1 must be defined (`coronal`, `sagittal`, `axial`)
     * axis directory contains layers (for raster images) and overlays subdirectories (for region delineations) 
     * Layers directory name must contain :
@@ -159,7 +161,7 @@ Parameters:
         * the image file extension ("`.tif`" as it is currently the only supported format)
     * There is only 1 overlay directory (named `overlay0_Regions`) which contains SVG files defining region delineations for each slice. These SVG files must conform to the following rules described [here](#dev-regionsvg). ZAViever includes a simple region editing feature to interactively create those SVG files and edit their content (see [here](#dev-regionedit)).
 
-3. The overall structure of the input directory looks like this:
+    To sum things up, the overall structure of the input directory should look like this:
 
     ```
     .
@@ -184,8 +186,21 @@ Parameters:
         ...
     ```
 
-🟠 TODO: add Region information file import and explain its structure 🟠
+##### 1.1.3 Optional resources
 
+###### 1.1.3.1 Region info
+
+An optional resource containing hierarchical organization of brain regions may be provided to ZAViewer, which will then be able to :
+
+* dynamically show the long name of the hovered region,
+* display in a treeview widget the  of all brain regions to allow naviagation and selection.
+
+A default version of the resource (for Marmoset brain) is shipped with the script and is copied in the output folder when the script is executed. Therefore, if you wish to use your own version of the resource, just overwrite the one provided, or alternatively update the configuration file generated in the ouput folder (check configuration details [here](#descriptors-when-not-using-a-backend)).
+
+The structure of the region information resource is detailed [there](#dev-regiondata).
+
+
+###### 1.1.3.1 image for subview widget
 
 * In case of single axis image set, you may provide a small image from on an orthogonal plane which will be displayed in the subview wigdet (it allows to see the current slice position in the set)
 
@@ -616,8 +631,34 @@ Region delineations display on top of images are defined in SVG files that must 
 
 ### Region structure and extended information <a id="dev-regiondata"></a>
 
+This optional resource is used by ZAViewer to dynamically show the long name of focused region, or to display hierarchical organisation of all brain regions.
 
-🟠 TODO 🟠
+Regions are described in the resource by `json` blocks which follow the `typescript` interface below.
+Each region is identifed by a unique region abbreviation, which is specified in `bma:regionId` (or `xml:id`) attribute of overlay SVG paths' in order to make the link between shapes and brain regions.
+
+```typescript
+    interface IRegion {
+        abb: string,            // region's abbreviation. MUST be unique as it is used as region identifier.
+        parent: string | null,  // abbreviation of the parent region, null only for the (unique) root region.
+        name: string,           // long name of the region.
+        exists: number,         // indicates if the region is identified in at least one slice (then its value is 1, 0 otherwise)
+        color: string,          // RGB hex value of the color associated to the region 
+        children?: string[],    // [optional] list of abbreviation of sub-regions, if any
+    }
+```
+
+e.g.
+
+```json
+    {
+        "parent": "CorA",
+        "abb": "VC",
+        "name": "Visual cortex",
+        "exists": 1,
+        "children": [
+            "V1", "V2", "V3", "V3A", "A19DI", "A19M", "V4", "V4T", "V5", "MST", "FST", "V6"]
+    }
+```
 
 <br/><br/>
 ---

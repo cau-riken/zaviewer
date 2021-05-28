@@ -502,14 +502,19 @@ def prepareImages(axisLayersFiles, config, ouput_path, phys_unit):
 
             # TODO check SVG conformance
             nbImages = len(overlay['images'])
+
+            bar = Bar('Processing overlay images... ', suffix='%(percent)d%%', max=nbImages, check_tty=False)
+
             for index, image in enumerate(overlay['images']):
-                print(f"\t\t\t{index+1}/{nbImages}")
+                bar.next()
                 source = os.path.join(
                     overlay['path'], image['shortname'] + image['ext'])
                 output = os.path.join(
                     overlay_ouputpath, 'Anno_' + str(index) + image['ext'])
                 # copy SVG to output dir
                 copyfile(source, output)
+
+            bar.finish()
 
     refImage = axisLayersFiles['axis'][referenceAxis]['layers'][referenceLayerName]['images'][0]
 
@@ -589,6 +594,13 @@ def startGuidedImport():
     phys_unit = 1
     phys_unit = float(input(
         f"Physical unit used in images, in micrometer ({phys_unit}) : ") or phys_unit)
+
+    #copy provided hierarchical region information resource to output folder
+    REGIONTREE_FILENAME = 'regionTree.json'
+    regionTreeFilePath = os.path.join(os.path.dirname(__file__), 'assets', REGIONTREE_FILENAME)
+    print(f"Copying hierarchical regions info ({regionTreeFilePath}) in output folder.")
+    copyfile(regionTreeFilePath, os.path.join(ouput_path, REGIONTREE_FILENAME))
+    config['tree'] = data_root_path
 
     axisLayersFiles = getLayersNFiles(input_path, config, phys_unit)
     # print("axisLayersFiles :",  json.dumps(axisLayersFiles, indent=2))
