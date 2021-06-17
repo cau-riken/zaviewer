@@ -1,4 +1,4 @@
-FROM zaviewer_ui:2.0.0
+FROM zaviewer_ui:2.1.0
 
 WORKDIR /usr/share/nginx
 
@@ -21,8 +21,8 @@ RUN find /usr/share/nginx/html/ -type d -exec chmod 755 {} \;
 RUN find /usr/share/nginx/html/ -type f -exec chmod 644 {} \;
 
 LABEL jp.riken.cau.product="ZAViewer User Interface + minimal backend for region editor" \
-    jp.riken.cau.version="2.0.0" \
-    jp.riken.cau.release-date="2021-02-16"
+    jp.riken.cau.version="2.1.0" \
+    jp.riken.cau.release-date="2021-06-16"
 
 
 EXPOSE 80

@@ -1,5 +1,7 @@
 import React from 'react';
 
+import "./PositionInfoPanel.scss";
+
 class PositionInfoPanel extends React.Component {
 
     constructor(props) {

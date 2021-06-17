@@ -76,12 +76,12 @@ The provided Docker script will:
     cd zaviewer
 
     docker build --no-cache -f docker_scripts/Dockerfile.ui \
-    -t zaviewer_ui:2.0.0 .
+    -t zaviewer_ui:2.1.0 .
     ```
 
 3. Run the web-server container:
     ```sh
-    docker run -it --rm -p 9090:80 zaviewer_ui:2.0.0
+    docker run -it --rm -p 9090:80 zaviewer_ui:2.1.0
     ```
     **►** This container will display web-server log in the terminal window and keep running until stopped using `[Ctrl-C]`, then the container will be automatically removed (but ZAViewer Docker image will remain in your local repository for later use)
     <br/><br/>
@@ -102,7 +102,7 @@ The provided Docker script will:
    * If you don't intend to use ZAViewer anymore, you may remove its Docker image with the following command:
 
    ```sh
-        docker image rm zaviewer_ui:2.0.0
+        docker image rm zaviewer_ui:2.1.0
    ```
 
  
@@ -247,7 +247,7 @@ The same ZAViewer Docker image as before is used, but with different parameters 
     ```sh
     docker run -it --rm \
     -v /full/path/to/output/dir:/usr/share/nginx/html/data:ro \
-    -p 9090:80 zaviewer_ui:2.0.0
+    -p 9090:80 zaviewer_ui:2.1.0
     ```
 
 2. Launch ZAViewer by opening the following URL in your web browser :
@@ -287,7 +287,7 @@ The same ZAViewer Docker image as before is used, but with different parameters 
     -v /full/path/to/output/dir:/usr/share/nginx/html/data:ro \
     -v /full/path/to/zaviewer/extension/nginx_extra.conf:/etc/nginx/conf.d/nginx_extra.conf:ro \
     -v /full/path/to/zaviewer/extension:/usr/share/nginx/html/ext:ro \
-    -p 9090:80 zaviewer_ui:2.0.0
+    -p 9090:80 zaviewer_ui:2.1.0
     ```
 
 2. Launch ZAViewer by opening the following URL in your web browser :
@@ -309,7 +309,7 @@ As before local data will be displayed, but this time the displayed/edited regio
 1. Create the extended Docker image allowing to save region editing:
 
     ```sh
-    docker build --no-cache -f docker_scripts/Dockerfile.ed -t zaviewer_ed:2.0.0 .
+    docker build --no-cache -f docker_scripts/Dockerfile.ed -t zaviewer_ed:2.1.0 .
     ```
 
 2. Run the UI+Editor container:
@@ -319,7 +319,7 @@ As before local data will be displayed, but this time the displayed/edited regio
     -v /full/path/to/output/dir:/usr/share/nginx/html/data:rw \
     -v /full/path/to/zaviewer/extension/nginx_extra.conf:/etc/nginx/conf.d/nginx_extra.conf:ro \
     -v /full/path/to/editableSVGs/dir:/usr/share/nginx/html/data/SVGEdit:rw \
-    -p 9090:80 zaviewer_ed:2.0.0
+    -p 9090:80 zaviewer_ed:2.1.0
     ```
 
     **Notes**
@@ -353,7 +353,7 @@ ZAViewer UI source code is composed of Javascript and CSS files that are bundled
 
 ### requirement and dependencies
 
-* `NodeJs` and `gulp` must be installed on your platform beforehand
+* `NodeJs` ^v12.22.0 (and `npm` ^v6.14.11) must be installed on your platform beforehand
 
 
 * Use terminal windows and go to source folder 
@@ -365,13 +365,13 @@ cd zaviewer
 * For **first time build only**, modules and devtools dependencies have to be installed :
 
 ```sh
-node install
+npm install
 ```
 
 * build bundles from sources :
 
 ```sh
-gulp builproddall
+npm run build
 ```
 
 `Javascript` and `css` bundles are produced in `assets/` subfolder

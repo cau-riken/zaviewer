@@ -2,6 +2,7 @@ import React from 'react';
 
 import ViewerManager from '../ViewerManager.js'
 
+import "./OSDMain.scss";
 
 class OSDMain extends React.Component {
 

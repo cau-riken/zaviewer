@@ -11,6 +11,8 @@ import {
 } from "@blueprintjs/core";
 
 
+import "./ParamAdjusterLabel.scss";
+
 class ParamAdjusterLabel extends React.Component {
 
     render() {

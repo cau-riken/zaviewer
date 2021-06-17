@@ -23,6 +23,8 @@ import { HuePicker } from 'react-color';
 import RegionsManager from '../RegionsManager.js'
 import ViewerManager from '../ViewerManager.js'
 
+import "./RegionEditPanel.scss";
+
 const REGIONEDITOR_ACTIONSOURCEID = 'REGEDIT';
 
 

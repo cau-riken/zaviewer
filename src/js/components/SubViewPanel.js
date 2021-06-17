@@ -13,6 +13,9 @@ import ViewerManager from '../ViewerManager.js'
 
 import Utils from '../Utils.js';
 
+import "./SubViewPanel.scss";
+
+
 class AxisArrow extends React.Component {
 
     render() {

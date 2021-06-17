@@ -9,24 +9,24 @@ ENV PATH /app/node_modules/.bin:$PATH
 COPY package.json ./
 COPY package-lock.json ./
 
-# download and install build system tool
-RUN npm install --global gulp-cli@2.2.0
 
 # download and install node modules
 RUN npm install --no-optional
 #RUN npm clean-install --no-optional
 
+#copy sources
 COPY . ./
 
 #generate ZAViewer bundles
-RUN gulp buildprodall
+RUN npm run build
+
 
 # production environment
 FROM nginx:stable-alpine
 
 LABEL jp.riken.cau.product="ZAViewer User Interface" \
-    jp.riken.cau.version="2.0.0" \
-    jp.riken.cau.release-date="2021-01-06"
+    jp.riken.cau.version="2.1.0" \
+    jp.riken.cau.release-date="2021-06-16"
 
 # copy generated bundles and assets from building stage image
 COPY --from=build /app/index.html /usr/share/nginx/html

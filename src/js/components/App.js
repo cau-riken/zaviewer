@@ -11,6 +11,15 @@ import { DrawerHandle } from './Drawer.js';
 import ZAVConfig from '../ZAVConfig.js';
 import RegionsManager from '../RegionsManager.js';
 
+import "./App.scss";
+
+
+import {
+  FocusStyleManager,
+} from "@blueprintjs/core";
+
+FocusStyleManager.onlyShowFocusOnTabs();
+
 /** Main component of the ZAViewer */
 class App extends React.Component {
 
@@ -35,7 +44,7 @@ class App extends React.Component {
           <div className="secondaryRegionTreePane" style={{ height: "100%", overflow: "hidden" }}>
             <div id="zav_logoPlaceHolder">
               <div id="zav_logoContainer" draggable="false">
-                <a id="bm_logo" href="https://www.brainminds.riken.jp/"  >
+                <a id="bm_logo" href="https://dataportal.brainminds.jp/"  >
                   <img src="./assets/img/brain-minds_borderlogo.svg" height={32} />
                 </a>
                 <img id="zav_logo" src="./assets/img/logo.png" height={23} />

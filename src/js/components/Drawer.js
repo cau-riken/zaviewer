@@ -2,6 +2,8 @@ import React from 'react';
 
 import { Icon } from "@blueprintjs/core";
 
+import "./Drawer.scss";
+
 export const LEFT = 'left';
 export const RIGHT = 'right';
 

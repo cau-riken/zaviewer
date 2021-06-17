@@ -4,7 +4,10 @@ import {
     AnchorButton,
     Icon
 } from "@blueprintjs/core";
+
 import ViewerManager from '../ViewerManager.js'
+
+import "./MeasureInfoPanel.scss";
 
 class MeasureInfoPanel extends React.Component {
 

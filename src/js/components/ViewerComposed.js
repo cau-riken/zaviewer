@@ -26,6 +26,8 @@ import ViewerManager from '../ViewerManager.js'
 import RegionsManager from '../RegionsManager.js'
 import ZAVConfig from '../ZAVConfig.js';
 
+import "./ViewerComposed.scss";
+
 
 class TitledCard extends React.Component {
 

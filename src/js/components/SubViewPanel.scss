@@ -4,30 +4,6 @@ $subview-total-padding: 20px;
 
 
 
-/* Label of subview */
-.axialLabel,
-.coronalLabel,
-.sagittalLabel {
-	position: absolute;
-	margin: 2px 0 0 4px;
-	height: 21px;
-	background-repeat: no-repeat;
-}
-.axialLabel {
-	width: 100px;
-	background-image: url("../img/btn_axial.png");
-}
-.coronalLabel {
-	width: 120px;
-	background-image: url("../img/btn_coronal.png");
-}
-.sagittalLabel {
-	width: 120px;
-	background-image: url("../img/btn_sagittal.png");
-}
-
-
-
 .zav-SubViewSlider {
 	width: $subview-width;
 	margin: auto;

@@ -17,6 +17,8 @@ import {
 import RegionsManager from '../RegionsManager.js'
 import ViewerManager from '../ViewerManager.js'
 
+import "./RegionTreePanel.scss";
+
 const TREE_ACTIONSOURCEID = 'TREE'
 const RegionDetailToaster = Toaster.create({
     className: "zav-RegionToaster",

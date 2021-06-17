@@ -11,6 +11,8 @@ import ParamAdjusterLabel from './ParamAdjusterLabel.js';
 
 import ViewerManager from '../ViewerManager.js';
 
+import "./SliderNavigatorPanel.scss";
+
 class LayerSlider extends React.Component {
     constructor(props) {
         super(props);
