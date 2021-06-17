@@ -12,7 +12,18 @@ import {
     Switch
 } from "@blueprintjs/core";
 
+import {
+    Popover2InteractionKind,
+    Popover2
+} from "@blueprintjs/popover2";
+
+
 import ViewerManager from '../ViewerManager.js'
+
+import MetadataView from "./MetadataView";
+
+
+import "./QuickActionButtons.scss";
 
 class ActionContainer extends React.Component {
     render() {
@@ -62,7 +73,7 @@ class QuickActionButtons extends React.Component {
                     null
                 }
 
-                { this.props.config && (this.props.config.getTotalSlidesCount() > 1) ?
+                {this.props.config && (this.props.config.getTotalSlidesCount() > 1) ?
                     <React.Fragment>
                         <div className="zav-ActionContainer">
                             <AnchorButton
@@ -160,6 +171,35 @@ class QuickActionButtons extends React.Component {
                         null
                 }
 
+                {
+                    this.props.config && this.props.config.dataset_info
+                        ?
+                        <div
+                            className="zav-ActionContainer"
+                            style={{ position: "absolute", bottom: 10 }}
+                        >
+                            <Popover2
+                                content={
+                                    <div
+                                        style={{ width: '70vw', maxWidth: 850, height: '80vh', overflowY: 'auto' }}>
+                                        <MetadataView
+                                            infoDataset={this.props.config.dataset_info}
+                                        />
+                                    </div>
+                                }
+                                position={Position.LEFT_TOP}
+                                interactionKind={Popover2InteractionKind.CLICK}
+                            >
+                                <AnchorButton
+                                    icon="info-sign"
+                                    title="display dataset informations"
+                                />
+                            </Popover2>
+                        </div>
+                        :
+                        null
+                }
+
             </React.Fragment>
         );
     }
@@ -183,7 +223,6 @@ class QuickActionButtons extends React.Component {
     onGoToSlice(sliceNum) {
         ViewerManager.goToSlice(sliceNum);
     }
-
 
 }
 

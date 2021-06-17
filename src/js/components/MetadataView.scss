@@ -1,0 +1,31 @@
+
+$proplabel-color: #888;
+$propcellborder-color: silver;
+
+
+
+.tiv_propspacer {
+    grid-column: 1 / span 2;
+    margin-top: 5px;
+    margin-bottom: 15px;
+}
+
+.tiv_propcell {
+    border-bottom: dotted 1px $propcellborder-color;
+}
+
+.tiv_proplabelcell {
+    grid-column: 1 / span 1;
+    padding: 3px 1px;
+}
+
+.tiv_propvaluecell {
+    grid-column: 2 / span 1;
+    padding: 3px;
+    border-left: dotted 1px $propcellborder-color;
+}
+
+.tiv_proplabel {
+    color: $proplabel-color;
+    font-weight: "bold";
+}

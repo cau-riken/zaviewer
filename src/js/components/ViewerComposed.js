@@ -66,10 +66,10 @@ class ViewerComposed extends React.Component {
         }
 
 
-        const datasetInfo = this.props.config && this.props.config.fmTracerSignalImgUrl
+        const datasetInfo = this.props.config && this.props.config.dataset_info && this.props.config.dataset_info.thumbnailUrl
             ?
             <Popover
-                interactionKind={PopoverInteractionKind.CLICK_TARGET_ONLY}
+                interactionKind={PopoverInteractionKind.CLICK}
                 position={Position.BOTTOM_RIGHT}
                 disabled={!this.state.isToolbarExpanded}
                 boundary="window"
@@ -81,16 +81,17 @@ class ViewerComposed extends React.Component {
                     {this.props.config.dataset_info
                         ?
                         <React.Fragment>
-                            <div>Dataset ID : <b>{this.props.config.dataset_info.id}</b></div>
-                            <div>Injection Region : <b>{this.props.config.dataset_info.region}</b></div>
-                            <div>Lab : <b>{this.props.config.dataset_info.lab}</b></div>
-                            <div>Channel : <b>{this.props.config.dataset_info.channel}</b></div>
+                            <div>Dataset ID : <b>{this.props.config.dataset_info.labID}</b></div>
+                            <div>Marmoset ID : <b>{this.props.config.dataset_info.marmosetID}</b></div>
+                            <div>Injection Region : <b>{this.props.config.dataset_info.injRegion}</b></div>
+                            { this.props.config.dataset_info.lab ? <div>Lab : <b>{this.props.config.dataset_info.lab}</b></div> : null }
+                            { this.props.config.dataset_info.channel ? <div>Channel : <b>{this.props.config.dataset_info.channel}</b></div> : null }
                         </React.Fragment>
                         :
                         null
                     }
                     <img
-                        src={this.props.config.fmTracerSignalImgUrl}
+                        src={this.props.config.dataset_info.thumbnailUrl}
                         width={250}
                         onLoad={(event) => console.info("loaded ", event)} />
                 </div>

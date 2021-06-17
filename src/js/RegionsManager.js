@@ -51,24 +51,24 @@ class RegionsManager {
         const that = this;
 
         //load regions related data
-            const treeDataUrl =
+        const treeDataUrl =
             config.treeUrlPath
                 ? config.hasBackend
                     ? Utils.makePath(config.PUBLISH_PATH, config.treeUrlPath, "regionTreeGroup_" + config.paramId + ".json")
                     : Utils.makePath(config.treeUrlPath, config.fallbackTreeUrl)
                 : config.fallbackTreeUrl
 
-            $.ajax({
-                url: treeDataUrl,
-                type: config.hasBackend ? "POST" : "GET",
-                async: true,
-                dataType: 'json',
-                success: function (data) {
+        $.ajax({
+            url: treeDataUrl,
+            type: config.hasBackend ? "POST" : "GET",
+            async: true,
+            dataType: 'json',
+            success: function (data) {
 
-                    that.prepareData(data);
-                    that.signalListeners();
-                },
-            });
+                that.prepareData(data);
+                that.signalListeners();
+            },
+        });
 
     }
 

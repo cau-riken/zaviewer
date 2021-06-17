@@ -237,19 +237,8 @@ class ZAVConfig {
             this.config.TILE_EXTENSION = "/info.json";
             this.config.THUMB_EXTENSION = "/full/250,/0/default.jpg"; //".ptif/full/250,/0/default.jpg";
 
-            //FIXME retrieve from config stored on server
-            /** url to retrieve extra info for dataset from flatmap Json API */
-            this.config.fmDatasetsInfoUrl = "https://www.brainminds.riken.jp/wp-json/bmind/p3/get_dataset/";
-
-            //FIXME retrieve from config stored on server
-            /** url of the tracer signal (including injection point) on the flatmap */
-            this.config.fmTracerSignalImgUrl = "https://www.brainminds.riken.jp/injections_point/" + configId + ".png";
-
-            //BETA : will we have content there someday ?
-            //FIXME retrieve from config stored on server
-            /** url to access the dataset information page */
-            this.config.AboutDatasetUrl = "https://www.brainminds.riken.jp/dataset_info/" + configId;
-
+            /** url to retrieve extra info for dataset */
+            this.config.fmDatasetsInfoUrl = "/datasets.json";
 
         } else {
 
@@ -284,6 +273,11 @@ class ZAVConfig {
     }
 
 
+    expandDatasetImagesUrl = (data) => {
+        data.thumbnailUrl = data.imageBaseUrl + '/thumbnails/' + data.labID + '-thumb.png';
+        data.snapshotUrl = data.imageBaseUrl + "/snapshots/" + data.snapshot;
+        return data;
+    }
 
     /**
      * Retrieve configuration from remote backend
@@ -328,25 +322,27 @@ class ZAVConfig {
                 });
 
 
-                /** retrieve extra info for dataset from flatmap backend */
-                $.ajax({
-                    url: that.config.fmDatasetsInfoUrl,
-                    type: "GET",
-                    async: true,
-                    dataType: 'json',
-                    success: function (data) {
-                        const dataset_info = _.findWhere(data, { marmoset_id: that.config.paramId });
-                        if (dataset_info) {
-                            that.config.dataset_info = dataset_info;
-                        } else {
-                            console.info("Missing info for dataset ", that.config.paramId);
+                /** retrieve extra info for dataset from Tracer Injection Viewer */
+                if (that.config.fmDatasetsInfoUrl) {
+                    $.ajax({
+                        url: that.config.fmDatasetsInfoUrl,
+                        type: "GET",
+                        async: true,
+                        dataType: 'json',
+                        success: function (data /* :ConfigNDatasetPayload */) {
+                            if (data.datasets && data.datasets.length) {
+                                const dataset_info = _.findWhere(data.datasets, { marmosetID: that.config.paramId });
+                                dataset_info.imageBaseUrl = data.config && data.config.imageBaseUrl ? data.config.imageBaseUrl : undefined;
+                                that.config.dataset_info = that.expandDatasetImagesUrl(dataset_info);
+                            } else {
+                                console.info("Missing info for dataset: ", that.config.paramId);
+                            }
+                        },
+                        error: function (jqXHR, textStatus, errorThrown) {
+                            console.info("Error while retrieving datasets info: ", errorThrown);
                         }
-                    },
-                    error: function (jqXHR, textStatus, errorThrown) {
-                        console.warn(errorThrown);
-                    }
-                });
-
+                    });
+                }
 
                 //FIXME unused code
 
@@ -400,8 +396,27 @@ class ZAVConfig {
                 console.error('Error while retrieving configuration: ', errorThrown);
                 alert('Error while retrieving configuration from ' + configUrl + "\nTry reloading [F5], or check configuration source is accessible.");
             },
-            success: that.parseLayersConfig.bind(that, callbackWhenReady)
+            success: function (data) {
+                /** retrieve optional extra info for dataset from Tracer Injection Viewer */
+                const datasetInfoUrl = data.data_root_path + '/datasetInfo.json';
+
+                $.ajax({
+                    url: datasetInfoUrl,
+                    type: "GET",
+                    async: true,
+                    dataType: 'json',
+                    success: function (data /* :SingleDatasetInfo */) {
+                        that.config.dataset_info = that.expandDatasetImagesUrl(data);
+                    },
+                    error: function (jqXHR, textStatus, errorThrown) {
+                        console.info("Error while retrieving info for current dataset: ", errorThrown);
+                    }
+                });
+
+                that.parseLayersConfig(callbackWhenReady, data);
+            }
         });
+
     }
 
 
