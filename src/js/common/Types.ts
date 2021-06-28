@@ -1,5 +1,10 @@
-export interface Config {
+export interface ImageConfig {
     imageBaseUrl: string,
+    snapshotsFolder: string,
+    thumbnailsFolder: string,
+};
+
+export interface Config extends ImageConfig {
     imageWidth: number,
     imageHeight: number,
     delineationImage: string,
@@ -21,10 +26,27 @@ export interface CorticalRegionsPayload {
     cortical_groups: CorticalGroup[]
 };
 
+
+export enum LayerPosition {
+    Bottom = "b",
+    Middle = "m",
+    Top = "t",
+    Track = "z",
+};
+
+export const LayerPositionLabels: { [key in LayerPosition]: string } = {
+    [LayerPosition.Top]: 'Top layer',
+    [LayerPosition.Middle]: 'Middle layer',
+    [LayerPosition.Bottom]: 'Bottom layer',
+    [LayerPosition.Track]: 'All layers Log',
+};
+
+
 export interface Layers {
-    b?: string,
+    b: string,
     m: string,
-    t?: string
+    t: string,
+    z: string,
 };
 
 export interface TracerInfo {
@@ -70,10 +92,11 @@ export interface DatasetInfo extends DatasetBaseInfo {
     otherNFT: string,
     snapshot: string,
     snapshotUrl: string,
+    thumbnail: string,
+    thumbnailUrl: string,
 };
 
-export interface SingleDatasetInfo extends DatasetInfo {
-    imageBaseUrl: string
+export interface SingleDatasetInfo extends DatasetInfo, ImageConfig {
 };
 
 export interface ConfigNDatasetPayload {

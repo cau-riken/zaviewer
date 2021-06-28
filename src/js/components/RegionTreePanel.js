@@ -14,7 +14,7 @@ import {
     Toaster
 } from "@blueprintjs/core";
 
-import RegionsManager from '../RegionsManager.js'
+import RegionsManager from '../RegionsManager'
 import ViewerManager from '../ViewerManager.js'
 
 import "./RegionTreePanel.scss";

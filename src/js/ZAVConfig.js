@@ -273,9 +273,9 @@ class ZAVConfig {
     }
 
 
-    expandDatasetImagesUrl = (data) => {
-        data.thumbnailUrl = data.imageBaseUrl + '/thumbnails/' + data.labID + '-thumb.png';
-        data.snapshotUrl = data.imageBaseUrl + "/snapshots/" + data.snapshot;
+    expandDatasetImagesUrl = (data, config) => {
+        data.thumbnailUrl = config.imageBaseUrl + '/' + config.thumbnailsFolder +  '/' + data.thumbnail;
+        data.snapshotUrl = config.imageBaseUrl + '/' + config.snapshotsFolder +  '/' + data.snapshot;
         return data;
     }
 
@@ -332,8 +332,7 @@ class ZAVConfig {
                         success: function (data /* :ConfigNDatasetPayload */) {
                             if (data.datasets && data.datasets.length) {
                                 const dataset_info = _.findWhere(data.datasets, { marmosetID: that.config.paramId });
-                                dataset_info.imageBaseUrl = data.config && data.config.imageBaseUrl ? data.config.imageBaseUrl : undefined;
-                                that.config.dataset_info = that.expandDatasetImagesUrl(dataset_info);
+                                that.config.dataset_info = that.expandDatasetImagesUrl(dataset_info, data.config);
                             } else {
                                 console.info("Missing info for dataset: ", that.config.paramId);
                             }
@@ -406,7 +405,7 @@ class ZAVConfig {
                     async: true,
                     dataType: 'json',
                     success: function (data /* :SingleDatasetInfo */) {
-                        that.config.dataset_info = that.expandDatasetImagesUrl(data);
+                        that.config.dataset_info = that.expandDatasetImagesUrl(data, data);
                     },
                     error: function (jqXHR, textStatus, errorThrown) {
                         console.info("Error while retrieving info for current dataset: ", errorThrown);

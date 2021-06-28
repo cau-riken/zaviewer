@@ -5,7 +5,7 @@ import Color from 'color';
 
 import Utils from './Utils.js';
 
-import RegionsManager from './RegionsManager.js'
+import RegionsManager from './RegionsManager'
 import ZAVConfig from './ZAVConfig.js';
 
 import CustomFilters from './CustomFilters.js';
@@ -1314,7 +1314,7 @@ class ViewerManager {
                         that.hideDelineation();
                     }
 
-                    RegionsManager.setCurrentSliceRegions(
+                    that.regionActionner.setCurrentSliceRegions(
                         Array.from(that.status.currentSliceRegions.values())
                             .map((r) => r.abbrev)
                     );

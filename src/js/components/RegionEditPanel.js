@@ -20,7 +20,7 @@ import {
 
 import { HuePicker } from 'react-color';
 
-import RegionsManager from '../RegionsManager.js'
+import RegionsManager from '../RegionsManager'
 import ViewerManager from '../ViewerManager.js'
 
 import "./RegionEditPanel.scss";

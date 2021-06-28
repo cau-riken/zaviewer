@@ -1,4 +1,5 @@
-import React from 'react';
+import * as React from "react";
+
 
 import { createBrowserHistory } from 'history';
 
@@ -9,7 +10,11 @@ import RegionTreePanel from './RegionTreePanel.js';
 import ViewerComposed from './ViewerComposed.js';
 import { DrawerHandle } from './Drawer.js';
 import ZAVConfig from '../ZAVConfig.js';
-import RegionsManager from '../RegionsManager.js';
+
+import RegionsManager, { IRegionsStatus, IRegionsPayload, } from '../RegionsManager';
+
+import Utils from '../Utils.js';
+import axios from 'axios';
 
 import "./App.scss";
 
@@ -20,115 +25,123 @@ import {
 
 FocusStyleManager.onlyShowFocusOnTabs();
 
-/** Main component of the ZAViewer */
-class App extends React.Component {
 
-  constructor(props) {
-    super(props);
-    this.state = { configId: undefined, dataSrc: undefined, config: undefined, isRegionPanelExpanded: false, splitSize: 350 };
-    this.handleClick = this.handleClick.bind(this);
-    this.onSplitSizeChange = this.onSplitSizeChange.bind(this);
+const history = createBrowserHistory();
+const defaultSplitSize = 350;
+
+type AppProps = {
+  configId?: string,
+  dataSrc?: string,
+}
+
+/** Main component of the ZAViewer */
+const App = (props: AppProps) => {
+
+  const [config, setConfig] = React.useState(undefined);
+  const [isRegionPanelExpanded, setIsRegionPanelExpanded] = React.useState(false);
+  const [splitSize, setSplitSize] = React.useState(defaultSplitSize);
+
+  const [regionsStatus, setRegionsStatus] = React.useState<IRegionsStatus|undefined>(undefined);
+
+  React.useEffect(() => {
+
+    //retrieve config asynchronously...
+    ZAVConfig.getConfig(props.configId, props.dataSrc, (newConfig) => {
+      setConfig(newConfig);
+
+      //load regions related data
+      const treeDataUrl =
+        newConfig.treeUrlPath
+          ? newConfig.hasBackend
+            ? Utils.makePath(newConfig.PUBLISH_PATH, newConfig.treeUrlPath, "regionTreeGroup_" + newConfig.paramId + ".json")
+            : Utils.makePath(newConfig.treeUrlPath, newConfig.fallbackTreeUrl)
+          : newConfig.fallbackTreeUrl
+
+
+      axios({
+        method: newConfig.hasBackend ? "POST" : "GET",
+        url: treeDataUrl,
+      })
+
+        .then(response => {
+          const payload: IRegionsPayload = response.data;
+
+          //retrieve region data asynchronously...
+          RegionsManager.init(payload, (regionsStatus) => {
+            //... and update state after region data change
+            setRegionsStatus(regionsStatus);
+          });
+
+        })
+        .catch(error => {
+          // handle error
+          console.error(error);
+        });
+
+
+    });
+
+  }, [props.configId, props.dataSrc]);
+
 
     this.history = createBrowserHistory();
   }
 
-  render() {
-    return (
+  return (
+    <div
+      className="App"
       <div className="App">
         <SplitPane
           split="vertical"
-          defaultSize={350}
-          size={this.state.isRegionPanelExpanded ? this.state.splitSize : 0}
-          onChange={this.onSplitSizeChange}
-        >
-          <div className="secondaryRegionTreePane" style={{ height: "100%", overflow: "hidden" }}>
-            <div id="zav_logoPlaceHolder">
-              <div id="zav_logoContainer" draggable="false">
-                <a id="bm_logo" href="https://dataportal.brainminds.jp/"  >
-                  <img src="./assets/img/brain-minds_borderlogo.svg" height={32} />
-                </a>
-                <img id="zav_logo" src="./assets/img/logo.png" height={23} />
-              </div>
+    >
+      <SplitPane
+        split="vertical"
+        defaultSize={defaultSplitSize}
+        size={isRegionPanelExpanded ? splitSize : 0}
+        onChange={(size) => {
+          if (isRegionPanelExpanded) {
+            setSplitSize(size)
+          }
+        }}
+      >
+        <div className="secondaryRegionTreePane" style={{ height: "100%", overflow: "hidden" }}>
+          <div id="zav_logoPlaceHolder">
+            <div id="zav_logoContainer" draggable="false">
+              <a id="bm_logo" href="https://dataportal.brainminds.jp/"  >
+                <img src="./assets/img/brain-minds_borderlogo.svg" height={32} />
+              </a>
+              <img id="zav_logo" src="./assets/img/logo.png" height={23} />
             </div>
-            {
-              RegionsManager.isReady()
-                ? <RegionTreePanel regionsStatus={this.state.regionsStatus} />
-                : null
-            }
           </div>
-          <div className="primaryViewerPane" style={{ height: "100%" }}>
-            {
-              RegionsManager.isReady()
-                ? <DrawerHandle
-                  collapseDirection={DrawerHandle.LEFT}
-                  isExpanded={this.state.isRegionPanelExpanded}
-                  onClick={this.handleClick}
-                />
-                : null
-            }
-
-            <div style={{ position: "absolute", left: 13, width: "calc( 100% - 13px )", height: "100%" }}>
-              <ViewerComposed
-                config={this.state.config}
-                regionsStatus={this.state.regionsStatus}
-                history={this.history}
+          {
+            RegionsManager.isReady()
+              ? <RegionTreePanel regionsStatus={regionsStatus} />
+              : null
+          }
+        </div>
+        <div className="primaryViewerPane" style={{ height: "100%" }}>
+          {
+            RegionsManager.isReady()
+              ? <DrawerHandle
+                collapseDirection={DrawerHandle.LEFT}
+                isExpanded={isRegionPanelExpanded}
+                onClick={() => setIsRegionPanelExpanded(!isRegionPanelExpanded)}
               />
-            </div>
+              : null
+          }
+
+          <div style={{ position: "absolute", left: 13, width: "calc( 100% - 13px )", height: "100%" }}>
+            <ViewerComposed
+              config={config}
+              regionsStatus={regionsStatus}
+              history={history}
+            />
           </div>
-        </SplitPane>
-      </div >
-    );
-  }
+        </div>
+      </SplitPane>
+    </div >
+  );
 
-  componentDidMount() {
-    //config ID is undefined when the viewer is used without backend (i.e. shipped within its dataset)
-    const params = this.getConfigParams();
-    const configId = params["configId"];
-    const dataSrc = params["dataSrc"];
-    if (dataSrc !== this.state.dataSrc || configId !== this.state.configId || (typeof this.state.configId == "undefined")) {
-      //retrieve config asynchronously...
-      ZAVConfig.getConfig(configId, dataSrc, (config) => {
-        //... and expand state when config has been retrieved
-        this.setState(state => ({ configId: configId, dataSrc: dataSrc, config: config }));
-
-        //retrieve region data asynchronously...
-        RegionsManager.init(config, (regionsStatus) => {
-          //... and update state after region data change
-          this.setState(state => ({ regionsStatus: regionsStatus }));
-        });
-
-      });
-    }
-  }
-
-  /** retrieve configuration ID from url query param  
-   * @private
-  */
-  getConfigParams() {
-    const params = {};
-    const url = location.search.substring(1).split('&');
-
-    for (var i = 0; url[i]; i++) {
-      const k = url[i].split('=');
-      if (k[0] == "id") {
-        params["configId"] = k[1];
-      } else if (k[0] == "datasrc") {
-        params["dataSrc"] = k[1];
-      }
-    }
-    return params;
-  }
-
-  handleClick() {
-    this.setState(state => ({ isRegionPanelExpanded: !state.isRegionPanelExpanded }));
-  }
-
-  onSplitSizeChange(size) {
-    if (this.state.isRegionPanelExpanded) {
-      this.setState(state => ({ splitSize: size }))
-    }
-  }
-
-}
+};
 
 export default App;

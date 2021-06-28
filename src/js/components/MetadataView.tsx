@@ -52,12 +52,11 @@ const MetadataView = (props: MetadataViewProps) => {
 
             overflowY: "auto",
         }}>
-            <PropRenderer label="Lab identifier" value={infoDataset.labID} />
+            <PropRenderer label="Brain/MINDS ID" value={infoDataset.marmosetID} />
             <PropRenderer label="Group" value={infoDataset.lab} />
 
             <PropSpacer />
-            <PropRenderer label="Marmoset ID" value={infoDataset.marmosetID} />
-            <PropRenderer label="Riken ID" value={infoDataset.rikenID} />
+            <PropRenderer label="Lab identifier" value={infoDataset.labID} />
             <PropRenderer label="Region of injection" value={infoDataset.injRegion} />
             <PropRenderer label="Side of injection" value={infoDataset.injSide} />
 

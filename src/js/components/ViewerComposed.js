@@ -23,7 +23,7 @@ import RegionEditPanel from './RegionEditPanel.js';
 import QuickActionButtons from './QuickActionButtons.js';
 
 import ViewerManager from '../ViewerManager.js'
-import RegionsManager from '../RegionsManager.js'
+import RegionsManager from '../RegionsManager'
 import ZAVConfig from '../ZAVConfig.js';
 
 import "./ViewerComposed.scss";
@@ -81,8 +81,8 @@ class ViewerComposed extends React.Component {
                     {this.props.config.dataset_info
                         ?
                         <React.Fragment>
-                            <div>Dataset ID : <b>{this.props.config.dataset_info.labID}</b></div>
-                            <div>Marmoset ID : <b>{this.props.config.dataset_info.marmosetID}</b></div>
+                            <div>Brain/MINDS ID : <b>{this.props.config.dataset_info.marmosetID}</b></div>
+                            <div>Lab ID : <b>{this.props.config.dataset_info.labID}</b></div>
                             <div>Injection Region : <b>{this.props.config.dataset_info.injRegion}</b></div>
                             { this.props.config.dataset_info.lab ? <div>Lab : <b>{this.props.config.dataset_info.lab}</b></div> : null }
                             { this.props.config.dataset_info.channel ? <div>Channel : <b>{this.props.config.dataset_info.channel}</b></div> : null }
