@@ -5,8 +5,6 @@ import _ from 'underscore';
 import {
     AnchorButton,
     Icon,
-    Popover,
-    PopoverInteractionKind,
     Position,
     Slider,
     Switch
@@ -56,151 +54,172 @@ class QuickActionButtons extends React.Component {
         const sliceStep = this.props.config ? ViewerManager.getPlaneSliceStep(this.props.activePlane) : 1;
 
         return (
-            <React.Fragment>
-                <div className="zav-ActionContainer"></div>
+            <>
+                <Popover2
+                    interactionKind={Popover2InteractionKind.CLICK}
+                    content={this.props.tourMenu}
+                    position={Position.LEFT_BOTTOM}
+                >
+                    <AnchorButton
+                        icon="help"
+                        title="Help and guided tours!"
+                        style={{
+                            margin: '20px 0',
+                        }}
+                    />
+                </Popover2>
+                <div
+                    className="zav-QuickActionPanel"
+                    style={{
+                        height: '100%',
+                    }}
+                >
+                    <div className="zav-ActionContainer"></div>
 
-                {this.props.hasDelineation ?
-
-                    <div
-                        className="zav-ActionContainer"
-                        title="toggle display of regions"
-                    >
-                        <Switch
-                            checked={this.props.showRegions}
-                            onChange={this.handleClickHideShow} />
-                    </div>
-                    :
-                    null
-                }
-
-                {this.props.config && (this.props.config.getTotalSlidesCount() > 1) ?
-                    <React.Fragment>
-                        <div className="zav-ActionContainer">
-                            <AnchorButton
-                                icon="double-chevron-right"
-                                small
-                                title="go to 10 slices forward"
-                                onClick={this.onShiftToSlice.bind(this, 10)}
-                            />
-                        </div>
-                        <div className="zav-ActionContainer">
-                            <AnchorButton
-                                icon="chevron-right"
-                                small
-                                title="go to next slice"
-                                onClick={this.onShiftToSlice.bind(this, 1)}
-                            />
-                        </div>
+                    {this.props.hasDelineation ?
 
                         <div
-                            className="zav-ActionContainer"
-                            title={"slice #" + (currentSlice + 1) + " of " + (maxSliceNum + 1)}
-                        >
-
-                            <Popover
-                                interactionKind={PopoverInteractionKind.HOVER}
-                                position={Position.LEFT}
-                                boundary="window"
-                                popoverClassName="bp3-popover-content-sizing"
-                                lazy
-                            >
-                                <AnchorButton icon="multi-select" small />
-
-                                <div>
-                                    <Icon
-                                        icon="chevron-left"
-                                        title="go to previous slice"
-                                        style={{ paddingRight: 10, verticalAlign: "top" }}
-                                        onClick={this.onShiftToSlice.bind(this, -1)}
-                                    />
-                                    <Slider
-                                        className="zav-Slider zav-QActSliceSlider"
-                                        min={0}
-                                        max={maxSliceNum}
-                                        stepSize={1}
-                                        onChange={this.onGoToSlice}
-                                        value={currentSlice}
-                                        showTrackFill={false}
-                                        labelStepSize={maxSliceNum}
-                                        labelRenderer={(value) => value}
-                                    />
-                                    <Icon
-                                        icon="chevron-right"
-                                        title="go to next slice"
-                                        style={{ paddingLeft: 10, verticalAlign: "top" }}
-                                        onClick={this.onShiftToSlice.bind(this, 1)}
-                                    />
-                                </div>
-                            </Popover>
-                        </div>
-
-                        <div className="zav-ActionContainer">
-                            <AnchorButton
-                                icon="chevron-left"
-                                small
-                                title="go to previous slice"
-                                onClick={this.onShiftToSlice.bind(this, -1)}
-                            />
-                        </div>
-                        <div className="zav-ActionContainer">
-                            <AnchorButton
-                                icon="double-chevron-left"
-                                small
-                                title="go to 10 slices backward"
-                                onClick={this.onShiftToSlice.bind(this, -10)}
-                            />
-                        </div>
-                    </React.Fragment>
-                    : null
-                }
-
-                {
-                    tracerLayer
-                        ?
-                        <div
-                            className="zav-ActionContainer"
-                            title="toggle tracer mask visibility"
-                            style={{ margin: "20px 0 10px 0" }}
+                            className="zav-ActionContainer zav-QuickToogleDelineationButton"
+                            title="toggle display of regions"
                         >
                             <Switch
-                                checked={tracerLayer.enabled}
-                                onChange={this.handleLayerEnabledChange.bind(this, tracerLayer.key, tracerLayer.opacity)}
-                            />
+                                checked={this.props.showRegions}
+                                onChange={this.handleClickHideShow} />
                         </div>
                         :
                         null
-                }
+                    }
 
-                {
-                    this.props.config && this.props.config.dataset_info
-                        ?
-                        <div
-                            className="zav-ActionContainer"
-                            style={{ position: "absolute", bottom: 10 }}
-                        >
-                            <Popover2
-                                content={
-                                    <div
-                                        style={{ width: '70vw', maxWidth: 850, height: '80vh', overflowY: 'auto' }}>
-                                        <MetadataView
-                                            infoDataset={this.props.config.dataset_info}
-                                        />
-                                    </div>
-                                }
-                                position={Position.LEFT_TOP}
-                                interactionKind={Popover2InteractionKind.CLICK}
-                            >
+                    {this.props.config && (this.props.config.getTotalSlidesCount() > 1) ?
+                        <div className="zav-QuickNavButtons">
+                            <div className="zav-ActionContainer">
                                 <AnchorButton
-                                    icon="info-sign"
-                                    title="display dataset informations"
+                                    icon="double-chevron-right"
+                                    small
+                                    title="go to 10 slices forward"
+                                    onClick={this.onShiftToSlice.bind(this, 10)}
                                 />
-                            </Popover2>
-                        </div>
-                        :
-                        null
-                }
+                            </div>
+                            <div className="zav-ActionContainer">
+                                <AnchorButton
+                                    icon="chevron-right"
+                                    small
+                                    title="go to next slice"
+                                    onClick={this.onShiftToSlice.bind(this, 1)}
+                                />
+                            </div>
 
-            </React.Fragment>
+                            <div
+                                className="zav-ActionContainer"
+                                title={"slice #" + (currentSlice + 1) + " of " + (maxSliceNum + 1)}
+                            >
+
+                                <Popover2
+                                    interactionKind={Popover2InteractionKind.HOVER}
+                                    position={Position.LEFT}
+                                    boundary="window"
+                                    lazy
+                                    content={
+                                        <div>
+                                            <Icon
+                                                icon="chevron-left"
+                                                title="go to previous slice"
+                                                style={{ paddingRight: 10, verticalAlign: "top" }}
+                                                onClick={this.onShiftToSlice.bind(this, -1)}
+                                            />
+                                            <Slider
+                                                className="zav-Slider zav-QActSliceSlider"
+                                                min={0}
+                                                max={maxSliceNum}
+                                                stepSize={1}
+                                                onChange={this.onGoToSlice}
+                                                value={currentSlice}
+                                                showTrackFill={false}
+                                                labelStepSize={maxSliceNum}
+                                                labelRenderer={(value) => value}
+                                            />
+                                            <Icon
+                                                icon="chevron-right"
+                                                title="go to next slice"
+                                                style={{ paddingLeft: 10, verticalAlign: "top" }}
+                                                onClick={this.onShiftToSlice.bind(this, 1)}
+                                            />
+                                        </div>
+                                    }
+                                >
+                                    <AnchorButton icon="multi-select" small />
+
+                                </Popover2>
+                            </div>
+
+                            <div className="zav-ActionContainer">
+                                <AnchorButton
+                                    icon="chevron-left"
+                                    small
+                                    title="go to previous slice"
+                                    onClick={this.onShiftToSlice.bind(this, -1)}
+                                />
+                            </div>
+                            <div className="zav-ActionContainer">
+                                <AnchorButton
+                                    icon="double-chevron-left"
+                                    small
+                                    title="go to 10 slices backward"
+                                    onClick={this.onShiftToSlice.bind(this, -10)}
+                                />
+                            </div>
+                        </div>
+                        : null
+                    }
+
+                    {
+                        tracerLayer
+                            ?
+                            <div
+                                className="zav-ActionContainer"
+                                title="toggle tracer mask visibility"
+                                style={{ margin: "20px 0 10px 0" }}
+                            >
+                                <Switch
+                                    checked={tracerLayer.enabled}
+                                    onChange={this.handleLayerEnabledChange.bind(this, tracerLayer.key, tracerLayer.opacity)}
+                                />
+                            </div>
+                            :
+                            null
+                    }
+
+                    {
+                        this.props.config && this.props.config.dataset_info
+                            ?
+                            <div
+                                className="zav-ActionContainer zav-QuickDatasetInfoButton"
+                                style={{ position: "absolute", bottom: 10 }}
+                            >
+                                <Popover2
+                                    content={
+                                        <div
+                                            style={{ width: '70vw', maxWidth: 850, height: '80vh', overflowY: 'auto' }}>
+                                            <MetadataView
+                                                infoDataset={this.props.config.dataset_info}
+                                            />
+                                        </div>
+                                    }
+                                    position={Position.LEFT_TOP}
+                                    interactionKind={Popover2InteractionKind.CLICK}
+                                >
+                                    <AnchorButton
+                                        icon="info-sign"
+                                        title="display dataset informations"
+                                    />
+                                </Popover2>
+                            </div>
+                            :
+                            null
+                    }
+
+                </div>
+            </>
         );
     }
 

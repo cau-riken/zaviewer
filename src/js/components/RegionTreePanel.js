@@ -417,7 +417,7 @@ class RegionTreeSearch extends React.Component {
                 <div style={{ marginLeft: 5, flexGrow: 1 }}>
                     <FormGroup>
                         <InputGroup
-
+                            className="zav-regions_searchinput"
                             placeholder=" Region search "
                             disabled={RegionsManager.isHighlightingLocked()}
                             inline

@@ -8,7 +8,7 @@ import SplitPane from 'react-split-pane';
 
 import RegionTreePanel from './RegionTreePanel.js';
 import ViewerComposed from './ViewerComposed.js';
-import { DrawerHandle } from './Drawer.js';
+import { DrawerHandle, CollapseDirection } from './Drawer';
 import ZAVConfig from '../ZAVConfig.js';
 
 import RegionsManager, { IRegionsStatus, IRegionsPayload, } from '../RegionsManager';
@@ -18,6 +18,7 @@ import axios from 'axios';
 
 import "./App.scss";
 
+import { TourContext } from "./GuidedTour"
 
 import {
   FocusStyleManager,
@@ -38,10 +39,10 @@ type AppProps = {
 const App = (props: AppProps) => {
 
   const [config, setConfig] = React.useState(undefined);
-  const [isRegionPanelExpanded, setIsRegionPanelExpanded] = React.useState(false);
+  const [isRegPanelExpanded, setIsRegPanelExpanded] = React.useState(false);
   const [splitSize, setSplitSize] = React.useState(defaultSplitSize);
 
-  const [regionsStatus, setRegionsStatus] = React.useState<IRegionsStatus|undefined>(undefined);
+  const [regionsStatus, setRegionsStatus] = React.useState<IRegionsStatus | undefined>(undefined);
 
   React.useEffect(() => {
 
@@ -84,15 +85,20 @@ const App = (props: AppProps) => {
   }, [props.configId, props.dataSrc]);
 
 
-    this.history = createBrowserHistory();
-  }
+  //
+  const currentTourStep = React.useContext(TourContext).stepContext?.currentStep;
+  const isRegionPanelExpanded = ['_init_', 'mainImagePanel'].includes(currentTourStep)
+    ? false
+    : currentTourStep === 'expandedRegionPanel'
+      ? true
+      : isRegPanelExpanded;
+
+  const containerRef = React.useRef<HTMLDivElement>(null);
 
   return (
     <div
       className="App"
-      <div className="App">
-        <SplitPane
-          split="vertical"
+      ref={containerRef}
     >
       <SplitPane
         split="vertical"
@@ -123,15 +129,16 @@ const App = (props: AppProps) => {
           {
             RegionsManager.isReady()
               ? <DrawerHandle
-                collapseDirection={DrawerHandle.LEFT}
+                collapseDirection={CollapseDirection.LEFT}
                 isExpanded={isRegionPanelExpanded}
-                onClick={() => setIsRegionPanelExpanded(!isRegionPanelExpanded)}
+                onClick={() => setIsRegPanelExpanded(!isRegionPanelExpanded)}
               />
               : null
           }
 
           <div style={{ position: "absolute", left: 13, width: "calc( 100% - 13px )", height: "100%" }}>
             <ViewerComposed
+              containerRef={containerRef}
               config={config}
               regionsStatus={regionsStatus}
               history={history}

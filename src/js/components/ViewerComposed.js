@@ -5,13 +5,16 @@ import {
     Classes,
     Icon,
     Overlay,
-    Popover,
-    PopoverInteractionKind,
     Position,
-
 } from "@blueprintjs/core";
 
-import Drawer from './Drawer.js';
+import {
+    Popover2InteractionKind,
+    Popover2,
+} from "@blueprintjs/popover2";
+
+
+import Drawer from './Drawer';
 
 import OSDMain from './OSDMain.js';
 import MeasureInfoPanel from './MeasureInfoPanel.js';
@@ -26,6 +29,8 @@ import ViewerManager from '../ViewerManager.js'
 import RegionsManager from '../RegionsManager'
 import ZAVConfig from '../ZAVConfig.js';
 
+import { TourContext } from './GuidedTour';
+
 import "./ViewerComposed.scss";
 
 
@@ -33,7 +38,7 @@ class TitledCard extends React.Component {
 
     render() {
         return (
-            <div className="zav-TitledCard">
+            <div className={"zav-TitledCard" + (this.props.className ? ' ' + this.props.className : '')} >
                 <div className="zav-TitledCardTitle">{this.props.header}</div>
                 {this.props.children}
             </div>
@@ -41,7 +46,11 @@ class TitledCard extends React.Component {
     }
 }
 
+//props.containerRef: React.RefObject<HTMLDivElement>,
+
 class ViewerComposed extends React.Component {
+
+    static contextType = TourContext;
 
     constructor(props) {
         super(props);
@@ -68,34 +77,39 @@ class ViewerComposed extends React.Component {
 
         const datasetInfo = this.props.config && this.props.config.dataset_info && this.props.config.dataset_info.thumbnailUrl
             ?
-            <Popover
-                interactionKind={PopoverInteractionKind.CLICK}
-                position={Position.BOTTOM_RIGHT}
+            <Popover2
+                interactionKind={Popover2InteractionKind.CLICK}
+                position={Position.LEFT_BOTTOM}
                 disabled={!this.state.isToolbarExpanded}
                 boundary="window"
-                popoverClassName="bp3-popover-content-sizing"
                 lazy
+                usePortal={true}
+                portalContainer={this.props.containerRef ? this.props.containerRef.current : undefined}
+                content={
+                    <div
+                        style={{ padding: 8 }}
+                    >
+                        {this.props.config.dataset_info
+                            ?
+                            <React.Fragment>
+                                <div>Brain/MINDS ID : <b>{this.props.config.dataset_info.marmosetID}</b></div>
+                                <div>Lab ID : <b>{this.props.config.dataset_info.labID}</b></div>
+                                <div>Injection Region : <b>{this.props.config.dataset_info.injRegion}</b></div>
+                                {this.props.config.dataset_info.lab ? <div>Lab : <b>{this.props.config.dataset_info.lab}</b></div> : null}
+                                {this.props.config.dataset_info.channel ? <div>Channel : <b>{this.props.config.dataset_info.channel}</b></div> : null}
+                            </React.Fragment>
+                            :
+                            null
+                        }
+                        <img
+                            src={this.props.config.dataset_info.thumbnailUrl}
+                            width={250}
+                            onLoad={(event) => console.info("loaded ", event)} />
+                    </div>
+                }
             >
                 <div><Icon icon="map" iconSize={14} /></div>
-                <div>
-                    {this.props.config.dataset_info
-                        ?
-                        <React.Fragment>
-                            <div>Brain/MINDS ID : <b>{this.props.config.dataset_info.marmosetID}</b></div>
-                            <div>Lab ID : <b>{this.props.config.dataset_info.labID}</b></div>
-                            <div>Injection Region : <b>{this.props.config.dataset_info.injRegion}</b></div>
-                            { this.props.config.dataset_info.lab ? <div>Lab : <b>{this.props.config.dataset_info.lab}</b></div> : null }
-                            { this.props.config.dataset_info.channel ? <div>Channel : <b>{this.props.config.dataset_info.channel}</b></div> : null }
-                        </React.Fragment>
-                        :
-                        null
-                    }
-                    <img
-                        src={this.props.config.dataset_info.thumbnailUrl}
-                        width={250}
-                        onLoad={(event) => console.info("loaded ", event)} />
-                </div>
-            </Popover>
+            </Popover2>
             :
             null
             ;
@@ -111,6 +125,21 @@ class ViewerComposed extends React.Component {
             ? (" — " + ZAVConfig.getPlaneLabel(ZAVConfig.getPreferredSubviewForPlane(this.state.activePlane)) + " view")
             : ""
             ;
+
+        const currentTourStep = this.context.stepContext?.currentStep;
+        const tourSpecificInit = {
+            controlPanelExpanded: ['mainImagePanel', 'collapsedControlPanel', 'expandedRegionPanel'].includes(currentTourStep)
+                ? false :
+                ['expandedControlPanel', 'navigatorPanel'].includes(currentTourStep)
+                    ? true
+                    : undefined
+
+        };
+        if (['_init_'].includes(currentTourStep)) {
+            ViewerManager.goHome(true);
+        } else if (currentTourStep === 'navigatorPanel') {
+            ViewerManager.setZoomFactor(50);
+        }
 
         return (
             <div style={{ height: "100%" }}>
@@ -148,6 +177,9 @@ class ViewerComposed extends React.Component {
                 <Drawer
                     id="ZAV-rightPanel"
                     initExpanded={this.state.initExpanded}
+
+                    forceExpanded={tourSpecificInit.controlPanelExpanded}
+
                     onExpandCollapse={this.onToolbarExpandCollapse.bind(this)}
                     quickactions={
                         <QuickActionButtons
@@ -156,9 +188,14 @@ class ViewerComposed extends React.Component {
                             showRegions={this.state.showRegions}
                             activePlane={this.state.activePlane}
                             chosenSlice={this.state.chosenSlice}
-                            config={this.props.config} />
+                            config={this.props.config}
+                            tourMenu={this.context.tourMenu}
+                        />
                     }>
-                    <TitledCard header={globalHeader}>
+                    <TitledCard
+                        className="zav-controlPanel_Navigator"
+                        header={globalHeader}
+                    >
                         <div className="navigatorParentClass">
                             <div id={ViewerManager.NAVIGATOR_ID} className="navigatorChildClass"></div>
                             <div className="zav-DatasetVersion">{globalDatasetVersion}</div>
@@ -167,7 +204,10 @@ class ViewerComposed extends React.Component {
 
                     {
                         this.props.config && this.props.config.matrix ?
-                            <TitledCard header={"Distance measurement"}>
+                            <TitledCard
+                                className="zav-controlPanel_Distance"
+                                header={"Distance measurement"}
+                            >
                                 <MeasureInfoPanel
                                     posCount={this.state.position ? this.state.position[0].c : 0}
                                     pos={this.state.pos} markedPos={this.state.markedPos}
@@ -177,7 +217,10 @@ class ViewerComposed extends React.Component {
                             : null
                     }
 
-                    <TitledCard header={"Layers control"}>
+                    <TitledCard
+                        className="zav-controlPanel_Layers"
+                        header={"Layers control"}
+                    >
                         <SliderNavigatorPanel
                             hasDelineation={this.props.config && this.props.config.hasDelineation}
                             displaySettings={this.state.layerDisplaySettings} />
@@ -196,7 +239,10 @@ class ViewerComposed extends React.Component {
 
                     {
                         this.props.config && this.props.config.hasDelineation ?
-                            <TitledCard header={"Atlas regions"}>
+                            <TitledCard
+                                className="zav-controlPanel_Regions"
+                                header={"Atlas regions"}
+                            >
                                 <RegionOptions
                                     showRegions={this.state.showRegions}
                                     regionsOpacity={this.state.regionsOpacity}
@@ -227,7 +273,9 @@ class ViewerComposed extends React.Component {
 
                     {
                         this.props.config && (this.props.config.getTotalSlidesCount() > 1) ?
-                            <TitledCard header={"Slices navigation" + subviewTitleSuffix}>
+                            <TitledCard
+                                className="zav-controlPanel_SliceNav"
+                                header={"Slices navigation" + subviewTitleSuffix}>
                                 <SubViewPanel
                                     activePlane={this.state.activePlane}
                                     chosenSlice={this.state.chosenSlice}

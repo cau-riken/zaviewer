@@ -8,6 +8,8 @@ import * as React from 'react';
 import * as ReactDOM from 'react-dom';
 
 import App from './components/App';
+import { GuidedTour } from "./components/GuidedTour";
+
 
 /** retrieve configuration ID from url query param  
 */
@@ -29,10 +31,12 @@ const getConfigParams = () => {
 
 ReactDOM.render(
   <React.StrictMode>
-    <App
-      //configID is undefined when the viewer is used without backend (i.e. shipped within its dataset)
-      {...getConfigParams()}
-    />
+    <GuidedTour>
+      <App
+        //configID is undefined when the viewer is used without backend (i.e. shipped within its dataset)
+        {...getConfigParams()}
+      />
+    </GuidedTour>
   </React.StrictMode>,
   document.getElementById('root')
 );

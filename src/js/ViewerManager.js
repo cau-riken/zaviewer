@@ -2625,6 +2625,12 @@ class ViewerManager {
         }
     }
 
+    static goHome() {
+        if (this.viewer) {
+            this.viewer.viewport.goHome(false);
+        }
+    }
+
     static hasProcessingsModule() {
         return typeof globalThis.ZAVProcessings != "undefined";
     }
