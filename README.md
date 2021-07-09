@@ -332,7 +332,7 @@ As before local data will be displayed, but this time the displayed/edited regio
 
 3. Launch ZAViewer by opening the following URL in your web browser :
 
-    [`http://localhost:9090/?mode=edit`](http://localhost:9090/?mode=edit)
+    [`http://localhost:9090/#mode=edit&`](http://localhost:9090/#mode=edit&)
 
 ---
 
