@@ -225,19 +225,6 @@ const NavigationTourSteps: ExtendedStep[] = [
     },
 
     {
-        stepContext: "collapsedControlPanel",
-        target: '.zav-QuickActionPanel .zav-QuickDatasetInfoButton',
-        disableBeacon: true,
-        content:
-            <div
-                className='zav_guideContent'
-            >
-                <p>Clicking on this button will display the detailed dataset's information.</p>
-            </div>,
-        placement: 'left-start',
-    },
-
-    {
         stepContext: "expandedControlPanel",
         target: '#ZAV-rightPanel .zav-controlPanel_Layers',
         disableBeacon: true,
@@ -297,6 +284,19 @@ const NavigationTourSteps: ExtendedStep[] = [
                 minWidth: '500px',
             },
         }
+    },
+
+    {
+        stepContext: "expandedControlPanel",
+        target: '#ZAV-rightPanel .zav-QuickDatasetInfoButton',
+        disableBeacon: true,
+        content:
+            <div
+                className='zav_guideContent'
+            >
+                <p>Clicking on this icon will display the detailed dataset's information.</p>
+            </div>,
+        placement: 'left-start',
     },
 
     {

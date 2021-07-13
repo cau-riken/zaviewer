@@ -60,14 +60,52 @@ class QuickActionButtons extends React.Component {
                     content={this.props.tourMenu}
                     position={Position.LEFT_BOTTOM}
                 >
-                    <AnchorButton
-                        icon="help"
+                    <div
                         title="Help and guided tours!"
-                        style={{
-                            margin: '20px 0',
-                        }}
-                    />
+                    >
+                        <Icon
+                            icon="help"
+                            color='#FFF'
+                            style={{
+                                margin: '18px 0px 20px 0px',
+                            }}
+                        />
+                    </div>
                 </Popover2>
+
+                {
+                    this.props.config
+                        ?
+                        <Popover2
+                            content={
+                                <div
+                                    style={{ width: '70vw', maxWidth: 850, height: '90vh', overflowY: 'auto' }}>
+                                    <MetadataView
+                                        infoDataset={this.props.config.dataset_info}
+                                        includeThumbnail={true}
+                                    />
+                                </div>
+                            }
+                            position={Position.LEFT}
+                            interactionKind={Popover2InteractionKind.CLICK}
+                        >
+                            <div
+                                title="display dataset informations"
+                            >
+                                <Icon
+                                    icon="info-sign"
+                                    color='#FFF'
+                                    style={{
+                                        margin: '6px 0px 10px 0px',
+                                    }}
+                                />
+                            </div>
+                        </Popover2>
+                        :
+                        null
+                }
+
+
                 <div
                     className="zav-QuickActionPanel"
                     style={{
@@ -184,35 +222,6 @@ class QuickActionButtons extends React.Component {
                                     checked={tracerLayer.enabled}
                                     onChange={this.handleLayerEnabledChange.bind(this, tracerLayer.key, tracerLayer.opacity)}
                                 />
-                            </div>
-                            :
-                            null
-                    }
-
-                    {
-                        this.props.config && this.props.config.dataset_info
-                            ?
-                            <div
-                                className="zav-ActionContainer zav-QuickDatasetInfoButton"
-                                style={{ position: "absolute", bottom: 10 }}
-                            >
-                                <Popover2
-                                    content={
-                                        <div
-                                            style={{ width: '70vw', maxWidth: 850, height: '80vh', overflowY: 'auto' }}>
-                                            <MetadataView
-                                                infoDataset={this.props.config.dataset_info}
-                                            />
-                                        </div>
-                                    }
-                                    position={Position.LEFT_TOP}
-                                    interactionKind={Popover2InteractionKind.CLICK}
-                                >
-                                    <AnchorButton
-                                        icon="info-sign"
-                                        title="display dataset informations"
-                                    />
-                                </Popover2>
                             </div>
                             :
                             null

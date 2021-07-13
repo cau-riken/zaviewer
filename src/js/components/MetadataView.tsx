@@ -14,7 +14,7 @@ const PropLabel = (props: { label: string }) => {
 
 type PropRenderer = {
     label: string,
-    value: string | number,
+    value: string | number | JSX.Element,
     format?: string,
 };
 
@@ -38,6 +38,7 @@ const PropRenderer = (props: PropRenderer) => {
 
 type MetadataViewProps = {
     infoDataset: TracInj.DatasetInfo,
+    includeThumbnail?: boolean,
 };
 
 
@@ -56,6 +57,27 @@ const MetadataView = (props: MetadataViewProps) => {
             <PropRenderer label="Group" value={infoDataset.lab} />
 
             <PropSpacer />
+            {props.includeThumbnail
+                ?
+                <>
+                    <PropRenderer
+                        label="Tracer signal thumbnail"
+                        value={
+                            <img
+                                src={infoDataset.thumbnailUrl}
+                                width={250}
+                                onLoad={(event) => console.info("loaded ", event)}
+                                style={{
+                                    justifySelf: 'right',
+                                }}
+                            />
+                        } />
+                    <PropSpacer />
+                </>
+                :
+                null
+            }
+
             <PropRenderer label="Lab identifier" value={infoDataset.labID} />
             <PropRenderer label="Region of injection" value={infoDataset.injRegion} />
             <PropRenderer label="Side of injection" value={infoDataset.injSide} />

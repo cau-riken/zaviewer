@@ -29,6 +29,8 @@ import ViewerManager from '../ViewerManager.js'
 import RegionsManager from '../RegionsManager'
 import ZAVConfig from '../ZAVConfig.js';
 
+import MetadataView from "./MetadataView";
+
 import { TourContext } from './GuidedTour';
 
 import "./ViewerComposed.scss";
@@ -74,49 +76,61 @@ class ViewerComposed extends React.Component {
             this.initialized = true;
         }
 
-
-        const datasetInfo = this.props.config && this.props.config.dataset_info && this.props.config.dataset_info.thumbnailUrl
-            ?
-            <Popover2
-                interactionKind={Popover2InteractionKind.CLICK}
-                position={Position.LEFT_BOTTOM}
-                disabled={!this.state.isToolbarExpanded}
-                boundary="window"
-                lazy
-                usePortal={true}
-                portalContainer={this.props.containerRef ? this.props.containerRef.current : undefined}
-                content={
-                    <div
-                        style={{ padding: 8 }}
-                    >
-                        {this.props.config.dataset_info
-                            ?
-                            <React.Fragment>
-                                <div>Brain/MINDS ID : <b>{this.props.config.dataset_info.marmosetID}</b></div>
-                                <div>Lab ID : <b>{this.props.config.dataset_info.labID}</b></div>
-                                <div>Injection Region : <b>{this.props.config.dataset_info.injRegion}</b></div>
-                                {this.props.config.dataset_info.lab ? <div>Lab : <b>{this.props.config.dataset_info.lab}</b></div> : null}
-                                {this.props.config.dataset_info.channel ? <div>Channel : <b>{this.props.config.dataset_info.channel}</b></div> : null}
-                            </React.Fragment>
-                            :
-                            null
+        const datasetDetails =
+            this.props.config && this.props.config.dataset_info
+                ?
+                <div
+                    className="zav-QuickDatasetInfoButton"
+                >
+                    <Popover2
+                        content={
+                            <div
+                                style={{ width: '70vw', maxWidth: 850, height: '90vh', overflowY: 'auto' }}>
+                                <MetadataView
+                                    infoDataset={this.props.config.dataset_info}
+                                    includeThumbnail={true}
+                                />
+                            </div>
                         }
-                        <img
-                            src={this.props.config.dataset_info.thumbnailUrl}
-                            width={250}
-                            onLoad={(event) => console.info("loaded ", event)} />
-                    </div>
-                }
-            >
-                <div><Icon icon="map" iconSize={14} /></div>
-            </Popover2>
-            :
-            null
+                        position={Position.LEFT}
+                        interactionKind={Popover2InteractionKind.CLICK}
+                    >
+                        <div
+                            title="display dataset informations"
+                        >
+                            <Icon
+                                icon="info-sign"
+                                color='#FFF'
+                            />
+                        </div>
+                    </Popover2>
+                </div>
+                :
+                null
             ;
+
         const globalHeaderText = (this.props.config && this.props.config.paramId ? this.props.config.paramId + " — " : "") + "Global view";
         const globalDatasetVersion = (this.props.config && this.props.config.datasetVersion) ? <a href={this.props.config.datasetVersion.uri} target="_blank">{this.props.config.datasetVersion.label}</a> : null;
 
-        const globalHeader = <React.Fragment>{globalHeaderText}{datasetInfo}</React.Fragment>;
+        const globalHeader = <>
+            <Popover2
+                interactionKind={Popover2InteractionKind.CLICK}
+                content={this.context.tourMenu}
+                position={Position.LEFT}
+            >
+                <div
+                    title="Help and guided tours!"
+                >
+                    <Icon
+                        icon="help"
+                        color='#FFF'
+                    />
+                </div>
+            </Popover2>
+
+            {globalHeaderText}
+            {datasetDetails}
+        </>;
 
         const region = this.state.hoveredRegion ? RegionsManager.getRegion(this.state.hoveredRegion) : null;
         const regionName = region ? region.name : "";
