@@ -1254,7 +1254,7 @@ class ViewerManager {
                             //Legacy SVG : regionId is specified in the id attribute of the path
                             regionId = paths[i].getAttribute('id').trim();
                             //append ordinal number to ensure unique id (case of non-contiguous regions)
-                            pathId = regionId + "-" + i;
+                            pathId = regionId + (regionId === BACKGROUND_PATHID ? '' : ('-' + i) );
                             paths[i].setAttribute('id', pathId);
                         }
 
