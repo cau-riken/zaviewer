@@ -21,11 +21,11 @@ const OwerviewTourSteps: ExtendedStep[] = [
             <div
                 className='zav_guideContent'
             >
-                <p>ZAViewer is a web 2D image viewer that was primarily designed to explore the Brain/MINDS Marmoset Reference Atlas.</p>
+                <p>ZAViewer is a web-based 2D high-resolution image viewer that was designed to explore data produced for the marmoset brain in the Brain/MINDS project.</p>
                 <p>
-                    This viewer allows to browse large image of brain slices, along to the standard orthogonal axes (Axial, Coronal, Sagittal).
+                    This viewer allows the user to browse large images of brain slices in the standard orthogonal anatomical views (Axial, Coronal, Sagittal depending on the data provided).
                     <br />
-                    Each slice view may contains several raster images layers, and Atlas regions overlayed on top of the raster images.
+                    Each slice view may contains several raster images layers with atlas regions overlaid on top of them.
                 </p>
                 <br />
                 <p>Click <span className="zav_keyboardkey">Next</span> to follow a quick guided tour of the viewer's main features!</p>
@@ -51,7 +51,7 @@ const OwerviewTourSteps: ExtendedStep[] = [
             <div
                 className='zav_guideContent'
             >
-                <p>By default, the zoomable brain image at the center use most of the screen space, with both side panels collapsed on the left and right.</p>
+                <p>By default, the zoomable brain image shown in the center uses most of the screen space, with both side panels collapsed on the left and right.</p>
             </div>,
         placement: 'bottom',
         styles: {
@@ -70,7 +70,7 @@ const OwerviewTourSteps: ExtendedStep[] = [
             <div
                 className='zav_guideContent'
             >
-                <p>When the right panel is collapsed, a minimal set of buttons allow to quickly change viewed slice along the current axis</p>
+                <p>When the right panel is collapsed, a minimal set of buttons allows the user to quickly change the viewed slice along the current axis</p>
             </div>,
         placement: 'left-start',
         styles: {
@@ -109,7 +109,7 @@ const OwerviewTourSteps: ExtendedStep[] = [
             <div
                 className='zav_guideContent'
             >
-                <p>When the right panel is expanded, a wide range of controls allow to manage the visibility of layers and overlays, navigate the slices, change axis, and others...</p>
+                <p>When the right panel is expanded, a wide range of controls are available for managing the visibility of layers and overlays, navigate the slices, change axis, and others...</p>
             </div>,
         placement: 'left',
         styles: {
@@ -235,7 +235,7 @@ const NavigationTourSteps: ExtendedStep[] = [
             >
                 <p>This sub-panel displays the layer stack, with the foreground layer at the top.</p>
                 <p><br />Below the layer's name, a visibility switch and an opacity slider allow to control the corresponding layer.
-                    <br />Also, contrast and gamma correction can be performed independantly for each layers
+                    <br />Also, contrast and gamma correction can be performed independently for each layers
                 </p>
             </div>,
         placement: 'left',
@@ -256,7 +256,7 @@ const NavigationTourSteps: ExtendedStep[] = [
                 className='zav_guideContent'
             >
                 <p>Use this sub-panel to control Atlas regions which are represented by colored shapes overlayed on top of slice images.</p>
-                <p><br />Region areas and borders can be independantly hidden thanks to these switches, and areas opacity can be finely adjusted</p>
+                <p><br />Region areas and borders can be independently hidden thanks to these switches, and areas opacity can be finely adjusted.</p>
             </div>,
         placement: 'left',
         styles: {
@@ -309,7 +309,7 @@ const NavigationTourSteps: ExtendedStep[] = [
                 className='zav_guideContent'
             >
                 <p>This sub-panel helps to locate the currently displayed brain slice within available slice series.</p>
-                <p>The active navigation axis (perpendicular to the slice's plane) is indicated, alongside the viewed slice's numeric index and the total number of slices in the current serial.
+                <p>The active navigation axis (perpendicular to the slice's plane) is indicated, alongside the viewed slice's numeric index and the total number of slices in the current ordered set of slices.
                     <br />Current slice's location is also figured by the position of the slider handle, and by a colored line on top of the brain section thumbnail image.</p>
                 <p><br />At any time, there is a single active navigation axis, and if the viewed dataset contains slices along more than 1 axis, several brain section thumbnails are shown, with switches on top of them to change the navigation axis.</p>
                 <p>Navigating amongst slices can be done in many ways: clicking on the slider track, dragging the slider handle, clicking on left and right chevron or clicking on thumbnail brain section image.</p>
@@ -332,13 +332,13 @@ const NavigationTourSteps: ExtendedStep[] = [
             >
                 <p>This tool is provided to measure distance in physical space units between points on the slice image.</p>
 
-                <p><br />Clicking on the button will switch in measurement mode, then:
+                <p><br />Clicking on the button will switch to measurement mode, then:
                 </p>
-                <ul><li>mark the first point by clicking on the slice image,</li>
-                    <li>choose a second point by clicking again on the image: the distance is then displayed</li>
-                    <li>(clicking a third time, reset the ruler to make other mesurements)</li>
+                <ul><li>Mark the first point by clicking on the slice image,</li>
+                    <li>Choose a second point by clicking again on the image: the distance is then displayed.</li>
+                    <li>Clicking a third time will reset the ruler to make other measurements.</li>
                 </ul>
-                <p>Measurement mode is deactivated by clicking again on the button.</p>
+                <p>Measurement mode is deactivated by clicking the button again.</p>
 
             </div>,
         placement: 'left',
@@ -384,12 +384,12 @@ const RegionsTourSteps: ExtendedStep[] = [
             <div
                 className='zav_guideContent'
             >
-                <p>And the regions selection is synchronized between the region treeview and the slice image overlay.
+                <p>And the regions selection is synchronized between the region tree view and the slice image overlay.
                 </p>
-                <p><br />In the hierarchical representation of the Atlas brain regions, selection is performed by clicking on region's name</p>
+                <p><br />In the hierarchical representation of the Atlas brain regions, selection is performed by clicking on a region's name.</p>
 
                 <p>To explore the tree, expand/collapse the level below a region by clicking on the +/- square at the left of the region name,
-                    <br />(and double-click to fully expand/collapse all levels of the sub-tree)
+                    <br />(and double-click to fully expand/collapse all levels of the sub-tree).
 
                 </p>
             </div>,
@@ -411,7 +411,7 @@ const RegionsTourSteps: ExtendedStep[] = [
                 className='zav_guideContent'
             >
                 <p>Quickly find regions by typing their name in this text box.</p>
-                <p><br />The tree will be pruned to only display regions whose name contains the text pattern (their name will be displayed in red, and necessary parent regions in grey)
+                <p><br />The tree will be pruned to only display regions whose name contains the text pattern (their name will be displayed in red, and necessary parent regions in grey).
                 </p>
             </div>,
         placement: 'right',
