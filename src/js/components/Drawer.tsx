@@ -24,7 +24,7 @@ export const DrawerHandle = (props: DrawerHandleProps) => {
             onClick={props.onClick}
         >
             <Icon
-                icon={pointToRight ? 'caret-right' : 'caret-right'}
+                icon={pointToRight ? 'caret-right' : 'caret-left'}
                 iconSize={22}
             />
         </div>
