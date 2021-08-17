@@ -9,6 +9,7 @@ import RegionsManager from './RegionsManager'
 import ZAVConfig from './ZAVConfig.js';
 
 import CustomFilters from './CustomFilters.js';
+import UserSettings from './UserSettings.js';
 
 export const VIEWER_ID = "openseadragon1";
 export const NAVIGATOR_ID = "navigatorDiv";
@@ -63,21 +64,46 @@ class ViewerManager {
         _.each(this.config.data, function (value, key) {
             //FIXME should use another method than name to identify tracer signal layer
             const isTracer = value.metadata.includes("nn_tracer");
-            initLayerDisplaySettings[key] = {
+
+            const itemKeyLayerPrefix = UserSettings.getLayerKeyPrefix(config.paramId, key)
+
+            initLayerDisplaySettings[key] = new Proxy({
                 key: key,
-                enabled: true,
-                opacity: value.opacity ? parseInt(value.opacity) : 100,
+                enabled: UserSettings.getBoolItem(itemKeyLayerPrefix + 'enabled', true),
+                opacity: UserSettings.getNumItem(
+                    itemKeyLayerPrefix + 'opacity',
+                    value.opacity ? parseInt(value.opacity) : 100
+                ),
                 name: value.metadata,
                 index: i++,
                 isTracer: isTracer,
                 enhanceSignal: false,
                 dilation: 0,
 
-                contrastEnabled: false,
-                contrast: 1,
-                gammaEnabled: false,
-                gamma: 1,
-            };
+                contrastEnabled: UserSettings.getBoolItem(itemKeyLayerPrefix + 'contrastEnabled', false),
+                contrast: UserSettings.getNumItem(itemKeyLayerPrefix + 'contrast', 1),
+                gammaEnabled: UserSettings.getBoolItem(itemKeyLayerPrefix + 'gammaEnabled', false),
+                gamma: UserSettings.getNumItem(itemKeyLayerPrefix + 'gamma', 1),
+            },
+                //handler to intercept Set operations and store it as user settings as required
+                {
+                    set: function (target, property, value) {
+                        if (['enabled', 'contrastEnabled', 'gammaEnabled'].includes(property)) {
+                            target[property] = value;
+                            const itemKey = itemKeyLayerPrefix + property;
+                            UserSettings.setBoolItem(itemKey, value);
+                            return true;
+                        } else if (['opacity', 'contrast', 'gamma'].includes(property)) {
+                            target[property] = value;
+                            const itemKey = itemKeyLayerPrefix + property;
+                            UserSettings.setNumItem(itemKey, value);
+                            return true;
+                        } else {
+                            return Reflect.set(...arguments);
+                        }
+                    }
+                }
+            );
         });
 
         //params retrieved from initial location
@@ -86,7 +112,7 @@ class ViewerManager {
         const overridingPlane = this.config.hasPlane(overridingConf.activePlane) ? overridingConf.activePlane : null;
 
         /** dynamic state of the viewer */
-        this.status = {
+        this.status = new Proxy({
 
             //protocol used with image server 
             useIIProtocol: overridingConf.protocol && "IIP" === overridingConf.protocol,
@@ -142,11 +168,11 @@ class ViewerManager {
             /** set to true when all tiles are loaded for the current view */
             isAllLoaded: false,
 
-            /** visibility of region delineations */
-            showRegions: !this.config.bHideDelineation,
-            displayAreas: !this.config.bHideDelineation,
-            regionsOpacity: 0.4,
-            displayBorders: false,
+            /** visibility of region areas & delineations  */
+            showRegions: this.config.showRegions,
+            displayAreas: this.config.displayAreas,
+            displayBorders: this.config.displayBorders,
+            regionsOpacity: UserSettings.getNumItem(UserSettings.SettingsKeys.OpacityAtlasRegionArea, 0.4),
 
             /** info about region currently hovered by mouse cursor */
             hoveredRegion: null,
@@ -233,8 +259,28 @@ class ViewerManager {
             /** last recorder position of cursor during region editing*/
             editPos: undefined,
 
-        };
-
+        },
+            //handler to intercept Set operations and store it as user settings as required
+            {
+                set: function (target, property, value) {
+                    if ('displayAreas' === property) {
+                        target[property] = value;
+                        UserSettings.setBoolItem(UserSettings.SettingsKeys.ShowAtlasRegionArea, value);
+                        return true;
+                    } else if ('displayBorders' === property) {
+                        target[property] = value;
+                        UserSettings.setBoolItem(UserSettings.SettingsKeys.ShowAtlasRegionBorder, value);
+                        return true;
+                    } else if ('regionsOpacity' === property) {
+                        target[property] = value;
+                        UserSettings.setNumItem(UserSettings.SettingsKeys.OpacityAtlasRegionArea, value);
+                        return true;
+                    } else {
+                        return Reflect.set(...arguments);
+                    }
+                }
+            }
+        );
         this.status.chosenSlice = this.getCurrentPlaneChosenSlice();
 
         this.setupTileSources(overridingConf);
@@ -1233,9 +1279,8 @@ class ViewerManager {
             success: function (svgFile) {
                 // process retrieved data only if it's the last one requested to ensure current slice SVG is loaded
                 if (svgName === that.status.currentSVGName) {
-
                     const root = svgFile.getElementsByTagName('svg')[0];
-                    that.status.hasCurrentSVG = (root != "undefined");
+                    that.status.hasCurrentSVG = (typeof root !== "undefined");
                     var paths = root.getElementsByTagName('path');
 
                     that.status.currentSliceRegions.clear();
@@ -1254,7 +1299,7 @@ class ViewerManager {
                             //Legacy SVG : regionId is specified in the id attribute of the path
                             regionId = paths[i].getAttribute('id').trim();
                             //append ordinal number to ensure unique id (case of non-contiguous regions)
-                            pathId = regionId + (regionId === BACKGROUND_PATHID ? '' : ('-' + i) );
+                            pathId = regionId + (regionId === BACKGROUND_PATHID ? '' : ('-' + i));
                             paths[i].setAttribute('id', pathId);
                         }
 

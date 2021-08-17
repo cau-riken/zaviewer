@@ -1,6 +1,8 @@
 import _ from 'underscore';
 import Utils from './Utils.js';
 
+import UserSettings from './UserSettings.js';
+
 export const AXIAL = 1;
 export const CORONAL = 2;
 export const SAGITTAL = 3;
@@ -135,9 +137,10 @@ class ZAVConfig {
 
             /** folder of the SVG region files */
             svgFolerName: undefined,
-            /** Set to true if region delineations are hidden */
-            bHideDelineation: false,
-
+            /** atlas regions area & delineations visibility */
+            showRegions: false,
+            displayAreas: true,
+            displayBorders: false,
 
             /** relative path to folder containing subview background images */
             subviewFolderName: undefined,
@@ -274,8 +277,8 @@ class ZAVConfig {
 
 
     expandDatasetImagesUrl = (data, config) => {
-        data.thumbnailUrl = config.imageBaseUrl + '/' + config.thumbnailsFolder +  '/' + data.thumbnail;
-        data.snapshotUrl = config.imageBaseUrl + '/' + config.snapshotsFolder +  '/' + data.snapshot;
+        data.thumbnailUrl = config.imageBaseUrl + '/' + config.thumbnailsFolder + '/' + data.thumbnail;
+        data.snapshotUrl = config.imageBaseUrl + '/' + config.snapshotsFolder + '/' + data.snapshot;
         return data;
     }
 
@@ -583,9 +586,24 @@ class ZAVConfig {
 
 
             //initial state for displaying regions
-            if (response.first_access.delineations === "hide") {
-                this.config.bHideDelineation = true;
+            const regionVisibility = response.first_access.delineations === "hide"
+                ?
+                false
+                :
+                response.first_access.delineations === "show"
+                    ?
+                    true
+                    :
+                    null;
+            if (regionVisibility != null) {
+                this.config.showRegions = regionVisibility;
+                this.config.displayAreas = regionVisibility;
             }
+
+            //override dataset settings with users' settings
+            this.config.displayAreas = UserSettings.getBoolItem(UserSettings.SettingsKeys.ShowAtlasRegionArea, this.config.displayAreas);
+            this.config.displayBorders = UserSettings.getBoolItem(UserSettings.SettingsKeys.ShowAtlasRegionBorder, this.config.displayBorders);
+            this.config.showRegions = this.config.displayAreas || this.config.displayBorders;
 
             //start with the middle slice if none is specified 
             this.config.axialChosenSlice = Math.floor(this.config.axialSlideCount / 2);
@@ -593,7 +611,7 @@ class ZAVConfig {
             this.config.sagittalChosenSlice = Math.floor(this.config.sagittalSlideCount / 2);
 
             //FIXME magic value!!
-            const initialSlice = (response.first_access.slide !== "undefined") ? parseInt(response.first_access.slide) : 30;
+            const initialSlice = (typeof response.first_access.slide !== "undefined") ? parseInt(response.first_access.slide) : 30;
             switch (this.config.firstActivePlane) {
                 case AXIAL:
                     this.config.axialChosenSlice = initialSlice;
