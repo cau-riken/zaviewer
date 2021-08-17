@@ -149,7 +149,8 @@ class QuickActionButtons extends React.Component {
 
                             <div
                                 className="zav-ActionContainer"
-                                title={"slice #" + (currentSlice + 1) + " of " + (maxSliceNum + 1)}
+                                title={"slice #" + (currentSlice) + " of " + (maxSliceNum)}
+                                style={{ paddingTop: 14 }}
                             >
 
                                 <Popover2
@@ -158,7 +159,9 @@ class QuickActionButtons extends React.Component {
                                     boundary="window"
                                     lazy
                                     content={
-                                        <div>
+                                        <div
+                                            style={{ padding: '14px 10px 8px 10px' }}
+                                        >
                                             <Icon
                                                 icon="chevron-left"
                                                 title="go to previous slice"
@@ -188,6 +191,22 @@ class QuickActionButtons extends React.Component {
                                     <AnchorButton icon="multi-select" small />
 
                                 </Popover2>
+                                <div
+                                    style={{
+                                        color: '#FFF', fontSize: '12px', lineHeight: '13px',
+                                        padding: '4px 14px 4px 0',
+                                        display: 'flex', flexDirection: 'column', alignItems: 'flex-end',
+                                    }}
+                                >
+                                    <span>{currentSlice}</span>
+                                    <span
+                                        style={{
+                                            textDecoration: 'overline',
+                                            textDecorationColor: '#137cbd'
+                                        }}
+                                    >{maxSliceNum}</span>
+                                </div>
+
                             </div>
 
                             <div className="zav-ActionContainer">
