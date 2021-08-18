@@ -93,7 +93,7 @@ class ViewerComposed extends React.Component {
                             </div>
                         }
                         position={Position.LEFT}
-                        interactionKind={Popover2InteractionKind.CLICK}
+                        interactionKind={Popover2InteractionKind.HOVER}
                     >
                         <div
                             title="display dataset informations"
@@ -114,7 +114,7 @@ class ViewerComposed extends React.Component {
 
         const globalHeader = <>
             <Popover2
-                interactionKind={Popover2InteractionKind.CLICK}
+                interactionKind={Popover2InteractionKind.HOVER}
                 content={this.context.tourMenu}
                 position={Position.LEFT}
             >

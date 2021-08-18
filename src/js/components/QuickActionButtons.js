@@ -56,7 +56,7 @@ class QuickActionButtons extends React.Component {
         return (
             <>
                 <Popover2
-                    interactionKind={Popover2InteractionKind.CLICK}
+                    interactionKind={Popover2InteractionKind.HOVER}
                     content={this.props.tourMenu}
                     position={Position.LEFT_BOTTOM}
                 >
@@ -87,7 +87,7 @@ class QuickActionButtons extends React.Component {
                                 </div>
                             }
                             position={Position.LEFT}
-                            interactionKind={Popover2InteractionKind.CLICK}
+                            interactionKind={Popover2InteractionKind.HOVER}
                         >
                             <div
                                 title="display dataset informations"
