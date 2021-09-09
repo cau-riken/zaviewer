@@ -2077,7 +2077,7 @@ class ViewerManager {
 
                     maxLevel: this.status.maxLevel,
                     minLevel: this.status.minLevel,
-                    getTileUrl: (level, x, y) => this.getIIPTileUrl(currentPage, key, ext, level, x, y, applyIIPadjustment)
+                    getTileUrl: (level, x, y) => this.getIIPTileUrl(this.getPageNumForCurrentSlice(), key, ext, level, x, y, applyIIPadjustment)
                 }
             } else {
                 return this.getIIIFTileSourceUrl(currentPage, key, ext);
