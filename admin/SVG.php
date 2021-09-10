@@ -177,9 +177,11 @@ SVGLIT;
 
                     $oldPath = $xpath->query("//svg:path[@id='$pathId']")->item(0);
                     if ($oldPath) {
-                        // Edited region may have changes in its 'd', path id and/or region id attributes
+                        //Transfer attributes which may have changed in the edited region
                         $oldPath->setAttribute('d', $editedPath->getAttribute('d'));
                         $oldPath->setAttribute('id', $editedPath->getAttribute('id'));
+                        $oldPath->setAttribute('stroke', $editedPath->getAttribute('stroke'));
+                        $oldPath->setAttribute('fill', $editedPath->getAttribute('fill'));
                         $oldPath->setAttribute('bma:regionId', $editedPath->getAttribute('bma:regionId'));
                     } else {
                         //NOT FOUND
