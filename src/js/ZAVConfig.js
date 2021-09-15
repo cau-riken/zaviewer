@@ -361,7 +361,7 @@ class ZAVConfig {
                         if (!data["error"]) {
 
                             that.config.imageGroupListData = data;
-                            _.each(data, function (value, key) {
+                            Object.entries(data).forEach(([key, value]) => {
                                 that.config.editLayers[value["publish_id"]] = { "name": value["display_name"], "ext": "." + value["extension"] };
                             });
 
@@ -524,8 +524,8 @@ class ZAVConfig {
         if (response.data) {
             this.config.data = response.data;
             const that = this;
-            var i = 0;
-            _.each(response.data, function (value, key) {
+
+            Object.entries(response.data).forEach(([key, value], i) => {
 
                 // only firstLayer when running with a backend 
                 if (that.config.hasBackend && (i == 0)) {
@@ -546,10 +546,11 @@ class ZAVConfig {
                 }
 
                 that.config.layers[key] = {
-                    "name": value.metadata,
-                    "ext": "." + (value.extension || that.config.fallbackExtension),
-                    "index": i++,
-                    "key": key,
+                    name: value.metadata,
+                    ext: "." + (value.extension || that.config.fallbackExtension),
+                    index: i,
+                    key: key,
+                    protocol: value.protocol
                 };
             });
 

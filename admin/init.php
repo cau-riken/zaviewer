@@ -32,6 +32,9 @@ $pdo->exec(
 		upload_id TEXT NOT NULL,
 		initial_opacity INTEGER,
 		sort_no INTEGER,
+		protocol TEXT DEFAULT 'IIIF',
+		initial_contrast DECIMAL(5.2) DEFAULT 1.00,
+		initial_gamma DECIMAL(5.2) DEFAULT 1.00,
 		PRIMARY KEY (view_id, upload_id)
 	);"
 );

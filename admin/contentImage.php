@@ -11,6 +11,9 @@ $pdo->exec(
 		upload_id TEXT NOT NULL,
 		initial_opacity INTEGER,
 		sort_no INTEGER,
+		protocol TEXT DEFAULT 'IIIF',
+		initial_contrast DECIMAL(5.2) DEFAULT 1.00,
+		initial_gamma DECIMAL(5.2) DEFAULT 1.00,
 		PRIMARY KEY (view_id, upload_id)
 	);"
 );
@@ -118,6 +121,22 @@ function fieldCheck($data){
 			}
 		}
 	}
+
+	//image retrieval protocol 
+	if($data["protocol"] != null && $data["protocol"] != "IIP" && $data["protocol"] != "IIIF" ){
+		$errAry["protocol"] = ERROR_UNKNOWN_PROTOCOL;
+	}
+
+	// initial_contrast
+	if (!preg_match("/^\d+(\.\d{0,2})$/", $data["initial_contrast"])) {
+		$errAry["initial_contrast"] = ERROR_NUMBER_FORMAT;//"should be a value between 0.00 and 5.00."
+	}
+
+	// initial_gamma
+	if (!preg_match("/^\d+(\.\d{0,2})?$/", $data["initial_gamma"])) {
+		$errAry["initial_gamma"] = ERROR_NUMBER_FORMAT;//"should be a value between 0.00 and 5.00."
+	}
+
 	return $errAry;
 }
 

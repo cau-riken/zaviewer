@@ -26,7 +26,7 @@ module.exports = (env, argv) => {
 
       {
         apply: (compiler) => {
-          compiler.hooks.compile.tap("TIIViewer_compile", () => {
+          compiler.hooks.compile.tap("ZAViewer_compile", () => {
             //remove preexisting production CSS to prevent it being loaded in devMode
             const prodCss = path.resolve(__dirname, 'assets/css/ZAViewer.css');
             if (fs.existsSync(prodCss)) {
@@ -57,7 +57,7 @@ module.exports = (env, argv) => {
         : []),
 
     entry: {
-      main: "./src/js/main.js"
+      main: "./src/js/main.tsx"
     },
 
     module: {

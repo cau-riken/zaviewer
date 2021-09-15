@@ -21,7 +21,7 @@ Table of Contents
 
 ZAViewer is a web 2D image viewer that was primarily designed to explore the [Brain/MINDS Marmoset Reference Atlas](https://doi.org/10.24475/bma.2799).
 
-It can display up to 3 sets of multimodal, regularly interspaced, large image slices along 3 standard orthogonal axis (Axial, Coronal, Sagittal).
+It can display up to 3 sets of multimodal, regularly interspaced, large image slices along the 3 standard orthogonal axes (Axial, Coronal, Sagittal).
 Each slice view may contains several raster images layers, and Atlas regions (represented by aligned vector images, SVG) displayed as an overlay over the raster images.
 
 
@@ -332,7 +332,7 @@ As before local data will be displayed, but this time the displayed/edited regio
 
 3. Launch ZAViewer by opening the following URL in your web browser :
 
-    [`http://localhost:9090/?mode=edit`](http://localhost:9090/?mode=edit)
+    [`http://localhost:9090/#mode=edit&`](http://localhost:9090/#mode=edit&)
 
 ---
 
@@ -465,6 +465,9 @@ When ZAViewer is used with images along a single axis (aka "single-plane mode") 
 | `data.` _layerId_  `.metadata` | Name of the layer displayed in the UI |
 | `data.` _layerId_  `.extension` | extension of the pyramidal image |
 | `data.` _layerId_  `.opacity` | initial opacity of the layer |
+| `data.` _layerId_  `.protocol` | image retrieval protocol (by default IIIF, or IIP)  |
+| `data.` _layerId_  `.contrast` | initial contrast adjustement of the layer (IIP protocol only) |
+| `data.` _layerId_  `.gamma` | initial gamma adjustment of the layer (IIP protocol only)  |
 
  <sup>1</sup> : value must be defined for at least 1 axis!  
  <sup>single</sup> : single-plane mode only  

@@ -81,7 +81,7 @@ if(count($res) > 0){
 }
 
 // ContentImage + FileTable
-$sql = "SELECT ft.publish_id, ft.display_name, ft.extension, ci.initial_opacity FROM content_image ci ";
+$sql = "SELECT ft.publish_id, ft.display_name, ft.extension, ci.initial_opacity, ci.protocol, ci.initial_contrast, ci.initial_gamma FROM content_image ci ";
 $sql .= "INNER JOIN file_table ft ON ci.upload_id = ft.upload_id WHERE ci.view_id = :id ORDER BY ci.sort_no;";
 $stmt = $pdo->prepare($sql);
 $stmt->bindParam(":id", $data["view_id"], PDO::PARAM_STR);
@@ -96,7 +96,10 @@ if(count($imageList) == 0){
 		$imageData[$value["publish_id"]] = array(
 			"metadata"=>$value["display_name"],
 			"extension"=>$value["extension"],
-			"opacity"=>$value["initial_opacity"]
+			"opacity"=>$value["initial_opacity"],
+			"protocol"=>$value["protocol"],
+			"contrast"=> floatval($value["initial_contrast"]),
+			"gamma"=> floatval($value["initial_gamma"])
 		);
 	}
 	$json["data"] = $imageData;

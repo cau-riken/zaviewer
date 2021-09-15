@@ -23,6 +23,7 @@ var ERROR_ROW_EXISTS = -10013;// Key duplication
 var ERROR_REQUIRED = -10014;// Required item absent
 var ERROR_ROW_NOT_EXISTS = -10015;// Specified row does not exist
 var ERROR_KEY_NOT_EXISTS = -10016;// Specified external key does not exist
+var ERROR_UNKNOWN_PROTOCOL = -10017;// Unknow specified image retrieval protocol (IIP or IIIF)
 
 
 var tableName;// Table name
@@ -570,6 +571,10 @@ function getErrorMessage(errId, fieldId){
 			return  $("#columnName .t_"+fieldId)[0].innerHTML + " does not exist in the relevant table.";
 			break;
 			
+		case ERROR_UNKNOWN_PROTOCOL:
+			// Unknow specified image retrieval protocol
+			return  $("#columnName .t_"+fieldId)[0].innerHTML + " should be either 'IIP' or 'IIIF' (or null).";
+			break;
 		case ERROR_UNSELECTED:
 			return "No row has been selected.";
 			break;

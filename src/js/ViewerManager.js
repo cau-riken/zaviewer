@@ -60,12 +60,16 @@ class ViewerManager {
 
         //layers initial display values
         const initLayerDisplaySettings = {};
-        var i = 0;
-        _.each(this.config.data, function (value, key) {
+        Object.entries(this.config.data).forEach(([key, value], i) => {
             //FIXME should use another method than name to identify tracer signal layer
             const isTracer = value.metadata.includes("nn_tracer");
 
             const itemKeyLayerPrefix = UserSettings.getLayerKeyPrefix(config.paramId, key)
+
+            const useIIProtocol = value.protocol === 'IIP';
+
+            const initContrast = parseFloat(value.contrast || 1.0);
+            const initGamma = parseFloat(value.gamma || 1.0);
 
             initLayerDisplaySettings[key] = new Proxy({
                 key: key,
@@ -75,15 +79,18 @@ class ViewerManager {
                     value.opacity ? parseInt(value.opacity) : 100
                 ),
                 name: value.metadata,
-                index: i++,
+                index: i,
                 isTracer: isTracer,
                 enhanceSignal: false,
                 dilation: 0,
 
-                contrastEnabled: UserSettings.getBoolItem(itemKeyLayerPrefix + 'contrastEnabled', false),
-                contrast: UserSettings.getNumItem(itemKeyLayerPrefix + 'contrast', 1),
-                gammaEnabled: UserSettings.getBoolItem(itemKeyLayerPrefix + 'gammaEnabled', false),
-                gamma: UserSettings.getNumItem(itemKeyLayerPrefix + 'gamma', 1),
+                defaultProtocol: value.protocol || 'IIIF',
+                useIIProtocol: useIIProtocol,
+
+                contrastEnabled: UserSettings.getBoolItem(itemKeyLayerPrefix + 'contrastEnabled', initContrast != 1.0),
+                contrast: UserSettings.getNumItem(itemKeyLayerPrefix + 'contrast', initContrast),
+                gammaEnabled: UserSettings.getBoolItem(itemKeyLayerPrefix + 'gammaEnabled', initGamma != 1.0),
+                gamma: UserSettings.getNumItem(itemKeyLayerPrefix + 'gamma', initGamma),
             },
                 //handler to intercept Set operations and store it as user settings as required
                 {
@@ -287,16 +294,21 @@ class ViewerManager {
     }
 
     static setupTileSources(overridingConf) {
+        const layerEntries = Object.values(this.config.layers);
+        const firstLayer = layerEntries.length > 0 ? layerEntries[0] : undefined;
+
         if (this.config.hasBackend) {
             if (this.config.data) {
-                //Internet Imaging Protocol (IIP)
-                if (this.status.useIIProtocol) {
+
+                if (firstLayer.protocol === 'IIP') {
+                    //Internet Imaging Protocol (IIP)
+
                     const that = this;
-                    const flayer = _.findWhere(this.config.layers, { index: 0 });
-                    //prerequisite: all page have same image size and tile composition, so pyramidal infos for first image is reused for all
+
+                    //Prerequisite: All pages have same image size and tile composition, so pyramidal infos for first image is reused for all
                     $.ajax({
                         //FIXME use specified plane
-                        url: this.getIIIFTileSourceUrl(this.status.coronalChosenSlice, flayer.key, flayer.ext),
+                        url: this.getIIIFTileSourceUrl(this.status.coronalChosenSlice, firstLayer.key, firstLayer.ext),
                         async: true,
                         success: (pyramidalImgInfo) => {
                             const tileSources = [];
@@ -305,41 +317,44 @@ class ViewerManager {
 
                             const tileDef = pyramidalImgInfo.tiles[0];
 
-                            that.status.minLevel = 0;
-                            that.status.maxLevel = tileDef.scaleFactors.length - 1;
-                            that.status.levelScale = {};
+                            const minLevel = 0;
+                            const maxLevel = tileDef.scaleFactors.length - 1;
+                            const iipTileInfos = {
+                                minLevel: minLevel,
+                                maxLevel: maxLevel,
+                                levelScale: {},
+                                tileWidth: tileDef.width,
+                                tileHeight: tileDef.height,
+
+                                imageWidth: pyramidalImgInfo.width,
+                                imgeHeight: pyramidalImgInfo.height,
+
+                                //number of tiles along both axis
+                                xTilesNumAtMaxLevel: Math.ceil(pyramidalImgInfo.width / tileDef.width),
+                                yTilesNumAtMaxLevel: Math.ceil(pyramidalImgInfo.height / tileDef.height),
+
+                                //number of tiles on X axis at each scale level
+                                xTilesNumAtLevel: {},
+                            }
 
                             //at maxLevel, image is at full scale
                             tileDef.scaleFactors.forEach(
                                 (scaleFact, level, factors) =>
-                                    that.status.levelScale[level] = scaleFact / factors[that.status.maxLevel]
+                                    iipTileInfos.levelScale[level] = scaleFact / factors[maxLevel]
                             );
 
-
-                            that.status.tileWidth = tileDef.width;
-                            that.status.tileHeight = tileDef.height;
-
-                            that.status.imageWidth = pyramidalImgInfo.width;
-                            that.status.imgeHeight = pyramidalImgInfo.height;
-
-
-                            //number of tiles along both axis
-                            that.status.xTilesNumAtMaxLevel = Math.ceil(that.status.imageWidth / that.status.tileWidth);
-                            that.status.yTilesNumAtMaxLevel = Math.ceil(that.status.imgeHeight / that.status.tileHeight);
-
-                            //number of tiles on X axis at each scale level
-                            that.status.xTilesNumAtLevel = {};
-                            for (var level = that.status.minLevel; level <= that.status.maxLevel; level++) {
-                                that.status.xTilesNumAtLevel[level] = Math.ceil(that.status.xTilesNumAtMaxLevel * that.status.levelScale[level]);
+                            for (var level = minLevel; level <= maxLevel; level++) {
+                                iipTileInfos.xTilesNumAtLevel[level] = Math.ceil(iipTileInfos.xTilesNumAtMaxLevel * iipTileInfos.levelScale[level]);
                             }
+
+                            that.status.iipTileInfos = iipTileInfos;
 
                             //tile source for 1rst layer of each slices
                             //FIXME use specified plane
                             for (var j = 0; j < that.config.coronalSlideCount; j++) {
 
                                 tileSources.push(
-                                    //apply IIP image adjustments on 1rst layer, if any
-                                    that.getTileSourceDef(flayer.key, flayer.ext, true)
+                                    that.getTileSourceDef(firstLayer.key, firstLayer.ext)
                                 );
                             }
                             that.status.tileSources = tileSources;
@@ -354,15 +369,15 @@ class ViewerManager {
 
                     const tileSources = [];
                     if (this.config.data) {
-                        const flayer = _.findWhere(this.config.layers, { index: 0 });
+
                         //FIXME use specified plane
                         for (var j = 0; j < this.config.coronalSlideCount; j++) {
-                            tileSources.push(this.getIIIFTileSourceUrl(j, flayer.key, flayer.ext));
+                            tileSources.push(this.getIIIFTileSourceUrl(j, firstLayer.key, firstLayer.ext));
                         }
-                    }
-                    this.status.tileSources = tileSources;
+                        this.status.tileSources = tileSources;
 
-                    this.init2ndStage(overridingConf);
+                        this.init2ndStage(overridingConf);
+                    }
                 }
             }
         } else {
@@ -371,21 +386,20 @@ class ViewerManager {
             //in case of multiplanes, first layer tiles source for all defined planes are appended in tileSources array
             const tileSources = [];
             if (this.config.data) {
-                const flayer = _.findWhere(this.config.layers, { index: 0 });
 
                 if (this.config.hasAxialPlane) {
                     for (var j = 0; j < this.config.axialSlideCount; j++) {
-                        tileSources.push(this.getFileTileSourceUrl(j, flayer.key, flayer.ext, this.config.hasMultiPlanes ? ZAVConfig.AXIAL : null));
+                        tileSources.push(this.getFileTileSourceUrl(j, firstLayer.key, firstLayer.ext, this.config.hasMultiPlanes ? ZAVConfig.AXIAL : null));
                     }
                 }
                 if (this.config.hasCoronalPlane) {
                     for (var j = 0; j < this.config.coronalSlideCount; j++) {
-                        tileSources.push(this.getFileTileSourceUrl(j, flayer.key, flayer.ext, this.config.hasMultiPlanes ? ZAVConfig.CORONAL : null));
+                        tileSources.push(this.getFileTileSourceUrl(j, firstLayer.key, firstLayer.ext, this.config.hasMultiPlanes ? ZAVConfig.CORONAL : null));
                     }
                 }
                 if (this.config.hasSagittalPlane) {
                     for (var j = 0; j < this.config.sagittalSlideCount; j++) {
-                        tileSources.push(this.getFileTileSourceUrl(j, flayer.key, flayer.ext, this.config.hasMultiPlanes ? ZAVConfig.SAGITTAL : null));
+                        tileSources.push(this.getFileTileSourceUrl(j, firstLayer.key, firstLayer.ext, this.config.hasMultiPlanes ? ZAVConfig.SAGITTAL : null));
                     }
                 }
 
@@ -513,8 +527,7 @@ class ViewerManager {
                 location: that.viewer.viewport.imageToViewportRectangle(new OpenSeadragon.Rect(0, 0, dimensions.x, dimensions.y)),
             });
 
-
-            _.each(that.config.layers, function (value, key) {
+            Object.entries(that.config.layers).forEach(([key, value]) => {
                 if (value.index != 0) {
                     that.addLayer(key, value.name, value.ext);
                 } else {
@@ -621,33 +634,32 @@ class ViewerManager {
         //--------------------------------------------------
         this.viewer.world.addHandler('add-item', (addItemEvent) => {
 
-            for (var i = 0; i < that.viewer.world.getItemCount(); i++) {
-                if (that.viewer.world.getItemAt(i) === addItemEvent.item) {
-                    const tiledImage = addItemEvent.item;
-                    //retrieve layer info associated to tiled image source of the event
-                    const layer = _.findWhere(that.status.layerDisplaySettings, { index: i });
+            const i = that.viewer.world.getIndexOfItem(addItemEvent.item);
+            const tiledImage = addItemEvent.item;
+            //retrieve layer info associated to tiled image source of the event
 
-                    //signal loading started for current tiledImage
-                    that.eventSource.raiseEvent('zav-layer-loading', { layer: layer.key });
+            const layers = Object.values(that.status.layerDisplaySettings)
+            const layer = i < layers.length ? layers[i] : undefined;
+            if (layer) {
+                //signal loading started for current tiledImage
+                that.eventSource.raiseEvent('zav-layer-loading', { layer: layer.key });
 
-                    //register event handler to track loaded state (loaded state will change after panning & zomming)
-                    tiledImage.addHandler('fully-loaded-change', (fullyLoadedChangeEvent) => {
-                        if (fullyLoadedChangeEvent.fullyLoaded) {
+                //register event handler to track loaded state (loaded state will change after panning & zomming)
+                tiledImage.addHandler('fully-loaded-change', (fullyLoadedChangeEvent) => {
+                    if (fullyLoadedChangeEvent.fullyLoaded) {
 
-                            that.eventSource.raiseEvent('zav-layer-loaded', { layer: layer.key });
+                        that.eventSource.raiseEvent('zav-layer-loaded', { layer: layer.key });
 
-                        } else {
+                    } else {
 
-                            that.eventSource.raiseEvent('zav-layer-loading', { layer: layer.key });
-                        }
-                    });
-
-                    //if tiledImage is already loaded by then, event handler might not be called...
-                    if (tiledImage.getFullyLoaded()) {
-                        //... thus, signal loading finished for current tiledImage
-                        that.eventSource.raiseEvent('zav-layer-loaded', { layer: layer.key })
+                        that.eventSource.raiseEvent('zav-layer-loading', { layer: layer.key });
                     }
-                    break;
+                });
+
+                //if tiledImage is already loaded by then, event handler might not be called...
+                if (tiledImage.getFullyLoaded()) {
+                    //... thus, signal loading finished for current tiledImage
+                    that.eventSource.raiseEvent('zav-layer-loaded', { layer: layer.key })
                 }
             }
 
@@ -2051,33 +2063,35 @@ class ViewerManager {
      * @param {*} x : x index of the tile
      * @param {*} y : y index of the tile
      */
-    static getIIPTileUrl(slideNum, key, ext, level, x, y, applyIIPadjustment) {
-        const xTilesNum = Math.ceil(this.status.xTilesNumAtMaxLevel * this.status.levelScale[level]);
+    static getIIPTileUrl(slideNum, key, ext, level, x, y) {
+        const xTilesNum = Math.ceil(this.status.iipTileInfos.xTilesNumAtMaxLevel * this.status.iipTileInfos.levelScale[level]);
+        const layerDispSettings = this.status.layerDisplaySettings[key];
         return (
             this.status.IIPSVR_PATH + key + "/"
             + slideNum + ext
-            + (applyIIPadjustment && this.status.gamma ? ("&GAM=" + this.status.gamma) : "")
-            + (applyIIPadjustment && this.status.contrast ? ("&CNT=" + this.status.contrast) : "")
-            // + "&WID=" + this.status.tileWidth + "&HEI=" + this.status.tileHeight
+            + (layerDispSettings.useIIProtocol && layerDispSettings.gammaEnabled ? ("&GAM=" + layerDispSettings.gamma) : "")
+            + (layerDispSettings.useIIProtocol && layerDispSettings.contrastEnabled ? ("&CNT=" + layerDispSettings.contrast) : "")
+            // + "&WID=" + this.status.iipTileInfos.tileWidth + "&HEI=" + this.status.iipTileInfos.tileHeight
             + "&JTL=" + (level ? level : "0") + "," + (y * xTilesNum + x)
         );
     }
 
-    static getTileSourceDef(key, ext, applyIIPadjustment) {
+    static getTileSourceDef(key, ext) {
         const currentPage = this.getPageNumForCurrentSlice();
         if (this.config.hasBackend) {
-            if (this.status.useIIProtocol) {
+            const layerDispSettings = this.status.layerDisplaySettings[key];
+            if (layerDispSettings.useIIProtocol) {
                 return {
-                    width: this.status.imageWidth,
-                    height: this.status.imgeHeight,
-                    tileWidth: this.status.tileWidth,
-                    tileHeight: this.status.tileHeight,
+                    width: this.status.iipTileInfos.imageWidth,
+                    height: this.status.iipTileInfos.imgeHeight,
+                    tileWidth: this.status.iipTileInfos.tileWidth,
+                    tileHeight: this.status.iipTileInfos.tileHeight,
 
                     overlap: 1,
 
-                    maxLevel: this.status.maxLevel,
-                    minLevel: this.status.minLevel,
-                    getTileUrl: (level, x, y) => this.getIIPTileUrl(this.getPageNumForCurrentSlice(), key, ext, level, x, y, applyIIPadjustment)
+                    maxLevel: this.status.iipTileInfos.maxLevel,
+                    minLevel: this.status.iipTileInfos.minLevel,
+                    getTileUrl: (level, x, y) => this.getIIPTileUrl(this.getPageNumForCurrentSlice(), key, ext, level, x, y)
                 }
             } else {
                 return this.getIIIFTileSourceUrl(currentPage, key, ext);
@@ -2139,7 +2153,7 @@ class ViewerManager {
     static setAllFilters() {
 
         const filters = [];
-        _.each(this.status.layerDisplaySettings, (layer, key) => {
+        Object.values(this.status.layerDisplaySettings).forEach((layer) => {
             const processors = [];
 
             if (layer.isTracer) {
@@ -2151,11 +2165,13 @@ class ViewerManager {
 
             } else {
 
-                if (layer.contrastEnabled) {
-                    processors.push(OpenSeadragon.Filters.CONTRAST(layer.contrast));
-                }
-                if (layer.gammaEnabled) {
-                    processors.push(OpenSeadragon.Filters.GAMMA(layer.gamma));
+                if (!layer.useIIProtocol) {
+                    if (layer.contrastEnabled) {
+                        processors.push(OpenSeadragon.Filters.CONTRAST(layer.contrast));
+                    }
+                    if (layer.gammaEnabled) {
+                        processors.push(OpenSeadragon.Filters.GAMMA(layer.gamma));
+                    }
                 }
             }
 
@@ -2174,21 +2190,55 @@ class ViewerManager {
 
     }
 
+    static resetTiledImageCache(layerid) {
+        const layerIndex = Object.keys(this.status.layerDisplaySettings).findIndex(id => id === layerid);
+
+        var tiledImage = this.viewer.world.getItemAt(layerIndex);
+        var tiledImageSource = tiledImage.source;
+
+        //Force update tiles's url for those already in viewer's tile matrix
+        Object.entries(tiledImage.tilesMatrix).forEach(([level, levelTiles]) =>
+            Object.entries(levelTiles).forEach(([x, xTiles]) =>
+                Object.entries(xTiles).forEach(([y, tile]) => {
+                    const newTileUrl = tiledImageSource.getTileUrl(parseInt(level), parseInt(x), parseInt(y));
+                    if (tile.url !== newTileUrl) {
+                        tile.exists = true;
+                        tile.loaded = false;
+                        //update tile url that otherwise would still use previous image adjustement param values
+                        tile.url = newTileUrl;
+                    }
+                })
+            )
+        );
+
+        //clears all of the current (cached) tiles and sets it to reload.
+        tiledImage.reset();
+    }
 
     static changeLayerContrast(layerid, enabled, contrast) {
         if (this.config.layers[layerid]) {
-            this.status.layerDisplaySettings[layerid].contrastEnabled = enabled;
-            this.status.layerDisplaySettings[layerid].contrast = contrast;
-            this.setAllFilters();
+            const layerSettings = this.status.layerDisplaySettings[layerid];
+            layerSettings.contrastEnabled = enabled;
+            layerSettings.contrast = contrast;
+            if (layerSettings.useIIProtocol) {
+                this.resetTiledImageCache(layerid);
+            } else {
+                this.setAllFilters();
+            }
             this.signalStatusChanged(this.status);
         }
     }
 
     static changeLayerGamma(layerid, enabled, gamma) {
         if (this.config.layers[layerid]) {
-            this.status.layerDisplaySettings[layerid].gammaEnabled = enabled;
-            this.status.layerDisplaySettings[layerid].gamma = gamma;
-            this.setAllFilters();
+            const layerSettings = this.status.layerDisplaySettings[layerid];
+            layerSettings.gammaEnabled = enabled;
+            layerSettings.gamma = gamma;
+            if (layerSettings.useIIProtocol) {
+                this.resetTiledImageCache(layerid);
+            } else {
+                this.setAllFilters();
+            }
             this.signalStatusChanged(this.status);
         }
     }
@@ -3049,22 +3099,6 @@ class ViewerManager {
         if (confFromPath.p) {
             confParams.protocol = confFromPath.p;
         }
-        if (confFromPath.GAM) {
-            const gamma = Number(confFromPath.GAM);
-            if (!isNaN(gamma) && isFinite(gamma)) {
-                if (gamma >= 0 && gamma <= 5) {
-                    confParams.gamma = gamma;
-                }
-            }
-        }
-        if (confFromPath.CNT) {
-            const contrast = Number(confFromPath.CNT);
-            if (!isNaN(contrast) && isFinite(contrast)) {
-                if (contrast >= 0 && contrast <= 5) {
-                    confParams.contrast = contrast;
-                }
-            }
-        }
         if (confFromPath.mode && confFromPath.mode === 'edit') {
             confParams.editMode = true;
         }
@@ -3094,16 +3128,6 @@ class ViewerManager {
             this.viewer.goToPage(this.getPageNumForCurrentSlice());
         }
 
-        if (typeof params.gamma !== "undefined") {
-            this.status.gamma = params.gamma;
-        } else {
-            delete this.status.gamma;
-        }
-        if (typeof params.contrast !== "undefined") {
-            this.status.contrast = params.contrast;
-        } else {
-            delete this.status.contrast;
-        }
         this.status.editModeOn = params.editMode === true;
         if (params.editMode === true) {
             this.setBorderDisplay(true);

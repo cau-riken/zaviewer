@@ -7,6 +7,7 @@ define("ERROR_ROW_EXISTS",		-10013); // Key duplication
 define("ERROR_REQUIRED",			-10014); // Required item absent
 define("ERROR_ROW_NOT_EXISTS",-10015); // Specified row does not exist
 define("ERROR_KEY_NOT_EXISTS",-10016); // Specified external key does not exist
+define("ERROR_UNKNOWN_PROTOCOL", 	-10017); // Unknow specified image retrieval protocol (IIP or IIIF)
 
 
 
