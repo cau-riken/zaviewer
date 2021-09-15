@@ -54,7 +54,7 @@ Have a look at [ZAViewer_Reference_Brain_v2](https://dataportal.brainminds.jp/ZA
 
 ## B) Build and run it on your computer <a id="local-container"></a>
 
-Prerequisite: [Docker](https://docs.docker.com/get-docker/) must be installed and running on your machine.
+Prerequisite: [Docker Engine](https://docs.docker.com/engine/) must be installed and running on your machine.
 
 The provided Docker script will:
 
