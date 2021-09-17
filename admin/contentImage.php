@@ -128,7 +128,7 @@ function fieldCheck($data){
 	}
 
 	// initial_contrast
-	if (!preg_match("/^\d+(\.\d{0,2})$/", $data["initial_contrast"])) {
+	if (!preg_match("/^\d+(\.\d{0,2})?$/", $data["initial_contrast"])) {
 		$errAry["initial_contrast"] = ERROR_NUMBER_FORMAT;//"should be a value between 0.00 and 5.00."
 	}
 
