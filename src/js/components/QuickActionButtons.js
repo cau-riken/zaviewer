@@ -74,7 +74,7 @@ class QuickActionButtons extends React.Component {
                 </Popover2>
 
                 {
-                    this.props.config
+                    this.props.config && this.props.config.dataset_info
                         ?
                         <Popover2
                             content={

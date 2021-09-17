@@ -335,7 +335,9 @@ class ZAVConfig {
                         success: function (data /* :ConfigNDatasetPayload */) {
                             if (data.datasets && data.datasets.length) {
                                 const dataset_info = _.findWhere(data.datasets, { marmosetID: that.config.paramId });
-                                that.config.dataset_info = that.expandDatasetImagesUrl(dataset_info, data.config);
+                                if (dataset_info) {
+                                    that.config.dataset_info = that.expandDatasetImagesUrl(dataset_info, data.config);
+                                }
                             } else {
                                 console.info("Missing info for dataset: ", that.config.paramId);
                             }
@@ -408,7 +410,9 @@ class ZAVConfig {
                     async: true,
                     dataType: 'json',
                     success: function (data /* :SingleDatasetInfo */) {
-                        that.config.dataset_info = that.expandDatasetImagesUrl(data, data);
+                        if (data) {
+                            that.config.dataset_info = that.expandDatasetImagesUrl(data, data);
+                        }
                     },
                     error: function (jqXHR, textStatus, errorThrown) {
                         console.info("Error while retrieving info for current dataset: ", errorThrown);
