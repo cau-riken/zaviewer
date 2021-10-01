@@ -25,8 +25,10 @@ It can display up to 3 sets of multimodal, regularly interspaced, large image sl
 Each slice view may contains several raster images layers, and Atlas regions (represented by aligned vector images, SVG) displayed as an overlay over the raster images.
 
 
+<div align="center">
+<img src="docs/ZAViewer_overview.jpg">
+</div>
 
-🟣 ADD [overview video presentation] 🟣
 
 ## Detailed Architecture
 
@@ -673,3 +675,9 @@ e.g.
 A list of software tools to create [Deep Zoom Images](http://msdn.microsoft.com/en-us/library/cc645077(v=vs.95).aspx) can be found [here](http://openseadragon.github.io/examples/creating-zooming-images/)
 
 
+<br/><br/>
+---
+
+# License
+
+ZAViewer is licensed under the Apache License, Version 2.0. See [LICENSE.txt](LICENSE.txt) for the full license text.
