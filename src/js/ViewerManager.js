@@ -74,6 +74,7 @@ class ViewerManager {
             initLayerDisplaySettings[key] = new Proxy({
                 key: key,
                 enabled: UserSettings.getBoolItem(itemKeyLayerPrefix + 'enabled', true),
+                initOpacity: value.opacity ? parseInt(value.opacity) : 100,
                 opacity: UserSettings.getNumItem(
                     itemKeyLayerPrefix + 'opacity',
                     value.opacity ? parseInt(value.opacity) : 100
@@ -88,8 +89,10 @@ class ViewerManager {
                 useIIProtocol: useIIProtocol,
 
                 contrastEnabled: UserSettings.getBoolItem(itemKeyLayerPrefix + 'contrastEnabled', initContrast != 1.0),
+                initContrast: initContrast,
                 contrast: UserSettings.getNumItem(itemKeyLayerPrefix + 'contrast', initContrast),
                 gammaEnabled: UserSettings.getBoolItem(itemKeyLayerPrefix + 'gammaEnabled', initGamma != 1.0),
+                initGamma: initGamma,
                 gamma: UserSettings.getNumItem(itemKeyLayerPrefix + 'gamma', initGamma),
             },
                 //handler to intercept Set operations and store it as user settings as required
@@ -179,6 +182,7 @@ class ViewerManager {
             showRegions: this.config.showRegions,
             displayAreas: this.config.displayAreas,
             displayBorders: this.config.displayBorders,
+            initRegionsOpacity: 0.4,
             regionsOpacity: UserSettings.getNumItem(UserSettings.SettingsKeys.OpacityAtlasRegionArea, 0.4),
 
             /** info about region currently hovered by mouse cursor */

@@ -1,7 +1,5 @@
 import React from 'react';
 
-import _ from 'underscore';
-
 import {
     ProgressBar,
     Switch
@@ -21,7 +19,14 @@ class LayerSlider extends React.Component {
         this.handleCheckedChange = this.handleCheckedChange.bind(this);
     }
     render() {
-        const { layerid, name, opacity, enabled, isTracer, contrast, contrastEnabled, gamma, gammaEnabled, enhanceSignal, dilation, loading } = this.props;
+        const {
+            layerid, name,
+            opacity, initOpacity, enabled,
+            contrast, initContrast, contrastEnabled,
+            gamma, initGamma, gammaEnabled,
+            isTracer, enhanceSignal, dilation,
+            loading
+        } = this.props;
 
         return (
             <div
@@ -31,7 +36,7 @@ class LayerSlider extends React.Component {
                 <div>
                     {name}
                     <div className="zav-thinProgressBar">
-                        {loading && enabled ? <ProgressBar className="zav-thinProgressBar"/> : null }
+                        {loading && enabled ? <ProgressBar className="zav-thinProgressBar" /> : null}
                     </div>
                 </div>
                 <div className="zav-AdjusterItem">
@@ -50,6 +55,7 @@ class LayerSlider extends React.Component {
                         stepSize={1}
                         onChange={this.handleOpacityChange.bind(this, layerid, enabled)}
                         value={opacity}
+                        defaultValue={initOpacity}
                         labelRenderer={(value) => <span>{value}<span style={{ fontSize: 8 }}>&nbsp;%</span></span>}
                         enabled={enabled}
                     />
@@ -57,7 +63,7 @@ class LayerSlider extends React.Component {
 
                 {isTracer
                     ?
-                    <div className="zav-AdjusterItem" style={{marginLeft: 6}}>
+                    <div className="zav-AdjusterItem" style={{ marginLeft: 6 }}>
                         <span title="toggle Tracer mask enhancer">
                             <Switch
                                 checked={enhanceSignal}
@@ -78,7 +84,7 @@ class LayerSlider extends React.Component {
 
                     :
                     <React.Fragment>
-                        <div className="zav-AdjusterItem" style={{marginLeft: 6}}>
+                        <div className="zav-AdjusterItem" style={{ marginLeft: 6 }}>
                             <span title="toggle layer's contrast correction">
                                 <Switch
                                     checked={contrastEnabled}
@@ -96,11 +102,12 @@ class LayerSlider extends React.Component {
                                 stepSize={0.01}
                                 onChange={this.handleContrastChange.bind(this, layerid, contrastEnabled)}
                                 value={contrast}
+                                defaultValue={initContrast}
                                 enabled={enabled && contrastEnabled}
                             />
                         </div>
 
-                        <div className="zav-AdjusterItem" style={{marginLeft: 6}}>
+                        <div className="zav-AdjusterItem" style={{ marginLeft: 6 }}>
                             <span title="toggle layer's gamma correction">
                                 <Switch
                                     checked={gammaEnabled}
@@ -118,6 +125,7 @@ class LayerSlider extends React.Component {
                                 stepSize={0.01}
                                 onChange={this.handleGammaChange.bind(this, layerid, gammaEnabled)}
                                 value={gamma}
+                                defaultValue={initGamma}
                                 enabled={enabled && gammaEnabled}
                             />
                         </div>
@@ -167,8 +175,8 @@ class SliderNavigatorPanel extends React.Component {
 
         const layerSliders = [];
         if (this.props.displaySettings) {
-            _.each(this.props.displaySettings, function (value, layerid) {
-                var params = _.extend(value, { layerid: layerid });
+            Object.entries(this.props.displaySettings).forEach(([layerid, value]) => {
+                const params = { ...value, ...{ layerid: layerid } };
                 layerSliders.push(<LayerSlider key={"slid_" + layerid}  {...params} />);
                 layerSliders.push(<div key={"sepslid_" + layerid} style={{ borderBottom: "dotted 1px #8a8a8a", margin: "3px 0" }} />);
             });

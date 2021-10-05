@@ -53,8 +53,9 @@ class UserSettings {
                 :
                 Number.parseFloat(value)
             ;
-
-        this.setStrItem(key, String(numValue));
+        if (!Number.isNaN(numValue)) {
+            this.setStrItem(key, String(numValue));
+        }
     }
 
     static getNumItem(key, defaultValue) {

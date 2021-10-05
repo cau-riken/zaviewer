@@ -260,6 +260,7 @@ class ViewerComposed extends React.Component {
                                 <RegionOptions
                                     showRegions={this.state.showRegions}
                                     regionsOpacity={this.state.regionsOpacity}
+                                    initRegionsOpacity={this.state.initRegionsOpacity}
                                     displayAreas={this.state.displayAreas}
                                     displayBorders={this.state.displayBorders}
                                 />

@@ -40,6 +40,7 @@ class RegionOptions extends React.Component {
                         stepSize={1}
                         onChange={this.handleOpacityChange}
                         value={Math.round(this.props.regionsOpacity * 100)}
+                        defaultValue={Math.round(this.props.initRegionsOpacity * 100)}
                         labelRenderer={(value) => <span>{value}<span style={{ fontSize: 8 }}>&nbsp;%</span></span>}
                         enabled={this.props.displayAreas}
                     />
