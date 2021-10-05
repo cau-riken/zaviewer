@@ -6,7 +6,6 @@ const fs = require('fs');
 
 const MiniCssExtractPlugin = require('mini-css-extract-plugin');
 
-const CssMinimizerPlugin = require('css-minimizer-webpack-plugin');
 const TerserPlugin = require('terser-webpack-plugin');
 
 
@@ -133,7 +132,7 @@ module.exports = (env, argv) => {
           extractComments: {
             condition: /^\**!|@preserve|@license|@cc_on/i,
             banner:(licenseFile) => `
-ZAViewer v2, Copyright 2021 RIKEN Center for Brain Science / Connectome Analysis Unit.
+ZAViewer, Copyright 2021 RIKEN Center for Brain Science / Connectome Analysis Unit.
 Licensed under the Apache License, Version 2.0.
 Third party license information can be found in ${licenseFile}
 `,
@@ -156,7 +155,9 @@ Third party license information can be found in ${licenseFile}
 
 
     devServer: {
-      contentBase: './',
+      static: {
+        directory: './',
+      },
       compress: true,
       port: 9000
     }
