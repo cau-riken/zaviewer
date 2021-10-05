@@ -14,6 +14,7 @@ Table of Contents
   * [**[DEV]** Playing with the source code](#dev-buildfromsrc)
   * [**[DEV]** Detailed configuration settings](#dev-config)
   * [References](#references)
+  * [License](#license)
 
 ---
 

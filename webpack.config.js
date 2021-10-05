@@ -7,6 +7,7 @@ const fs = require('fs');
 const MiniCssExtractPlugin = require('mini-css-extract-plugin');
 
 const CssMinimizerPlugin = require('css-minimizer-webpack-plugin');
+const TerserPlugin = require('terser-webpack-plugin');
 
 
 //webpack v5.38.1
@@ -43,7 +44,7 @@ module.exports = (env, argv) => {
       new webpack.DefinePlugin({
         "process.env": "{}",
         global: {}
-      })
+      }),
 
     ]
       .concat(extractCSS ? [new MiniCssExtractPlugin(
@@ -125,7 +126,24 @@ module.exports = (env, argv) => {
     },
 
     optimization: {
+      minimize: true,
+      minimizer: [
+        new TerserPlugin({
+          parallel: true,
+          extractComments: {
+            condition: /^\**!|@preserve|@license|@cc_on/i,
+            banner:(licenseFile) => `
+ZAViewer v2, Copyright 2021 RIKEN Center for Brain Science / Connectome Analysis Unit.
+Licensed under the Apache License, Version 2.0.
+Third party license information can be found in ${licenseFile}
+`,
+          },
+          terserOptions: {
+            // https://github.com/webpack-contrib/terser-webpack-plugin#terseroptions
 
+          },
+        })
+      ]
     },
 
     output: {
@@ -142,6 +160,6 @@ module.exports = (env, argv) => {
       compress: true,
       port: 9000
     }
-    
+
   }
 };
