@@ -1,0 +1,7 @@
+ZAViewer - Zooming Atlas Viewer
+Copyright 2021 RIKEN Center for Brain Science / Connectome Analysis Unit.
+
+ZAViewer source code is licensed under the Apache License, Version 2.0 (https://www.apache.org/licenses/LICENSE-2.0).
+This software contains code derived from Openseadragon v2.4.2 (http://openseadragon.github.io) originally released under the New BSD license. 
+
+Third-party software libraries [located in assets/vendors, or listed in package.json] are licensed under their respective license. 

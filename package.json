@@ -1,11 +1,20 @@
 {
   "name": "zaviewer",
   "version": "2.1.0",
-  "description": "Zooming Atlas Viewer",
+  "description": "Zooming Atlas Viewer – a web-based 2D high-resolution brain image viewer ",
   "main": "index.js",
-  "author": "cau-riken",
-  "repository": "https://github.com/cau-riken/zaviewer.git",
-  "license": "to_be_determined",
+  "author": "cau-riken <cau-contact@ml.riken.jp> (https://cau.riken.jp)",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/cau-riken/zaviewer.git"
+  },
+  "license": "Apache-2.0",
+  "keywords": [
+    "slice-viewer",
+    "brain-imaging",
+    "brain-atlas",
+    "neuroimaging"
+  ],
   "private": true,
   "scripts": {
     "start": "webpack serve --mode=development --node-env=development",
