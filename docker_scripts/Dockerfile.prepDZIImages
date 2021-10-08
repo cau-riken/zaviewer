@@ -1,0 +1,26 @@
+FROM python:3
+
+
+RUN mkdir -p /usr/src/app/scripts
+WORKDIR /usr/src/app/scripts
+COPY . .
+
+COPY requirements.prepDZIImages.txt .
+
+RUN pip install --no-cache-dir -r requirements.prepDZIImages.txt
+
+RUN git clone https://github.com/openzoom/deepzoom.py.git && \
+cd deepzoom.py && \
+python setup.py install && \
+cd ..
+
+
+WORKDIR /usr/src/app
+
+ENTRYPOINT ["python", "./scripts/prepareDZImages.py"]
+
+LABEL jp.riken.cau.product="ZAViewer Deep Zoom Images preparation utility" \
+    jp.riken.cau.version="2.1.0" \
+    jp.riken.cau.release-date="2021-09-15"
+
+

@@ -92,16 +92,18 @@ AXIS = ('coronal', 'sagittal', 'axial')
 DELINEATION_RELPATH = "SVGs"
 
 
-def getCleanedAndCheckedPath(input_query, error_message, default_path=None):
+def getCleanedAndCheckedPath(input_query, error_message, mount_path, default_path=None):
     user_value = input(f"{input_query} : ")
-    path = user_value or default_path
+    display_path = user_value or default_path
+
+    path = os.path.join(mount_path, display_path)
     # get absolute path
     if not os.path.isabs(path):
         path = os.path.normpath(os.path.realpath(path))
 
     # check that a correct path has been enterred
     if os.path.isdir(path):
-        return path
+        return (display_path, path)
     else:
         message = f"{error_message} : {user_value}"
         logging.critical(message)
@@ -550,11 +552,13 @@ def saveConfig(config_filepath, prev_config, config):
 
 
 def startGuidedImport():
-    ouput_path = ""
-    ouput_path = getCleanedAndCheckedPath(
-        "Please indicate output path", "Output path not found", ouput_path)
+    mount_path = "/mnt/hostdir"
 
-    print(f"Config & data will be generated in : {ouput_path}")
+    displayouput_path = ""
+    (displayouput_path, ouput_path) = getCleanedAndCheckedPath(
+        "Please indicate output path", "Output path not found", mount_path, displayouput_path)
+
+    print(f"Config & data will be generated in : {displayouput_path}")
     config = {}
 
     # retrieve existing config file, if any
@@ -588,8 +592,8 @@ def startGuidedImport():
     else:
         config['data_root_path'] = data_root_path
 
-    input_path = getCleanedAndCheckedPath(
-        "Path of the source images", "Path of the source images not found")
+    (displayinput_path, input_path) = getCleanedAndCheckedPath(
+        "Path of the source images", "Path of the source images not found", mount_path)
 
     # physical unit used in the image spacing properties, hence can be used to determine physical size of the image
     phys_unit = 1
