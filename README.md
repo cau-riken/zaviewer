@@ -237,30 +237,44 @@ These routine are Javascript code that can be easily plugged in ZAViewer as expl
 
 #### Step-by-step procedure:
 
-* declare your custom processsing code inside the following source file : [`zaviewer/extension/ZAVProcessings.js`](https://github.com/cau-riken/zaviewer/blob/master/extension/ZAVProcessings.js)
-* insert the required dependencies in the inside the html fragment file : [`zaviewer/extension/customProcessings.html`](https://github.com/cau-riken/zaviewer/blob/master/extension/customProcessings.html)
-<br/>(the content of this file will be included in the main page header)
-* load ZAViewer and test your processing!
-
-The same ZAViewer Docker image as before is used, but with different parameters to allow runing custom processing code.
-
-1. Run the web-server container:
+1. Clone ZAViewer git repo to get the latest sources, including extension directory :
 
     ```sh
-    docker run -it --rm \
-    -v /full/path/to/output/dir:/usr/share/nginx/html/data:ro \
-    -v /full/path/to/zaviewer/extension/nginx_extra.conf:/etc/nginx/conf.d/nginx_extra.conf:ro \
-    -v /full/path/to/zaviewer/extension:/usr/share/nginx/html/ext:ro \
-    -p 9090:80 rikencau/zaviewer:latest-ui
+    git clone https://github.com/cau-riken/zaviewer.git
+
+    cd zaviewer
     ```
 
-2. Launch ZAViewer by opening the following URL in your web browser :
 
-    [`http://localhost:9090/`](http://localhost:9090/)
+2. Add your custom processsing :
 
-**Note**
+    * declare your custom processsing code inside the following source file : [`zaviewer/extension/ZAVProcessings.js`](https://github.com/cau-riken/zaviewer/blob/master/extension/ZAVProcessings.js)
 
-* ZAViewer needs to be manually reloaded (press `[F5]` key) after changes of the custom processing code.
+    * insert the required dependencies in the inside the html fragment file : [`zaviewer/extension/customProcessings.html`](https://github.com/cau-riken/zaviewer/blob/master/extension/customProcessings.html)
+    <br/>(the content of this file will be included in the main page header)
+
+
+3. Load ZAViewer and test your processing!
+
+    The same ZAViewer Docker image as before is used, but with different parameters to allow runing custom processing code.
+
+    * Run the web-server container:
+
+        ```sh
+        docker run -it --rm \
+        -v /full/path/to/output/dir:/usr/share/nginx/html/data:ro \
+        -v /full/path/to/zaviewer/extension/nginx_extra.conf:/etc/nginx/conf.d/nginx_extra.conf:ro \
+        -v /full/path/to/zaviewer/extension:/usr/share/nginx/html/ext:ro \
+        -p 9090:80 rikencau/zaviewer:latest-ui
+        ```
+
+    * Launch ZAViewer by opening the following URL in your web browser :
+
+        [`http://localhost:9090/`](http://localhost:9090/)
+
+    **Note**
+
+    * ZAViewer needs to be manually reloaded (press `[F5]` key) after changes of the custom processing code.
 
 <br/><br/>
 
@@ -296,11 +310,6 @@ Note: By default, the docker image will be downloaded from Docker Hub registry i
 
 ---
 
-
-
-3. Launch ZAViewer by opening the following URL in your web browser :
-
-    [`http://localhost:9090/#mode=edit&`](http://localhost:9090/#mode=edit&)
 
 ---
 
