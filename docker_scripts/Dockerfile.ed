@@ -1,4 +1,4 @@
-FROM zaviewer_ui:2.1.0
+FROM rikencau/zaviewer:latest-ui
 
 WORKDIR /usr/share/nginx
 

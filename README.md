@@ -18,24 +18,22 @@ Table of Contents
 
 ---
 
-# Overview
+## Overview
 
 ZAViewer is a web 2D image viewer that was primarily designed to explore the [Brain/MINDS Marmoset Reference Atlas](https://doi.org/10.24475/bma.2799).
 
 It can display up to 3 sets of multimodal, regularly interspaced, large image slices along the 3 standard orthogonal axes (Axial, Coronal, Sagittal).
 Each slice view may contains several raster images layers, and Atlas regions (represented by aligned vector images, SVG) displayed as an overlay over the raster images.
 
-
 <div align="center">
 <img src="docs/ZAViewer_overview.jpg">
 </div>
 
-
-## Detailed Architecture
+### Detailed Architecture
 
 * ZAViewer User Interface is a javascript web application that can run in any modern Web browser (Firefox, Chrome, Edge) on a desktop or tablet environment since it is focused on displaying large images.
 <br/><a id="online-demo"></a>
-It is usually served from a remote web server, but can be conveniently executed locally in a container thanks to the provided Docker script.
+It is usually served from a remote web server, but can be conveniently executed locally in a container thanks to the provided Docker images.
 
 * ZAViewer can run with a dedicated back-end (Image server & web services providing the configuration), or without (as a simple web app hosted with its image and configuration data stored as static files).
 
@@ -44,51 +42,30 @@ It is usually served from a remote web server, but can be conveniently executed 
     * The standalone version of ZAViewer can display image in [DZI (Deep Zoom Image)](http://msdn.microsoft.com/en-us/library/cc645077(v=vs.95).aspx) format.
     <br/>
 
-    **Note**: these images may even be retrieved from a remote domain (if properly configured to serve cross-origin content)
+    **Note**: these images may be retrieved from a remote domain (if properly configured to serve cross-origin content)
 
+<br/>
 
-# Try it!
-
-## A) Online demo <a id="online-demo"></a>
+## A) Try Online demo <a id="online-demo"></a>
 
 Have a look at [ZAViewer_Reference_Brain_v2](https://dataportal.brainminds.jp/ZAViewer_Reference_Brain_v2/)
 
 ---
 
-## B) Build and run it on your computer <a id="local-container"></a>
+## B) Run ZAViewer on your computer <a id="local-container"></a>
 
 Prerequisite: [Docker Engine](https://docs.docker.com/engine/) must be installed and running on your machine.
 
-The provided Docker script will:
-
-* download dependencies and build ZAViewer UI from the source within a temporary image (so you don't have to setup the build environement on your machine)
-
-* create an image containing a light memory footprint web server to serve the generated ZAViewer Web App.
+Note: By default, ZAViewer Docker image will be downloaded from Docker Hub registry if it's not already on your local machine; You can also choose to locally [build the image](docs/docker-images.md#build-image-ui) beforehand.
 
 ### **Step by step procedure**
 
-1. Clone this git repo to get the latest sources
-
+1. Run the web-server container :
     ```sh
-    git clone https://github.com/cau-riken/zaviewer.git
-    ```
-
-2. Build the image
-
-    ```sh
-    cd zaviewer
-
-    docker build --no-cache -f docker_scripts/Dockerfile.ui \
-    -t zaviewer_ui:2.1.0 .
-    ```
-
-3. Run the web-server container:
-    ```sh
-    docker run -it --rm -p 9090:80 zaviewer_ui:2.1.0
+    docker run -it --rm -p 9090:80 rikencau/zaviewer:latest-ui
     ```
     **►** This container will display web-server log in the terminal window and keep running until stopped using `[Ctrl-C]`, then the container will be automatically removed (but ZAViewer Docker image will remain in your local repository for later use)
     <br/><br/>
-
 
 
 4. <a id="run-localcont-remotedata"></a> Launch ZAViewer by opening the following URL in your web browser :
@@ -102,10 +79,10 @@ The provided Docker script will:
 **Notes:**
 
 
-   * If you don't intend to use ZAViewer anymore, you may remove its Docker image with the following command:
+   * If you don't intend to use ZAViewer anymore, you may remove locally stored Docker image with the following command:
 
    ```sh
-        docker image rm zaviewer_ui:2.1.0
+        docker image rm rikencau/zaviewer:latest-ui
    ```
 
  
@@ -120,7 +97,7 @@ ZAViewer is able to display sets of large slice images, along with several kinds
 * region informations, and their hierarchical organization,
 * subview images (single or sets),
 
-A script is provided to help with the preparation and setup of the data in the right format and location, and generation of appropriate configuration file.
+An utility script is provided to help with the preparation and setup of the data in the right format and location, and generation of appropriate configuration file.
 
 **Note :** It will produce Deep Zoom Images copies derived from your source images, so enough free space must be available on your disk (roughly same amount of space than the original images).
 
@@ -130,7 +107,7 @@ A script is provided to help with the preparation and setup of the data in the r
 
 #### 1.1 Overview
 
-The script expects a set of slice images (single axis with only 1 layer) as minimal input.
+The utility script expects a set of slice images (single axis with only 1 layer) as minimal input.
 
 If several layers are defined :
 
@@ -196,7 +173,7 @@ The script will ask you the following parameters:
 An optional resource containing hierarchical organization of brain regions may be provided to ZAViewer, which will then be able to :
 
 * dynamically show the long name of the hovered region,
-* display in a treeview widget the  of all brain regions to allow naviagation and selection.
+* display in a treeview widget all brain regions to allow navigation and selection.
 
 A default version of the resource (for Marmoset brain) is shipped with the script and is copied in the output folder when the script is executed. Therefore, if you wish to use your own version of the resource, just overwrite the one provided, or alternatively update the configuration file generated in the ouput folder (check configuration details [here](#descriptors-when-not-using-a-backend)).
 
@@ -208,37 +185,21 @@ The structure of the region information resource is detailed [there](#dev-region
 * In case of single axis image set, you may provide a small image from on an orthogonal plane which will be displayed in the subview wigdet (it allows to see the current slice position in the set)
 
 
-#### 1.2 Install script dependencies
+#### 1.3 Run the script utility (Docker image)
 
+Note: By default, the docker image will be downloaded from Docker Hub registry if it's not already on your local machine; You can also choose to locally [build the image](docs/docker-images.md#build-image-prepimg) beforehand.
 
-🟠 Possible improvement: change procedure to run script inside a Docker container 🟠
+ 
+1. Run the import utility script
+ 
+    ```sh
+    sudo docker run -it --rm -v "$PWD":/mnt/hostdir  rikencau/zaviewer:latest-prepimg
+    ```
 
+Important note :
 
-```sh
-cd zaviewer/scripts
-
-python3 -m venv env
-
-source env/bin/activate
-
-git clone https://github.com/openzoom/deepzoom.py.git
-
-cd deepzoom.py
-
-python3 setup.py install
-
-pip3 install progress SimpleITK numpy
-```
-
-#### 1.3 Run the script
-
-```sh
-cd ..
-
-python3 prepareDZImages.py
-
-deactivate
-```
+   * The utility will interactively prompt for output & input paths used during the preparation process;
+     Be careful that these paths must be relative to current directory, eg: `OUTPUT` or `./INPUT`
 
 
 ### 2. Run ZAViewer to display prepared data
@@ -250,7 +211,7 @@ The same ZAViewer Docker image as before is used, but with different parameters 
     ```sh
     docker run -it --rm \
     -v /full/path/to/output/dir:/usr/share/nginx/html/data:ro \
-    -p 9090:80 zaviewer_ui:2.1.0
+    -p 9090:80 rikencau/zaviewer:latest-ui
     ```
 
 2. Launch ZAViewer by opening the following URL in your web browser :
@@ -290,7 +251,7 @@ The same ZAViewer Docker image as before is used, but with different parameters 
     -v /full/path/to/output/dir:/usr/share/nginx/html/data:ro \
     -v /full/path/to/zaviewer/extension/nginx_extra.conf:/etc/nginx/conf.d/nginx_extra.conf:ro \
     -v /full/path/to/zaviewer/extension:/usr/share/nginx/html/ext:ro \
-    -p 9090:80 zaviewer_ui:2.1.0
+    -p 9090:80 rikencau/zaviewer:latest-ui
     ```
 
 2. Launch ZAViewer by opening the following URL in your web browser :
@@ -306,23 +267,20 @@ The same ZAViewer Docker image as before is used, but with different parameters 
 
 ### 4. Editing region delineation within ZAViewer <a id="dev-regionedit"></a>
 
-ZAViewer allows to edit the region delineations displayed on top of the slice images. In order to save edited regions as SVG files, a minimal backend component needs to be used, thus it is necessary to create a new Docker image based on the ZAViewer Docker image used so far.
+ZAViewer allows to edit the region delineations displayed on top of the slice images (using another Docker image).
 As before local data will be displayed, but this time the displayed/edited region SVG will be located in a different directory.
 
-1. Create the extended Docker image allowing to save region editing:
+Note: By default, the docker image will be downloaded from Docker Hub registry if it's not already on your local machine; You can also choose to locally [build the image](docs/docker-images.md#build-image-regionedit) beforehand.
 
-    ```sh
-    docker build --no-cache -f docker_scripts/Dockerfile.ed -t zaviewer_ed:2.1.0 .
-    ```
 
-2. Run the UI+Editor container:
+1. Run the UI+Editor container:
 
     ```sh
     docker run -it --rm \
     -v /full/path/to/output/dir:/usr/share/nginx/html/data:rw \
     -v /full/path/to/zaviewer/extension/nginx_extra.conf:/etc/nginx/conf.d/nginx_extra.conf:ro \
     -v /full/path/to/editableSVGs/dir:/usr/share/nginx/html/data/SVGEdit:rw \
-    -p 9090:80 zaviewer_ed:2.1.0
+    -p 9090:80 rikencau/zaviewer:latest-ed
     ```
 
     **Notes**
@@ -331,6 +289,13 @@ As before local data will be displayed, but this time the displayed/edited regio
     * These files will be retrieved from  `/full/path/to/editableSVGs/dir/` directory, and it must contain an **`ARCHIVE`** subfolder used to backup the previous version of the edited file each time modifications are saved. (**`ARCHIVE`** subfolder must be created before starting editing).
     * The SVG file names should be `AtlasReg_`**`<N>`**`.svg`, where **`<N>`** is the slice number, which is a bit different from the one used for display, but their internal structure follow the same rules (as explained [here](#dev-regionsvg)).
     * All files and directory must be readeable & writeable from the Docker container. (🟠 add more details here).
+
+2. Launch ZAViewer by opening the following URL in your web browser :
+
+    [`http://localhost:9090/#mode=edit&`](http://localhost:9090/#mode=edit&)
+
+---
+
 
 
 3. Launch ZAViewer by opening the following URL in your web browser :
