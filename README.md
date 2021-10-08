@@ -13,8 +13,8 @@ Table of Contents
   * [**[DEV]** Custom processing](#dev-custproc)
   * [**[DEV]** Playing with the source code](#dev-buildfromsrc)
   * [**[DEV]** Detailed configuration settings](#dev-config)
-  * [References](#references)
-  * [License](#license)
+* [References](#references)
+* [License](#license)
 
 ---
 
