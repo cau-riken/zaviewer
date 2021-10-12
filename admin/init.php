@@ -6,6 +6,7 @@ $pdo->exec(
 "CREATE TABLE IF NOT EXISTS content(
 		view_id TEXT NOT NULL PRIMARY KEY,
 		view_publish_id TEXT NOT NULL UNIQUE,
+		dataset_id TEXT NOT NULL,
 		description TEXT,
 		image_group INTEGER,
 		subview_image TEXT,

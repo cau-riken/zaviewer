@@ -505,6 +505,7 @@ Since its contents is almost identical to `json.php` of descriptors described ab
 |entry|description|
 | --- | --- |
 | `data_root_path` | relative base URL from where all data is loaded (raster image, SVG) |
+| `dataset_id` | dataset ID (Brain/MINDS ID) used to retrieve dataset extended info |
 | `subview` |
 | `subview.foldername` | _see above_ |
 | `subview.axial_slide` |  _optional_ <sup>1</sup> _see above_ |

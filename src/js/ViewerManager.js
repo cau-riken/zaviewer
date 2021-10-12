@@ -64,7 +64,7 @@ class ViewerManager {
             //FIXME should use another method than name to identify tracer signal layer
             const isTracer = value.metadata.includes("nn_tracer");
 
-            const itemKeyLayerPrefix = UserSettings.getLayerKeyPrefix(config.paramId, key)
+            const itemKeyLayerPrefix = UserSettings.getLayerKeyPrefix(config.viewerId, key)
 
             const useIIProtocol = value.protocol === 'IIP';
 
@@ -2002,9 +2002,9 @@ class ViewerManager {
     static getRegionsSVGEditUrl(extraParams) {
         const sliceNum = this.getCurrentPlaneChosenSlice();
         const url = new URL(Utils.makePath("../", this.config.ADMIN_PATH, 'SVG.php'), window.location);
-        const params = this.config.paramId ?
+        const params = this.config.viewerId ?
             {
-                dataset: this.config.paramId,
+                dataset: this.config.viewerId,
                 plane: this.status.activePlane
             }
             : {};

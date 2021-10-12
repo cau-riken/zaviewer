@@ -227,8 +227,10 @@ class ZAVConfig {
 
 
         if (this.config.hasBackend) {
+            /** viewer id */
+            this.config.viewerId = configId;
             /** dataset id */
-            this.config.paramId = configId;
+            this.config.datasetId = configId;
 
             /** base URL of image server */
             this.config.IIPSERVER_PATH = undefined;
@@ -315,38 +317,42 @@ class ZAVConfig {
                     async: true,
                     dataType: 'json',
                     data: {
-                        id: that.config.paramId,
+                        id: that.config.viewerId,
                     },
                     error: function (jqXHR, textStatus, errorThrown) {
                         console.error('Error while retrieving configuration: ', errorThrown);
                         alert('Error while retrieving configuration from ' + configUrl + "\nTry reloading [F5], or check configuration source is up and running.");
                     },
-                    success: that.parseLayersConfig.bind(that, callbackWhenReady)
-                });
-
-
-                /** retrieve extra info for dataset from Tracer Injection Viewer */
-                if (that.config.fmDatasetsInfoUrl) {
-                    $.ajax({
-                        url: that.config.fmDatasetsInfoUrl,
-                        type: "GET",
-                        async: true,
-                        dataType: 'json',
-                        success: function (data /* :ConfigNDatasetPayload */) {
-                            if (data.datasets && data.datasets.length) {
-                                const dataset_info = _.findWhere(data.datasets, { marmosetID: that.config.paramId });
-                                if (dataset_info) {
-                                    that.config.dataset_info = that.expandDatasetImagesUrl(dataset_info, data.config);
-                                }
-                            } else {
-                                console.info("Missing info for dataset: ", that.config.paramId);
-                            }
-                        },
-                        error: function (jqXHR, textStatus, errorThrown) {
-                            console.info("Error while retrieving datasets info: ", errorThrown);
+                    success: function (data) {
+                        if (data.dataset_id) {
+                            that.config.datasetId = data.dataset_id;
                         }
-                    });
-                }
+                        /** retrieve extra info for dataset from Tracer Injection Viewer */
+                        if (that.config.fmDatasetsInfoUrl) {
+                            jQuery.ajax({
+                                url: that.config.fmDatasetsInfoUrl,
+                                type: "GET",
+                                async: true,
+                                dataType: 'json',
+                                success: function (data /* :ConfigNDatasetPayload */) {
+                                    if (data.datasets && data.datasets.length) {
+                                        const dataset_info = _.findWhere(data.datasets, { marmosetID: that.config.datasetId });
+                                        if (dataset_info) {
+                                            that.config.dataset_info = that.expandDatasetImagesUrl(dataset_info, data.config);
+                                        }
+                                    } else {
+                                        console.info("Missing info for dataset: ", that.config.datasetId);
+                                    }
+                                },
+                                error: function (jqXHR, textStatus, errorThrown) {
+                                    console.info("Error while retrieving datasets info: ", errorThrown);
+                                }
+                            });
+                        }
+
+                        that.parseLayersConfig(callbackWhenReady, data);
+                    }
+                });
 
                 //FIXME unused code
 
@@ -357,7 +363,7 @@ class ZAVConfig {
                     async: true,
                     dataType: 'json',
                     data: {
-                        id: that.config.paramId,
+                        id: that.config.viewerId,
                     },
                     success: function (data) {
                         if (!data["error"]) {
@@ -383,7 +389,7 @@ class ZAVConfig {
 
 
     /**
-    * Retrieve configuration from web sever
+    * Retrieve static configuration from web sever
     * @param {function} callbackWhenReady - function invoked when the configuration is fully loaded
     * @private
     */

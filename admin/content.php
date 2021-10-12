@@ -9,6 +9,7 @@ $pdo->exec(
 "CREATE TABLE IF NOT EXISTS content(
 		view_id TEXT NOT NULL PRIMARY KEY,
 		view_publish_id TEXT NOT NULL UNIQUE,
+		dataset_id TEXT NOT NULL,
 		description TEXT,
 		image_group INTEGER,
 		subview_image TEXT,
@@ -106,6 +107,13 @@ function fieldCheck($data, $key){
 					$errAry["view_publish_id"] = ERROR_ROW_EXISTS;
 				}
 			}
+		}
+	}
+	//dataset_id
+	if($data["dataset_id"] == null){
+		$errAry["dataset_id"] = ERROR_REQUIRED;
+		if(!preg_match("/^[a-zA-Z0-9\_\-]+$/", $data["dataset_id"])) {
+			$errAry["dataset_id"] = ERROR_PATH_FORMAT;
 		}
 	}
 	

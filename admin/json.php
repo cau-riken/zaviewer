@@ -39,6 +39,7 @@ $data = $res[0];
 
 // create JSON
 $json["data_root_path"] = $data["view_id"];
+$json["dataset_id"] = $data["dataset_id"];
 $json["subview"] = array(
 	"foldername"=>$data["subview_upload_id"],
 	"coronal_slide"=>100,

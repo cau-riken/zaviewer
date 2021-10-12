@@ -109,7 +109,7 @@ class ViewerComposed extends React.Component {
                 null
             ;
 
-        const globalHeaderText = (this.props.config && this.props.config.paramId ? this.props.config.paramId + " — " : "") + "Global view";
+        const globalHeaderText = (this.props.config && this.props.config.datasetId ? this.props.config.datasetId + " — " : "") + "Global view";
         const globalDatasetVersion = (this.props.config && this.props.config.datasetVersion) ? <a href={this.props.config.datasetVersion.uri} target="_blank">{this.props.config.datasetVersion.label}</a> : null;
 
         const globalHeader = <>

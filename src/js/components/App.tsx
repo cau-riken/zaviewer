@@ -62,7 +62,7 @@ const App = (props: AppProps) => {
       const treeDataUrl =
         newConfig.treeUrlPath
           ? newConfig.hasBackend
-            ? Utils.makePath(newConfig.PUBLISH_PATH, newConfig.treeUrlPath, "regionTreeGroup_" + newConfig.paramId + ".json")
+            ? Utils.makePath(newConfig.PUBLISH_PATH, newConfig.treeUrlPath, "regionTreeGroup_" + newConfig.viewerId + ".json")
             : Utils.makePath(newConfig.treeUrlPath, newConfig.fallbackTreeUrl)
           : newConfig.fallbackTreeUrl
 
