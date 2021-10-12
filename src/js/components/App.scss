@@ -60,6 +60,30 @@ div#zav_logoContainer {
 	margin-top: 12px;
 }
 
+div#zav_licensecontainer {
+	position: fixed;
+	top: $zavlogo-height;
+	left: 0;
+	width: 250px;
+	text-align: center;
+	margin-top: -15px;
+}
+
+div#zav_licensecontainer > span {	
+	color: 	gray;
+	font-size: 10px;
+	letter-spacing: 2px;
+	border: solid 1px transparent;
+	border-bottom-color:  gray;
+	padding: 2px 1px 1px 4px;
+	cursor: pointer;
+}
+div#zav_licensecontainer > span:hover {	
+	border-color:  gray;
+	color: 	#000;
+	background-color: #FFF;
+}
+
 .Resizer {
 	background: #000;
 	opacity: 0.2;
