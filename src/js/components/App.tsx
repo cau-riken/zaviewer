@@ -128,9 +128,9 @@ const App = (props: AppProps) => {
               <div id="zav_licensecontainer">
                 <Popover2
                   interactionKind={Popover2InteractionKind.HOVER}
-                  position={Position.RIGHT}
+                  position={'bottom-right'}
                   content={
-                    <div style={{ width: '40vw', padding: 20, marginTop: 30 }}>
+                    <div style={{ width: '40vw', padding: 20, }}>
                       <h2>Licenses</h2>
                       <p>
                         ZAViewer (this webapp) is licensed under the <a href="https://www.apache.org/licenses/LICENSE-2.0" target="_blank">Apache License, Version 2.0</a>
