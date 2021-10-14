@@ -125,32 +125,44 @@ const App = (props: AppProps) => {
                 <img src="./assets/img/brain-minds_borderlogo.svg" height={32} />
               </a>
               <img id="zav_logo" src="./assets/img/logo.png" height={23} />
-              <div id="zav_licensecontainer">
-                <Popover2
-                  interactionKind={Popover2InteractionKind.HOVER}
-                  position={'bottom-right'}
-                  content={
-                    <div style={{ width: '40vw', padding: 20, }}>
-                      <h2>Licenses</h2>
-                      <p>
-                        ZAViewer (this webapp) is licensed under the <a href="https://www.apache.org/licenses/LICENSE-2.0" target="_blank">Apache License, Version 2.0</a>
-                      </p>
-                      <br/>
-                      <p>
-                        This software contains code derived from <a href="http://openseadragon.github.io" target="_blank">Openseadragon</a> v2.4.2 released under the New BSD license.
-                      </p>
-                      {/* FIXME : IIPserver is not always used on backend...  */}
-                      <p>
-                        Brain images are served by <a href="https://iipimage.sourceforge.io/" target="_blank">IIPImage server</a>, licensed under version 3 of the GNU General Public License.
-                      </p>
-                    </div>
-                  }
-                >
-                  <span> licenses</span>
-                </Popover2>
-              </div>
             </div>
           </div>
+          <div id="zav_licensecontainer">
+            {config?.extra?.termsOfUse ?
+              <div><a href={config?.extra?.termsOfUse} target="_blank">
+                <span className="zav_miscLinks">terms of use</span>
+              </a></div>
+              :
+              null
+            }
+            <Popover2
+              interactionKind={Popover2InteractionKind.CLICK}
+              hasBackdrop={true}
+              position={'bottom-right'}
+              content={
+                <div style={{ width: '40vw', padding: 20, }}>
+                  <h2>Licenses</h2>
+                  <p>
+                    ZAViewer (this webapp) is licensed under the <a href="https://www.apache.org/licenses/LICENSE-2.0" target="_blank">Apache License, Version 2.0</a>
+                  </p>
+                  <br />
+                  <p>
+                    This software contains code derived from <a href="http://openseadragon.github.io" target="_blank">Openseadragon</a> v2.4.2 released under the New BSD license.
+                  </p>
+                  {config?.extra?.hasIIPserver ?
+                    <p>
+                      Brain images are served by <a href="https://iipimage.sourceforge.io/" target="_blank">IIPImage server</a>, licensed under version 3 of the GNU General Public License.
+                    </p>
+                    :
+                    null
+                  }
+                </div>
+              }
+            >
+              <div><span className="zav_miscLinks">licenses</span></div>
+            </Popover2>
+          </div>
+
           {
             RegionsManager.isReady()
               ? <RegionTreePanel regionsStatus={regionsStatus} />

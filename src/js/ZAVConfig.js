@@ -3,6 +3,8 @@ import Utils from './Utils.js';
 
 import UserSettings from './UserSettings.js';
 
+import ExtraConfig from './ZAVConfig.json';
+
 export const AXIAL = 1;
 export const CORONAL = 2;
 export const SAGITTAL = 3;
@@ -266,6 +268,10 @@ class ZAVConfig {
             /** URL path to the default tree region */
             this.config.fallbackTreeUrl = Utils.makePath(this.config.baseConfigPath, "regionTree.json");
 
+        }
+
+        if (Object.keys(ExtraConfig).length) {
+            this.config.extra = ExtraConfig;
         }
 
         //start retrieving configuration
