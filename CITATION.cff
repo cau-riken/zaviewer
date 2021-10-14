@@ -1,0 +1,17 @@
+cff-version: 1.2.0
+message: "If you use this software, please cite it as below."
+authors:
+- family-names: "Papazian"
+ given-names: "Frederic"
+- family-names: "Lai"
+ given-names: "Jonathan"
+- family-names: "Maeda"
+	given-names: "Masahide"
+- family-names: "Gong"
+	given-names: "Rui"
+- family-names: "Woodward"
+	given-names: "Alexander"
+title: "ZAViewer: A web-based 2D high-resolution brain image viewer"
+version: 2.1.0
+date-released: 2021-10-08
+url: "https://github.com/cau-riken/zaviewer"
