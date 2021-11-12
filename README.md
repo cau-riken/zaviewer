@@ -189,7 +189,7 @@ Note: By default, the docker image will be downloaded from Docker Hub registry i
 1. Run the import utility script
  
     ```sh
-    sudo docker run -it --rm -v "$PWD":/mnt/hostdir  rikencau/zaviewer:latest-prepimg
+    docker run -it --rm -u "$(id -u):$(id -g)" -v "$PWD":/mnt/hostdir  rikencau/zaviewer:latest-prepimg
     ```
 
 Important note :
