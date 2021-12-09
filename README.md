@@ -185,10 +185,12 @@ The structure of the region information resource is detailed [there](#dev-region
 
 Note: By default, the docker image will be downloaded from Docker Hub registry if it's not already on your local machine; You can also choose to locally [build the image](docs/docker-images.md#build-image-prepimg) beforehand.
 
- 
 1. Run the import utility script
- 
+
     ```sh
+
+    mkdir OUTPUT
+
     docker run -it --rm -u "$(id -u):$(id -g)" -v "$PWD":/mnt/hostdir  rikencau/zaviewer:latest-prepimg
     ```
 
@@ -261,7 +263,7 @@ These routine are Javascript code that can be easily plugged in ZAViewer as expl
         -v /full/path/to/output/dir:/usr/share/nginx/html/data:ro \
         -v /full/path/to/zaviewer/extension/nginx_extra.conf:/etc/nginx/conf.d/nginx_extra.conf:ro \
         -v /full/path/to/zaviewer/extension:/usr/share/nginx/html/ext:ro \
-        -p 9090:80 rikencau/zaviewer:latest-ui
+        -p 9090:80 rikencau/zaviewer:latest-ed
         ```
 
     * Launch ZAViewer by opening the following URL in your web browser :
