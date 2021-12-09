@@ -54,8 +54,8 @@ Prerequisite: [Docker Engine](https://docs.docker.com/engine/) must be installed
 
 **Notes**:
 
-    * Depending on your configuration, you might need to have root permission to run docker, in this case you will need to preface the `docker` command with `sudo` in all the following examples (more details [here](https://docs.docker.com/engine/install/linux-postinstall) ).
-    * By default, ZAViewer Docker image will be downloaded from Docker Hub registry if it's not already on your local machine; You can also choose to locally [build the image](docs/docker-images.md#build-image-ui) beforehand.
+* Depending on your configuration, you might need to have root permission to run docker, in this case you will need to preface the `docker` command with `sudo` in all the following examples (more details [here](https://docs.docker.com/engine/install/linux-postinstall) ).
+* By default, ZAViewer Docker image will be downloaded from Docker Hub registry if it's not already on your local machine; You can also choose to locally [build the image](docs/docker-images.md#build-image-ui) beforehand.
 
 ### **Step by step procedure**
 
