@@ -2157,6 +2157,7 @@ class ViewerManager {
     static setAllFilters() {
 
         const filters = [];
+        let tracerNum = 0;
         Object.values(this.status.layerDisplaySettings).forEach((layer) => {
             const processors = [];
 
@@ -2165,7 +2166,8 @@ class ViewerManager {
                 if (layer.enhanceSignal && layer.dilation > 0) {
                     processors.push(OpenSeadragon.Filters.MORPHOLOGICAL_OPERATION(layer.dilation, Math.max));
                 }
-                processors.push(CustomFilters.INTENSITYALPHA());
+                processors.push(CustomFilters.INTENSITYALPHA(tracerNum));
+                tracerNum++;
 
             } else {
 
