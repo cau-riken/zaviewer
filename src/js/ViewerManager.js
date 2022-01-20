@@ -1983,19 +1983,75 @@ class ViewerManager {
         return opacity;
     }
 
+    /**
+     * Refresh effective opacity of the layer stack including and below the specified one,
+     * and returns the id of refreshed layers
+     * 
+     *   Effective opacity of a layer is zero (to prevent it from being loaded by OSD),
+     *   when any fully opaque layer above it renders it invisible.
+     *   (Assuming that there's no transparent color in the layer images, except for tracer layer)
+     */
+    static refreshLayersEffectiveOpacity(startLayerKey) {
+        const opacities = [];
+        let hasOpaqueLayerAbove = false;
+
+        let skip = true;
+        Object.keys(this.config.layers)
+            // from top to bottom
+            .reverse()
+            // iterate over layers
+            .forEach((currentLayerKey) => {
+
+                const isStartingLayer = currentLayerKey == startLayerKey;
+                const currentlayer = this.status.layerDisplaySettings[currentLayerKey];
+
+                //skip computing opacity for layer above the specified one
+                skip = skip && !isStartingLayer;
+
+                if (!skip) {
+                    //effective opacity is set to 0 when layer is disabled or covered by another layer above it
+                    currentlayer.effectiveOpacity = (!hasOpaqueLayerAbove && currentlayer.enabled) ? currentlayer.opacity / 100 : 0;
+                    opacities.push(currentLayerKey);
+                }
+
+                //check if the current layer is hidding the one below
+                if (!hasOpaqueLayerAbove) {
+                    //layeris enabled and fully opaque and not a tracer layer (which has alpha values),
+                    hasOpaqueLayerAbove =
+                        !currentlayer.isTracer
+                        && currentlayer.enabled
+                        && currentlayer.opacity == 100;
+                }
+            });
+
+        return opacities;
+    }
+
     static setLayerOpacity(key) {
         if (this.config.layers[key]) {
-            var opacity = this.getLayerOpacity(key);
-            const layerIndex = this.config.layers[key].index;
-            const viewerLayer = this.viewer.world.getItemAt(layerIndex);
-            if (viewerLayer) {
-                viewerLayer.setOpacity(opacity);
-                //since changing opacity on the viewer automatically spreads to the navigator, explicit reset to 100% opacity in the navigator is required 
-                const navigatorLayer = this.viewer.navigator.world.getItemAt(layerIndex);
-                if (navigatorLayer) {
-                    navigatorLayer.setOpacity(1);
-                }
-            }
+            //Update the effective opacity of the specified layer and the ones below
+            this.refreshLayersEffectiveOpacity(key)
+                .forEach(layerKey => {
+                    const layerInfo = this.status.layerDisplaySettings[layerKey];
+                    const layerIndex = this.config.layers[layerKey].index;
+
+                    const viewerLayer = this.viewer.world.getItemAt(layerIndex);
+                    if (viewerLayer) {
+                        viewerLayer.setOpacity(layerInfo.effectiveOpacity);
+
+                        if (layerInfo.effectiveOpacity==0) {
+                            //if effective opacity is zero, loading won't occur or be canceled
+                            //hence finished loading status needs to be forced to stop active progress bar
+                            this.status.layerDisplaySettings[layerKey].loading = false;
+                        }
+
+                        //since changing opacity on the viewer automatically spreads to the navigator, explicit reset to 100% opacity in the navigator is required 
+                        const navigatorLayer = this.viewer.navigator.world.getItemAt(layerIndex);
+                        if (navigatorLayer) {
+                            navigatorLayer.setOpacity(1);
+                        }
+                    }
+                });
         }
     }
 
