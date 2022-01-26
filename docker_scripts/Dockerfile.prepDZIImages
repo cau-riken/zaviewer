@@ -7,7 +7,8 @@ COPY . .
 
 COPY requirements.prepDZIImages.txt .
 
-RUN pip install -r requirements.prepDZIImages.txt
+RUN pip install --upgrade pip && \
+    pip install --no-cache-dir -r requirements.prepDZIImages.txt
 
 RUN git clone https://github.com/openzoom/deepzoom.py.git && \
 cd deepzoom.py && \
