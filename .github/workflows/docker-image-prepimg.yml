@@ -1,4 +1,4 @@
-name: Docker Image CI — rikencau/zaviewer:latest-ui
+name: Docker Image CI — rikencau/zaviewer:latest-prepimg
 
 on:
   push:
@@ -27,7 +27,8 @@ jobs:
         uses: docker/build-push-action@v2
         with:
           context: .
-          file: ./docker_scripts/Dockerfile.ui
+          file: ./docker_scripts/Dockerfile.prepDZIImages
           push: true
-          tags: rikencau/zaviewer:2.1.0-ui, rikencau/zaviewer:latest-ui
+          tags: rikencau/zaviewer:2.1.0-prepimg, rikencau/zaviewer:latest-prepimg
+
 
