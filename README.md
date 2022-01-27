@@ -363,12 +363,12 @@ npm run build
 ## Detailed configuration settings [DEV] <a id="dev-config"></a>
 
 The viewer is flexible thanks to its detailed configuration descriptors which describe the data to display, according to which the UI adapts its behavior.
-Since ZAViewer may run with or without a backend, the configuration 
+Note that some limited parts of the configuration are expressed in a similar, but not strictly identical way, depending if ZAViewer runs with or without a backend.
 
 This configuration is loaded  in several steps when ZAViewer runs with a backend, 
 This configuration is loaded in a single step when ZAViewer runs with or without a backend, the configuration is merged as a single simplified descriptor.
 
-### Descriptors when using a backend
+### **Descriptors when using a backend**
 
 In this mode, the configuration needs to be loaded in several sequential steps.
 
@@ -411,8 +411,8 @@ When ZAViewer is used with images along a single axis (aka "single-plane mode") 
 | `subview.coronal_slide` <sup>multi</sup> | _optional_ <sup>1</sup> as above but for Coronal image set |
 | `subview.sagittal_slide` <sup>multi</sup> | _optional_  <sup>1</sup> as above but for Sagittal image set |
 | `subview.size` | size of the (square) subview images  |
-| `subview.min` <sup>single</sup> | minimum boundary (i.e. left position in pixels) of the space covered by orthogonal slices on the subview image |
-| `subview.max` <sup>single</sup> | maximum boundary (i.e. right position in pixels) of the space covered by orthogonal slices on the subview image |
+| `subview.min` <sup>single</sup> | minimum boundary (in percent) of the space covered by orthogonal slices on the subview image. |
+| `subview.max` <sup>single</sup> | maximum boundary (in percent) of the space covered by orthogonal slices on the subview image.|
 | `subview.x_min` <sup>multi</sup> | minimum boundary (in pixels), on the subview image, of the space covered by orthogonal slices along x axis |
 | `subview.x_max` <sup>multi</sup> | maximum boundary (in pixels), on the subview image, of the space covered by orthogonal slices along x axis |
 | `subview.y_min` <sup>multi</sup> | same as above, but for y axis |
@@ -494,7 +494,7 @@ _Example:_
 }
 ```
 
-### Descriptors when not using a backend
+### **Descriptors when not using a backend**
 
 In this simple mode, the configuration is loaded in a single step.
 
@@ -513,8 +513,8 @@ Since its contents is almost identical to `json.php` of descriptors described ab
 | `subview.coronal_slide` | _optional_ <sup>1</sup> _see above_ |
 | `subview.sagittal_slide` | _optional_  <sup>1</sup> _see above_ |
 | `subview.size` | _see above_  |
-| `subview.min` <sup>single</sup> | _see above_ |
-| `subview.max` <sup>single</sup> | _see above_ |
+| `subview.min` <sup>single</sup> | _as above_, but value is expressed in pixels instead of percent.  |
+| `subview.max` <sup>single</sup> | _as above_, but value is expressed in pixels instead of percent. |
 | `subview.x_min` <sup>multi</sup> | _see above_ |
 | `subview.x_max` <sup>multi</sup> | _see above_ |
 | `subview.y_min` <sup>multi</sup> | _see above_ |

@@ -501,10 +501,16 @@ class ZAVConfig {
             this.config.zMinGlobal = (response.subview.z_min ? response.subview.z_min : 0) / this.config.subviewZoomRatio;
             this.config.zMaxGlobal = (response.subview.z_max ? response.subview.z_max : subviewOrgSize) / this.config.subviewZoomRatio;
         } else {
-            this.config.xMinGlobal = this.config.yMinGlobal = this.config.zMinGlobal = (response.subview.min ? response.subview.min : 1) / this.config.subviewZoomRatio;
 
-            //this.config.xMaxGlobal = this.config.yMaxGlobal = this.config.zMaxGlobal = (response.subview.max ? response.subview.max : subviewOrgSize) / this.config.subviewZoomRatio;
-            this.config.xMaxGlobal = this.config.yMaxGlobal = this.config.zMaxGlobal = (response.subview.max ? response.subview.max : subviewOrgSize) / this.config.subviewZoomRatio;
+            if (this.config.hasBackend) {
+                //subview.min & subview.max are expressed in percent of subview image size
+                this.config.xMaxGlobal = this.config.yMaxGlobal = this.config.zMaxGlobal = (response.subview.max ? response.subview.max / 100 * subviewOrgSize : subviewOrgSize) / this.config.subviewZoomRatio;
+                this.config.xMinGlobal = this.config.yMinGlobal = this.config.zMinGlobal = (response.subview.min ? response.subview.min / 100 * subviewOrgSize : subviewOrgSize) / this.config.subviewZoomRatio;
+            } else {
+                //subview.min & subview.max are expressed in pixels
+                this.config.xMaxGlobal = this.config.yMaxGlobal = this.config.zMaxGlobal = (response.subview.max ? response.subview.max : subviewOrgSize) / this.config.subviewZoomRatio;
+                this.config.xMinGlobal = this.config.yMinGlobal = this.config.zMinGlobal = (response.subview.min ? response.subview.min : 1) / this.config.subviewZoomRatio;
+            }
         }
 
         if (response.delineations) {
