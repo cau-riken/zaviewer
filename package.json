@@ -44,7 +44,7 @@
   "dependencies": {
     "@blueprintjs/core": "^3.52.0",
     "@blueprintjs/popover2": "^0.12.9",
-    "axios": "^0.24.0",
+    "axios": "^0.25.0",
     "classnames": "^2.2.6",
     "color": "^4.2.0",
     "history": "^5.2.0",
