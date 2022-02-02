@@ -1,5 +1,9 @@
 import * as React from 'react';
 
+import {
+    Button,
+} from "@blueprintjs/core";
+
 import * as TracInj from "../common/Types";
 
 import "./MetadataView.scss";
@@ -43,7 +47,9 @@ type MetadataViewProps = {
 
 
 const MetadataView = (props: MetadataViewProps) => {
+    const downloadLink = React.useRef(null);
     const infoDataset = props.infoDataset;
+    const { layers, thumbnail, thumbnailUrl, snapshot, snapshotUrl, ...metadata } = infoDataset;
     return (
         <div style={{
             padding: 6,
@@ -55,6 +61,20 @@ const MetadataView = (props: MetadataViewProps) => {
         }}>
             {infoDataset ?
                 <>
+                    <div style={{ position: 'absolute', right: 0, width: 50 }}>
+                        {/* using hidden anchor here (instead of AnchorButton) just to avoid displaying data url on the status bar... */}
+                        <a
+                            ref={downloadLink}
+                            style={{ display: 'hidden' }}
+                            href={'data:text/json;charset=utf-8,' + encodeURIComponent(JSON.stringify(metadata))}
+                            download={metadata.marmosetID + "_metadata.json"}
+                        />
+                        <Button
+                            icon='import'
+                            title="Download metadata"
+                            onClick={() => { downloadLink.current.click() }}
+                        />
+                    </div>
                     <PropRenderer label="Brain/MINDS ID" value={infoDataset.marmosetID} />
                     <PropRenderer label="Group" value={infoDataset.lab} />
 
