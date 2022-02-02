@@ -49,7 +49,7 @@ type MetadataViewProps = {
 const MetadataView = (props: MetadataViewProps) => {
     const downloadLink = React.useRef(null);
     const infoDataset = props.infoDataset;
-    const { layers, thumbnail, thumbnailUrl, snapshot, snapshotUrl, ...metadata } = infoDataset;
+    const { layers, thumbnail, thumbnailUrl, snapshot, snapshotUrl, zaviewerID, ...metadata } = infoDataset;
     return (
         <div style={{
             padding: 6,

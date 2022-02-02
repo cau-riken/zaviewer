@@ -3,6 +3,8 @@ import classNames from "classnames";
 
 import {
     Classes,
+    HotkeyConfig,
+    HotkeysTarget2,
     Icon,
     Overlay,
     Position,
@@ -53,6 +55,34 @@ class TitledCard extends React.Component {
 class ViewerComposed extends React.Component {
 
     static contextType = TourContext;
+
+    hotkeys = //HotkeyConfig[] 
+        [
+            {
+                combo: "ctrl + left",
+                global: true,
+                label: "Go to the previous slice",
+                onKeyDown: () => ViewerManager.shiftToSlice(-1),
+            },
+            {
+                combo: "meta + left",
+                global: true,
+                label: "Go to the previous slice",
+                onKeyDown: () => ViewerManager.shiftToSlice(-1),
+            },
+            {
+                combo: "ctrl + right",
+                global: true,
+                label: "Go to the next slice",
+                onKeyDown: () => ViewerManager.shiftToSlice(1),
+            },
+            {
+                combo: "meta + right",
+                global: true,
+                label: "Go to the next slice",
+                onKeyDown: () => ViewerManager.shiftToSlice(1),
+            },
+        ];
 
     constructor(props) {
         super(props);
@@ -155,7 +185,8 @@ class ViewerComposed extends React.Component {
             ViewerManager.setZoomFactor(50);
         }
 
-        return (
+        return (<HotkeysTarget2 hotkeys={this.hotkeys}>
+
             <div style={{ height: "100%" }}>
                 <div className="zav-StatusBar">
                     <div className="zav-StatusBarContent">
@@ -303,7 +334,8 @@ class ViewerComposed extends React.Component {
                 </Drawer>
 
             </div>
-        );
+
+        </HotkeysTarget2>);
     }
 
     onToolbarExpandCollapse(isExpanded) {

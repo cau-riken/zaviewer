@@ -178,13 +178,15 @@ const NavigationTourSteps: ExtendedStep[] = [
                     <br />(or <span className="zav_keyboardkey">Shift</span>+<span className="zav_keyboardkey">↑</span> and <span className="zav_keyboardkey">Shift</span>+<span className="zav_keyboardkey">↓</span> on the keyboard)</li>
                     <li>Scroll the image using click and drag gestures,
                         <br />(or keyboard's arrows : <span className="zav_keyboardkey">←</span> <span className="zav_keyboardkey">↑</span> <span className="zav_keyboardkey">→</span> <span className="zav_keyboardkey">↓</span>)</li>
-                    <li>Reset to full image view using <span className="zav_keyboardkey">Alt</span>+<span className="zav_keyboardkey">←</span></li>
+                    <li>Go to to next or previous slice using <span className="zav_keyboardkey">Ctrl</span>+<span className="zav_keyboardkey">→</span> or <span className="zav_keyboardkey">Ctrl</span>+<span className="zav_keyboardkey">←</span> respectively
+                        <br />(or <span className="zav_keyboardkey">Command</span>+<span className="zav_keyboardkey">→</span> or <span className="zav_keyboardkey">Command</span>+<span className="zav_keyboardkey">←</span> on MacOS)
+                    </li>
                 </ul>
             </div>,
         placement: 'bottom',
         styles: {
             tooltip: {
-                minWidth: '500px',
+                minWidth: '600px',
             },
         }
     },
