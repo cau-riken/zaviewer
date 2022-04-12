@@ -1,3 +1,7 @@
+#!/usr/bin/env python
+
+import argparse
+
 import logging
 #logging.basicConfig(format='%(asctime)s : %(message)s')
 
@@ -92,9 +96,13 @@ AXIS = ('coronal', 'sagittal', 'axial')
 DELINEATION_RELPATH = "SVGs"
 
 
-def getCleanedAndCheckedPath(input_query, error_message, mount_path, default_path=None):
-    user_value = input(f"{input_query} : ")
-    display_path = user_value or default_path
+def getCleanedAndCheckedPath(input_query, error_message, mount_path, default_path=None, interactive=True):
+    if interactive:
+        user_value = input(f"{input_query} : ")
+        display_path = user_value
+    else:
+        user_value = default_path
+        display_path = default_path
 
     path = os.path.join(mount_path, display_path)
     # get absolute path
@@ -551,12 +559,27 @@ def saveConfig(config_filepath, prev_config, config):
         json.dump(config, config_file, indent=2)
 
 
+def arg_parser():
+    parser = argparse.ArgumentParser(description='Prepare Deepzoom images for ZAViewer')
+    parser.add_argument('-i', '--inputpath', type=str, default=None,
+                        help='path of input data')
+    parser.add_argument('-o', '--outputpath', type=str, default=None,
+                        help='path to folder where ouput is generated')
+    parser.add_argument('-u', '--physicalunit', type=int, default=1,
+                        help='physical unit used in the image spacing properties (in µm)')
+    return parser
+
 def startGuidedImport():
     mount_path = "/mnt/hostdir"
 
-    displayouput_path = ""
+    args = arg_parser().parse_args()
+
+    interactive = args.outputpath is None or args.inputpath is None 
+
+    displayouput_path = args.outputpath
     (displayouput_path, ouput_path) = getCleanedAndCheckedPath(
-        "Please indicate output path", "Output path not found", mount_path, displayouput_path)
+        "Please indicate output path", "Output path not found", mount_path, displayouput_path, interactive)
+
 
     print(f"Config & data will be generated in : {displayouput_path}")
     config = {}
@@ -592,13 +615,15 @@ def startGuidedImport():
     else:
         config['data_root_path'] = data_root_path
 
+    displayinput_path = args.inputpath
     (displayinput_path, input_path) = getCleanedAndCheckedPath(
-        "Path of the source images", "Path of the source images not found", mount_path)
+        "Path of the source images", "Path of the source images not found", mount_path, displayinput_path, interactive)
 
     # physical unit used in the image spacing properties, hence can be used to determine physical size of the image
-    phys_unit = 1
-    phys_unit = float(input(
-        f"Physical unit used in images, in micrometer ({phys_unit}) : ") or phys_unit)
+    phys_unit = args.physicalunit
+    if interactive:
+        phys_unit = float(input(
+            f"Physical unit used in images, in micrometer ({phys_unit}) : ") or phys_unit)
 
     #copy provided hierarchical region information resource to output folder
     REGIONTREE_FILENAME = 'regionTree.json'

@@ -202,6 +202,14 @@ Important note :
    * The utility will interactively prompt for output & input paths used during the preparation process;
      Be careful that these paths must be relative to current directory, eg: `OUTPUT` or `./INPUT`
 
+   * Alternatively, you can pass argument values on the command line as follow:
+
+    ```sh
+    docker run -it --rm -u "$(id -u):$(id -g)" -v "$PWD":/mnt/hostdir  \
+      rikencau/zaviewer:latest-prepimg \
+      -i ./INPUT -o OUTPUT
+    ```
+
 
 ### 2. Run ZAViewer to display prepared data
 
