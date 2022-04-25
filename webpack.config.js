@@ -131,7 +131,7 @@ module.exports = (env, argv) => {
           parallel: true,
           extractComments: {
             condition: /^\**!|@preserve|@license|@cc_on/i,
-            banner:(licenseFile) => `
+            banner: (licenseFile) => `
 ZAViewer, Copyright 2021 RIKEN Center for Brain Science / Connectome Analysis Unit.
 Licensed under the Apache License, Version 2.0.
 Third party license information can be found in ${licenseFile}
@@ -153,10 +153,14 @@ Third party license information can be found in ${licenseFile}
       publicPath: '/assets/js',
     },
 
-
     devServer: {
       static: {
         directory: './',
+        watch: {
+          ignored: [
+            '**/node_modules'
+          ]
+        }
       },
       compress: true,
       port: 9000
