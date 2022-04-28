@@ -25,6 +25,8 @@ ZAViewer is a web 2D image viewer that was primarily designed to explore the [Br
 It can display up to 3 sets of multimodal, regularly interspaced, large image slices along the 3 standard orthogonal axes (Axial, Coronal, Sagittal).
 Each slice view may contains several raster images layers, and Atlas regions (represented by aligned vector images, SVG) displayed as an overlay over the raster images.
 
+https://user-images.githubusercontent.com/64643044/165652526-0eff29be-0f3d-46ec-90de-1f80d716a344.mp4
+
 ### Detailed Architecture
 
 * ZAViewer User Interface is a javascript web application that can run in any modern Web browser (Firefox, Chrome, Edge) on a desktop or tablet environment since it is focused on displaying large images.
