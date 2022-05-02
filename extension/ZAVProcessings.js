@@ -28,7 +28,7 @@ ZAVProcessings = function () { };
      *      when constraint="ratio", width and height values will correspond to same integer multiple of respective specified values.
      *      when constraint="fixed", width and height values will equal the respective specified values.
      */
-    
+
     //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     addProcessor(
         // example : image color inversion
@@ -56,11 +56,73 @@ ZAVProcessings = function () { };
 
     //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     addProcessor(
+        // Processor using ONNX (see https://github.com/microsoft/onnxruntime/tree/master/js/)
+        {
+            name: "FNST Udnie (onnx)",
+
+            //Fast Neural Style Transfer models work on 224x224 RGB images
+            inputSize: { width: 224, height: 224, constraint: "fixed" },
+
+
+            processImageData: function (imageData) {
+                // initialize ONNX with a pre-trained model
+                // (local copy of model provided at https://github.com/onnx/models/tree/main/vision/style_transfer/fast_neural_style)
+
+                const width = imageData.width;
+                const height = imageData.height;
+
+                return (
+
+                    ort.InferenceSession.create(
+                        "ext/models/onnx/udnie-9.onnx",
+                        {
+                            //NOTE: webgl execution seems not to be supported for now (for these models only?) 
+                            //executionProviders: ["webgl"],
+                            executionProviders: ["wasm"],
+                        })
+                        .then(
+                            (session) => {
+
+                                /* NOTE: 
+                                In the ImageData, RGBA pixels components are stored following a row-major layout :
+                                  in a single dimension array, red, green, blue and alpha components of each pixel are located at consecutive indices.
+
+                                The Fast Neural Style Transfer models expects RGB pixels components stored following a column-major layout:
+                                  in a single dimension array, red components of pixel 1 to pixel N at consecutive indices, followed by green components, and finally blue ones.
+                                */
+
+                                const feeds = {
+                                    input1: new ort.Tensor(
+                                        'float32',
+                                        modfn.imageDataPixs2FnstPixs(imageData.data),
+                                        [1, 3, width, height]
+                                    )
+                                };
+                                return session.run(feeds);
+                            }
+                        ).then(
+                            (results) => {
+
+                                //The Fast Neural Style Transfer model outputs a float32 array of same height and width as the input image.
+                                const rgba = modfn.fnstPixs2ImageDataPixs(results.output1.data);
+                                return new ImageData(rgba, width, height)
+                            }
+                        )
+
+                );
+
+            }
+
+        }
+    );
+
+    //~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+    addProcessor(
         // Processor based on UNET from ml5.js
         {
-            name: "UNET /Face 128px",
+            name: "UNET /Face 128px (ml5)",
 
-            inputSize: {width: 128, height: 128, constraint: "fixed"},
+            inputSize: { width: 128, height: 128, constraint: "fixed" },
 
             processImageData: function (imageData) {
                 // initialize a UNET method with a pre-trained model
@@ -103,9 +165,9 @@ ZAVProcessings = function () { };
     addProcessor(
         // Processor based on Pix2Pix from ml5.js - https://learn.ml5js.org/#/reference/pix2pix
         {
-            name: "pix2pix /Pikachu 256px",
+            name: "pix2pix /Pikachu 256px (ml5)",
 
-            inputSize: {width: 256, height: 256, constraint: "ratio"},
+            inputSize: { width: 256, height: 256, constraint: "ratio" },
 
             processImageData: function (imageData) {
                 return (
@@ -192,6 +254,49 @@ ZAVProcessings = function () { };
             }
         });
     };
+
+    const RGBA_BytesPerPx = 4;
+    const RGB_BytesPerPx = 3;
+
+    //convert a row-major ordered UInt8 array of RGBA pixel components 
+    //  into  a column-major ordered Float32 array of RGB pixel components
+    modfn.imageDataPixs2FnstPixs = (inData) => {
+        const inLen = inData.length;
+        const nbPixels = Math.ceil(inLen / RGBA_BytesPerPx);
+        const dblPixels = 2 * nbPixels;
+        const outLen = nbPixels * RGB_BytesPerPx;
+        const outData = new Float32Array(outLen);
+        let oPix = 0;
+        for (let iPix = 0; iPix < inLen; iPix += RGBA_BytesPerPx) {
+            outData[oPix] = inData[iPix]; // Red
+            outData[nbPixels + oPix] = inData[iPix + 1]; // Green
+            outData[dblPixels + oPix] = inData[iPix + 2]; // Blue
+            //drop Alpha
+            oPix += 1;
+        }
+        return outData;
+    }
+
+    //convert a column-major ordered Float32 array of RGB pixel components  
+    //  into  a row-major ordered UInt8 array of RGBA pixel components
+    modfn.fnstPixs2ImageDataPixs = (inData) => {
+        const inLen = inData.length;
+        const nbPixels = Math.ceil(inLen / RGB_BytesPerPx);
+        const dblPixels = 2 * nbPixels;
+
+        const outLen = nbPixels * RGBA_BytesPerPx;
+        const outData = new Uint8ClampedArray(outLen);
+        let iPix = 0;
+        for (let oPix = 0; oPix < outLen; oPix += RGBA_BytesPerPx) {
+            outData[oPix] = Math.round(inData[iPix]); // Red
+            outData[oPix + 1] = Math.round(inData[nbPixels + iPix]); // Green
+            outData[oPix + 2] = Math.round(inData[dblPixels + iPix]); // Blue
+            outData[oPix + 3] = 255; //Alpha
+            iPix += 1;
+        }
+        return outData;
+    }
+
 
 }(ZAVProcessings));
 

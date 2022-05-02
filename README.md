@@ -244,7 +244,7 @@ The same ZAViewer Docker image as before is used, but with different parameters 
 ### 3. Implement custom processing on image clip within ZAViewer <a id="dev-custproc"></a>
 
 It is possible to create custom image processing routine that can be run on (part of) the images displayed in ZAViewer.
-These routine are Javascript code that can be easily plugged in ZAViewer as explained below.
+These routines are Javascript code that can be easily plugged in ZAViewer as explained below.
 
 #### Step-by-step procedure:
 
