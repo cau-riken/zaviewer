@@ -83,7 +83,10 @@ class ViewerManager {
                 index: i,
                 isTracer: isTracer,
                 enhanceSignal: false,
+                manualEnhancing: false,
                 dilation: 0,
+                manualDilation: 0,
+                autoDilation: 0,
 
                 defaultProtocol: value.protocol || 'IIIF',
                 useIIProtocol: useIIProtocol,
@@ -613,7 +616,7 @@ class ViewerManager {
                 if (that.viewer.world.getItemAt(i) === tiledImage) {
                     const layer = _.findWhere(that.status.layerDisplaySettings, { index: i });
 
-                    //if this tiled imaged correspond to tracer signal
+                    //if this tiled image corresponds to tracer signal
                     if (layer && layer.isTracer) {
                         //handler to set filter on once the image is fully loaded
                         const hnd = (fullyLoadedChangeEvent) => {
@@ -895,7 +898,7 @@ class ViewerManager {
             this.status.editRegion = targetElt;
             this.status.editPathFillColor = targetElt.getAttribute("fill");
             this.status.editPathStrokeColor = targetElt.getAttribute("stroke");
-            
+
             const editGroup = this.status.editSVG.getElementById('svgEditGroup');
             //copy region svg as a base for edit 
             const newLivPath = targetElt.cloneNode();
@@ -2039,7 +2042,7 @@ class ViewerManager {
                     if (viewerLayer) {
                         viewerLayer.setOpacity(layerInfo.effectiveOpacity);
 
-                        if (layerInfo.effectiveOpacity==0) {
+                        if (layerInfo.effectiveOpacity == 0) {
                             //if effective opacity is zero, loading won't occur or be canceled
                             //hence finished loading status needs to be forced to stop active progress bar
                             this.status.layerDisplaySettings[layerKey].loading = false;
@@ -2199,12 +2202,16 @@ class ViewerManager {
     /** adjust filters to the new zoom factor */
     static adjustFiltersAfterZoom(zoom) {
         const tracerLayer = _.findWhere(this.status.layerDisplaySettings, { isTracer: true });
-        const newDilationSize = zoom > 2.5 ? 0 : zoom > 1.5 ? 3 : zoom > 0.3 ? 5 : 7;
-        //change filters only if dilation kernel size changed
-        if (tracerLayer && newDilationSize != tracerLayer.dilation) {
-            tracerLayer.dilation = newDilationSize;
-            if (tracerLayer.enhanceSignal) {
-                this.setAllFilters();
+        if (tracerLayer) {
+            const newDilationSize = zoom > 2.5 ? 0 : zoom > 1.5 ? 3 : zoom > 0.3 ? 5 : 7;
+            tracerLayer.autoDilation = newDilationSize;
+
+            //change filters only if dilation kernel size changed
+            if (newDilationSize != tracerLayer.dilation && !tracerLayer.manualEnhancing) {
+                tracerLayer.dilation = newDilationSize;
+                if (tracerLayer.enhanceSignal) {
+                    this.setAllFilters();
+                }
             }
         }
     }
@@ -2305,9 +2312,35 @@ class ViewerManager {
         }
     }
 
-    static changeLayerEnhancer(layerid, enabled) {
+    static changeLayerDilation(layerid, enabled, manualEnhancing, dilation) {
         if (this.config.layers[layerid]) {
-            this.status.layerDisplaySettings[layerid].enhanceSignal = enabled;
+            const layerSettings = this.status.layerDisplaySettings[layerid];
+
+            if (layerSettings.enhanceSignal != enabled) {
+                if (!enabled) {
+                    layerSettings.dilation = layerSettings.autoDilation;
+                    layerSettings.manualEnhancing = false;
+                }
+                layerSettings.enhanceSignal = enabled;
+            }
+
+            //just enabled or disabled manual setting of dilation value
+            else if (layerSettings.manualEnhancing != manualEnhancing) {
+                //reset dilation to previous value in corresponding mode
+                if (manualEnhancing) {
+                    layerSettings.dilation = layerSettings.manualDilation;
+                } else {
+                    layerSettings.dilation = layerSettings.autoDilation;
+                }
+                layerSettings.manualEnhancing = manualEnhancing;
+            }
+            //just manually changed value of dilation
+            else if (manualEnhancing) {
+                //dilation kernel size must be an odd number
+                layerSettings.manualDilation = dilation == 0 ? dilation : Math.floor(dilation / 2) * 2 + 1;
+                layerSettings.dilation = layerSettings.manualDilation;
+            }
+
             this.setAllFilters();
             this.signalStatusChanged(this.status);
         }
@@ -2880,30 +2913,38 @@ class ViewerManager {
                     this.status.longRunningMessage = "Performing custom processing...";
                     this.signalStatusChanged(this.status);
 
-                    proc.processImageData(imageData)
-                        .then((processedImageData) => {
-                            //if result is already an image, no conversion necessary
-                            if (Image.prototype.isPrototypeOf(processedImageData)) {
-                                return processedImageData;
-                            } else {
-                                //convert computed result as image object
-                                return this.imageDataToImage(processedImageData)
-                            }
-                        })
-                        .then((imageObj) => {
-                            imageObj.name = proc.name + ' -' + new Date().toISOString().slice(0, 19).replaceAll(/[:\-]/g, '');;
-                            this.status.processedImage = imageObj;
-                            this.displayClipBox();
-                        })
-                        .catch((error) => {
-                            console.error(error);
-                        })
-                        .finally(() => {
-                            this.status.processingActive = false;
-                            this.status.longRunningMessage = null;
-                            this.signalStatusChanged(this.status);
-                        });
-
+                    try {
+                        proc.processImageData(imageData)
+                            .then((processedImageData) => {
+                                //if result is already an image, no conversion necessary
+                                if (Image.prototype.isPrototypeOf(processedImageData)) {
+                                    return processedImageData;
+                                } else {
+                                    //convert computed result as image object
+                                    return this.imageDataToImage(processedImageData)
+                                }
+                            })
+                            .then((imageObj) => {
+                                imageObj.name = proc.name + ' -' + new Date().toISOString().slice(0, 19).replaceAll(/[:\-]/g, '');;
+                                this.status.processedImage = imageObj;
+                                this.displayClipBox();
+                            })
+                            .catch((error) => {
+                                console.error(error);
+                                alert("An error occured:\n" + error);
+                                this.signalStatusChanged(this.status);
+                            })
+                            .finally(() => {
+                                this.status.processingActive = false;
+                                this.status.longRunningMessage = null;
+                                this.signalStatusChanged(this.status);
+                            });
+                    } catch (e) {
+                        alert("An error occured:\n" + e);
+                        this.status.processingActive = false;
+                        this.status.longRunningMessage = null;
+                        this.signalStatusChanged(this.status);
+                    }
                 };
 
                 //collect info to check if part of the clipped region is outside of the screen

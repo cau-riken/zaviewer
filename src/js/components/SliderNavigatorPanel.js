@@ -24,7 +24,7 @@ class LayerSlider extends React.Component {
             opacity, initOpacity, enabled,
             contrast, initContrast, contrastEnabled,
             gamma, initGamma, gammaEnabled,
-            isTracer, enhanceSignal, dilation,
+            isTracer, enhanceSignal, manualEnhancing, dilation,
             loading
         } = this.props;
 
@@ -67,7 +67,7 @@ class LayerSlider extends React.Component {
                         <span title="toggle Tracer mask enhancer">
                             <Switch
                                 checked={enhanceSignal}
-                                onChange={this.handleEnhanceCheck.bind(this, layerid)}
+                                onChange={this.handleEnhanceCheck.bind(this, layerid, manualEnhancing, dilation)}
                                 inline
                                 disabled={!enabled}
                             />
@@ -75,11 +75,25 @@ class LayerSlider extends React.Component {
 
                         <ParamAdjusterLabel
                             icon="heatmap"
-                            noAdjust={true}
+                            label="Tracer enhancing factor"
+                            noAdjust={!enhanceSignal || !manualEnhancing}
+                            min={0}
+                            max={21}
+                            stepSize={2}
+                            onChange={this.handleDilationChange.bind(this, layerid, enhanceSignal, manualEnhancing)}
                             value={dilation}
+
                             enabled={enabled && enhanceSignal}
                         />
 
+                        <span title="manually set enhancement factor" style={{ paddingLeft: 4 }}>
+                            <Switch
+                                checked={manualEnhancing}
+                                onChange={this.handleManualEnhanceCheck.bind(this, layerid, enhanceSignal, dilation)}
+                                inline
+                                disabled={!enabled || !enhanceSignal}
+                            />
+                        </span>
                     </div>
 
                     :
@@ -159,8 +173,14 @@ class LayerSlider extends React.Component {
         ViewerManager.changeLayerGamma(layerid, event.target.checked, gamma);
     }
 
-    handleEnhanceCheck(layerid, event) {
-        ViewerManager.changeLayerEnhancer(layerid, event.target.checked);
+    handleEnhanceCheck(layerid, manualEnhancing, dilation, event) {
+        ViewerManager.changeLayerDilation(layerid, event.target.checked, manualEnhancing, dilation);
+    }
+    handleManualEnhanceCheck(layerid, enabled, dilation, event) {
+        ViewerManager.changeLayerDilation(layerid, enabled, event.target.checked, dilation);
+    }
+    handleDilationChange(layerid, enabled, manualEnhancing, dilation) {
+        ViewerManager.changeLayerDilation(layerid, enabled, manualEnhancing, dilation);
     }
 
 }
