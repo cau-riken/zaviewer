@@ -120,11 +120,17 @@ const App = (props: AppProps) => {
       >
         <div className="secondaryRegionTreePane" style={{ height: "100%", overflow: "hidden" }}>
           <div id="zav_logoPlaceHolder">
-            <div id="zav_logoContainer" draggable="false">
-              <a id="bm_logo" href="https://dataportal.brainminds.jp/"  >
-                <img src="./assets/img/brain-minds_borderlogo.svg" height={32} />
-              </a>
-              <img id="zav_logo" src="./assets/img/logo.png" height={23} />
+            <div id="zav_logoContainer">
+              <div>
+                <a id="bm_logo" href="https://dataportal.brainminds.jp/"  >
+                  <img src="./assets/img/brain-minds_borderlogo.svg" height={32} />
+                </a>
+              </div>
+              <div><img id="zav_logo" src="./assets/img/logo.png" height={23} draggable="false" /></div>
+              <div style={{ verticalAlign: 'bottom' }}>
+                <div id="zav_BrandingPlaceHolder" style={{ maxWidth: 280, height: 32, overflow: 'clip'}}>
+                </div>
+              </div>
             </div>
           </div>
           <div id="zav_licensecontainer">

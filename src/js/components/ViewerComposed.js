@@ -50,6 +50,58 @@ class TitledCard extends React.Component {
     }
 }
 
+
+class BrandingMark extends React.Component {
+
+    constructor(props) {
+        super(props);
+        this.el = document.createElement('div');
+    }
+    componentDidMount() {
+        this.placeHolder = document.getElementById('zav_BrandingPlaceHolder');
+        this.placeHolder && this.placeHolder.appendChild(this.el);
+    }
+    componentWillUnmount() {
+        this.placeHolder && this.placeHolder.removeChild(this.el);
+    }
+    render() {
+
+        return (
+            this.placeHolder ?
+            ReactDOM.createPortal(
+                <div style={{ color: '#E1E1E1', verticalAlign: 'middle', fontSize: '10px' }}>
+                    {this.props.brandingInfo && this.props.brandingInfo.short && <span>{this.props.brandingInfo.short}{' '}</span>}
+                    {this.props.brandingInfo && this.props.brandingInfo.descr && 
+
+                    <Popover2
+                        content={
+                            <div
+                                style={{ maxWidth: '50vw', maxHeight: '50vh', overflowY: 'auto', padding: 10, fontSize: '12px'  }}>
+                                <p><br />{this.props.brandingInfo.descr.split('\n').map((l, i) => <p>{l}</p>)}</p>
+                            </div>
+                        }
+                        position={Position.RIGHT_BOTTOM}
+                        interactionKind={Popover2InteractionKind.HOVER}
+                    >
+                        <span 
+                            style={{ color: '#E1E1E1', backgroundColor: '#515151', borderRadius: 2, padding: '0 2px',}}
+                            //title="more info here!"
+                        ><Icon icon='more' size={12} /></span>
+                    </Popover2>
+
+                        
+                    }
+                </div>,
+                this.el,
+            )
+            :
+            null
+        );
+    }
+}
+
+
+
 //props.containerRef: React.RefObject<HTMLDivElement>,
 
 class ViewerComposed extends React.Component {
@@ -188,6 +240,9 @@ class ViewerComposed extends React.Component {
         return (<HotkeysTarget2 hotkeys={this.hotkeys}>
 
             <div style={{ height: "100%" }}>
+
+                <BrandingMark brandingInfo={this.props.config && this.props.config.branding}/>
+
                 <div className="zav-StatusBar">
                     <div className="zav-StatusBarContent">
                         {
