@@ -248,15 +248,14 @@ class ViewerComposed extends React.Component {
                     </TitledCard>
 
                     {
-                        this.props.config && this.props.config.matrix ?
+                        this.props.config && (this.props.config.getTotalSlidesCount() > 1) ?
                             <TitledCard
-                                className="zav-controlPanel_Distance"
-                                header={"Distance measurement"}
-                            >
-                                <MeasureInfoPanel
-                                    posCount={this.state.position ? this.state.position[0].c : 0}
-                                    pos={this.state.pos} markedPos={this.state.markedPos}
-                                    markedPosColors={this.state.markedPosColors}
+                                className="zav-controlPanel_SliceNav"
+                                header={"Slices navigation" + subviewTitleSuffix}>
+                                <SubViewPanel
+                                    activePlane={this.state.activePlane}
+                                    chosenSlice={this.state.chosenSlice}
+                                    config={this.props.config}
                                 />
                             </TitledCard>
                             : null
@@ -318,14 +317,15 @@ class ViewerComposed extends React.Component {
                     }
 
                     {
-                        this.props.config && (this.props.config.getTotalSlidesCount() > 1) ?
+                        this.props.config && this.props.config.matrix ?
                             <TitledCard
-                                className="zav-controlPanel_SliceNav"
-                                header={"Slices navigation" + subviewTitleSuffix}>
-                                <SubViewPanel
-                                    activePlane={this.state.activePlane}
-                                    chosenSlice={this.state.chosenSlice}
-                                    config={this.props.config}
+                                className="zav-controlPanel_Distance"
+                                header={"Distance measurement"}
+                            >
+                                <MeasureInfoPanel
+                                    posCount={this.state.position ? this.state.position[0].c : 0}
+                                    pos={this.state.pos} markedPos={this.state.markedPos}
+                                    markedPosColors={this.state.markedPosColors}
                                 />
                             </TitledCard>
                             : null
