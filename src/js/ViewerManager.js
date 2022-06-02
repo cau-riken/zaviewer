@@ -3155,7 +3155,7 @@ class ViewerManager {
                 s: sliceNum, a: this.status.activePlane
             };
         }
-        Utils.pushHistoryStep(this.history, stepParams);
+        Utils.pushHistoryStep(this.history, stepParams, ['px']);
     }
 
     static getParamsFromCurrLocation() {
@@ -3205,6 +3205,10 @@ class ViewerManager {
         if (confFromPath.mode && confFromPath.mode === 'edit') {
             confParams.editMode = true;
         }
+        //transient param: open UI with right panel expanded
+        if (confFromPath.px && confFromPath.px === '1') {
+            confParams.initPanelExpanded = true;
+        }
         return confParams;
     }
 
@@ -3235,6 +3239,7 @@ class ViewerManager {
         if (params.editMode === true) {
             this.setBorderDisplay(true);
         }
+        this.status.initExpanded = params.initPanelExpanded;
     }
 }
 

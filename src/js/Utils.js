@@ -45,9 +45,9 @@ class Utils {
 		return qs.parse(this.getCleanHash(location.hash));
 	}
 
-	static pushHistoryStep(history, newParams) {
+	static pushHistoryStep(history, newParams, omitedParams) {
 		const currentParams = this.getConfigFromLocation(history.location);
-		const updStrParams = qs.stringify(_.extend(currentParams, newParams));
+		const updStrParams = qs.stringify(_.omit(_.extend(currentParams, newParams), omitedParams));
 		const updatedPath = createPath(_.extend(_.clone(history.location), { hash: updStrParams }));
 		if (updStrParams != this.getCleanHash(history.location.hash)) {
 			history.push(updatedPath);

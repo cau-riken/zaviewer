@@ -223,7 +223,7 @@ class ViewerComposed extends React.Component {
                     id="ZAV-rightPanel"
                     initExpanded={this.state.initExpanded}
 
-                    forceExpanded={tourSpecificInit.controlPanelExpanded}
+                    forceExpanded={tourSpecificInit.controlPanelExpanded || this.state.initExpanded}
 
                     onExpandCollapse={this.onToolbarExpandCollapse.bind(this)}
                     quickactions={
