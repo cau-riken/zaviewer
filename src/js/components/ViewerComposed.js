@@ -1,4 +1,5 @@
 import React from 'react';
+import ReactDOM from 'react-dom';
 import classNames from "classnames";
 
 import {
@@ -156,6 +157,12 @@ class ViewerComposed extends React.Component {
                 this.props.history
             );
             this.initialized = true;
+
+            //Apply simple theming according to config
+            if (this.props.config && this.props.config.branding && this.props.config.branding.theme) {
+                const App = document.getElementsByClassName('App');
+                App.item(0).className = App.item(0).className + (this.props.config.branding.theme === 'light' ? ' theme-light' : '');
+            }
         }
 
         const datasetDetails =

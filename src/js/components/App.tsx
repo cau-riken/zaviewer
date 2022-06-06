@@ -25,6 +25,7 @@ import Utils from '../Utils.js';
 import axios from 'axios';
 
 import "./App.scss";
+import "./Themes.scss";
 
 import { TourContext } from "./GuidedTour"
 
