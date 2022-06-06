@@ -675,6 +675,9 @@ class ZAVConfig {
                 this.config.datasetVersion = response.verofdata.all;
             }
         }
+        if (response.branding) {
+            this.config.branding = response.branding;
+        }
 
 
         if (callbackWhenReady && typeof (callbackWhenReady) === 'function') {

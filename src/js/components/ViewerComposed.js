@@ -78,7 +78,7 @@ class BrandingMark extends React.Component {
                         content={
                             <div
                                 style={{ maxWidth: '50vw', maxHeight: '50vh', overflowY: 'auto', padding: 10, fontSize: '12px'  }}>
-                                <p><br />{this.props.brandingInfo.descr.split('\n').map((l, i) => <p>{l}</p>)}</p>
+                                <p><br />{this.props.brandingInfo.descr.split('\n').map((l, i) => <p key={i}>{l}</p>)}</p>
                             </div>
                         }
                         position={Position.RIGHT_BOTTOM}
