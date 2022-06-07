@@ -43,6 +43,26 @@ $drawer-handle-color: #2b2b2b;
     overflow-y: auto;
 }
 
+.zav-Drawer_expandedCont.zav-moreBoth {
+    background:
+        linear-gradient(#7BA4E3, #0000) center top,
+        linear-gradient(#0000, #7BA4E3) center bottom;
+    background-repeat: no-repeat;
+    background-size: 100% 20px;
+}
+
+.zav-Drawer_expandedCont.zav-moreUp {
+    background: linear-gradient(#7BA4E3, #0000) center top;
+    background-repeat: no-repeat;
+    background-size: 100% 20px;
+}
+
+.zav-Drawer_expandedCont.zav-moreDown {
+    background: linear-gradient(#0000, #7BA4E3) center bottom;
+    background-repeat: no-repeat;
+    background-size: 100% 20px;
+}
+
 .zav-Drawer[data-isexpanded="false"] > .zav-Drawer_expandedCont {
     display: none;
     width: 0;

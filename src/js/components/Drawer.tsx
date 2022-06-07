@@ -45,7 +45,8 @@ type DrawerProps = {
 export const Drawer = (props: DrawerProps) => {
 
     const [isExpanded, setIsExpanded] = React.useState(props.initExpanded);
-    const drawerRef = React.useRef<HTMLDivElement>(null);
+    const [scrollTop, setScrollTop] = React.useState(0);
+    const scrollContRef = React.useRef<HTMLDivElement>(null);
 
     React.useEffect(
         () => {
@@ -56,10 +57,16 @@ export const Drawer = (props: DrawerProps) => {
         [props.forceExpanded]
     );
 
+    let [moreUp, moreDown] = [false, false];
+    if (scrollContRef.current) {
+        const hiddenHeight = scrollContRef.current.scrollHeight - scrollContRef.current.clientHeight;
+        moreDown = Math.abs(hiddenHeight - scrollTop) > 1;
+        moreUp = hiddenHeight > 0 && Math.abs(scrollTop) > 1;
+    }
+
     return (
         <div
             id={props.id}
-            ref={drawerRef}
             className="zav-Drawer"
             data-isexpanded={isExpanded}
         >
@@ -75,7 +82,21 @@ export const Drawer = (props: DrawerProps) => {
             <div className="zav-Drawer_collapsedCont">
                 {props.quickactions}
             </div>
-            <div className="zav-Drawer_expandedCont">
+            <div
+                ref={scrollContRef}
+
+                className={'zav-Drawer_expandedCont'
+                    + (moreUp && moreDown ?
+                        ' zav-moreBoth'
+                        :
+                        (
+                            (moreUp ? ' zav-moreUp' : '')
+                            + (moreDown ? ' zav-moreDown' : '')
+                        )
+                    )
+                }
+                onScroll={(e) => setScrollTop(e.target.scrollTop)}
+            >
                 <div className="zav-Drawer_expandedContWrapper">
                     {props.children}
                 </div>
