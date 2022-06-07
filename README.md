@@ -608,7 +608,7 @@ Region delineations display on top of images are defined in SVG files that must 
 * SVG user coordinate system must be identical to the viewport (i.e. it must not be redefined via a `viewBox` attribute, or by any `transform` attribute on container or graphic elements, since those will be lost when the SVG is imported in the UI).
 * Therefore, coordinates used for graphic elements directly map to pixels (1 user unit maps to 1 pixel), 
 * Region delineations are represented by `<path>` elements, which must have a unique value for their `id` attribute, and a region id in the custom attribute `bma:regionId` (declared namespace `xmlns:bma="https://www.brainminds.riken.jp/Atlas"`). The region hemisphere is indicated by a 2 characters suffix in the region id: an underscore separator `_` and the side letter (`L` or `R`).
-* One path defining a closed rectangle the size of the image must be defined with `id="backgound"`.
+* One path defining a closed rectangle the size of the image must be defined with `id="backgound"` (This element is **mandatory** for correct region rendering and region edition feature).
 
 ```svg
 <?xml version="1.0"?>

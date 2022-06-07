@@ -1306,6 +1306,7 @@ class ViewerManager {
                     //new set of mouse event listeners 
                     that.status.regionEventListeners = {};
 
+                    let hasBackground = false;
                     const svgElement = overlayElement.getElementsByTagName('svg')[0];
                     for (var i = 0; i < paths.length; i++) {
 
@@ -1343,6 +1344,7 @@ class ViewerManager {
 
                             //Create Background path in the SVG dedicated to edition
                             that.createEditSVGBackground(paths[i]);
+                            hasBackground= true;
 
                         } else {
                             newPathElt.id = pathId;
@@ -1365,6 +1367,9 @@ class ViewerManager {
                                 modifiedRegionInDom.setAttribute("vector-effect", "non-scaling-stroke");
                             }
                         }
+                    }
+                    if (!hasBackground) {
+                        console.error("SVG without background: Region rendering and edition will likely fail! " + svgName);
                     }
 
                     that.eventSource.raiseEvent('zav-regions-created', { svgUrl: svgName })
