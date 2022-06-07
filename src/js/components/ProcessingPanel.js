@@ -43,6 +43,7 @@ class ProcessingPanel extends React.Component {
                                     (valueAsNumber, valueAsString) =>
                                         ViewerManager.setZoomFactor(valueAsNumber)
                                 }
+                                asyncControl={true}
                             />
                         </div>
                     </div>
