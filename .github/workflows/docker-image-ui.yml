@@ -29,5 +29,5 @@ jobs:
           context: .
           file: ./docker_scripts/Dockerfile.ui
           push: true
-          tags: rikencau/zaviewer:2.1.0-ui, rikencau/zaviewer:latest-ui
+          tags: rikencau/zaviewer:2.3.0-ui, rikencau/zaviewer:latest-ui
 

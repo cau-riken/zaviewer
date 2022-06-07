@@ -29,6 +29,6 @@ jobs:
           context: ./scripts/
           file: ./docker_scripts/Dockerfile.prepDZIImages
           push: true
-          tags: rikencau/zaviewer:2.1.0-prepimg, rikencau/zaviewer:latest-prepimg
+          tags: rikencau/zaviewer:2.3.0-prepimg, rikencau/zaviewer:latest-prepimg
 
 
