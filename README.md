@@ -46,7 +46,7 @@ It is usually served from a remote web server, but can be conveniently executed 
 
 ## A) Try Online demo <a id="online-demo"></a>
 
-Have a look at [ZAViewer_Reference_Brain_v2](https://dataportal.brainminds.jp/ZAViewer_Reference_Brain_v2/)
+Have a look at the [Brain/MINDS Marmoset Atlas in ZAViewer](https://dataportal.brainminds.jp/ZAViewer_BMA_2019/)
 
 ---
 
@@ -71,7 +71,7 @@ Prerequisite: [Docker Engine](https://docs.docker.com/engine/) must be installed
 
 4. <a id="run-localcont-remotedata"></a> Launch ZAViewer by opening the following URL in your web browser :
 
-    [`http://localhost:9090/?datasrc=https://dataportal.brainminds.jp/ZAViewer_Reference_Brain_v2`](http://localhost:9090/?datasrc=https://dataportal.brainminds.jp/ZAViewer_Reference_Brain_v2)
+    [`http://localhost:9090/?datasrc=https://dataportal.brainminds.jp/ZAViewer_BMA_2019/`](http://localhost:9090/?datasrc=https://dataportal.brainminds.jp/ZAViewer_BMA_2019)
 
     **►** in this configuration, images are actually retrieved from a remote domain, as specified by the `datasrc` parameter.
     <br/><br/>
