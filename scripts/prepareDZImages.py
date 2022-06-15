@@ -63,7 +63,7 @@ def changeSize(in_filename, out_filename, scale_factor=0.1, desired_size=None):
     resample.SetOutputDirection = image.GetDirection()
     resample.SetOutputOrigin = image.GetOrigin()
 
-    orig_size = np.array(image.GetSize(), dtype=np.int)
+    orig_size = np.array(image.GetSize(), dtype=int)
     orig_spacing = image.GetSpacing()
     # resize by final pixel or via scale factor
     if desired_size:
