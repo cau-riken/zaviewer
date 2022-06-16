@@ -122,7 +122,7 @@ class SubView extends React.Component {
                 //in single plane mode, only 1 image for the subview, but one for each slice in multiplane
                 //FIXME introduce a specific parameter for this feature
                 if (this.props.config.hasMultiPlanes) {
-                    imageUrl = Utils.makePath(this.props.config.PUBLISH_PATH, this.props.config.subviewFolderName, ZAVConfig.getPlaneLabel(this.props.viewPlane), ViewerManager.getPlaneChosenSlice(this.props.viewPlane) + '.jpg');
+                    imageUrl = Utils.makePath(this.props.config.PUBLISH_PATH, this.props.config.subviewFolderName, ZAVConfig.getPlaneName(this.props.viewPlane), ViewerManager.getPlaneChosenSlice(this.props.viewPlane) + '.jpg');
                 } else {
                     imageUrl = Utils.makePath(this.props.config.PUBLISH_PATH, this.props.config.subviewFolderName, "/subview.jpg");
                 }

@@ -423,12 +423,16 @@ When ZAViewer is used with images along a single axis (aka "single-plane mode") 
 | `subview.size` | size of the (square) subview images  |
 | `subview.min` <sup>single</sup> | minimum boundary (in percent) of the space covered by orthogonal slices on the subview image. |
 | `subview.max` <sup>single</sup> | maximum boundary (in percent) of the space covered by orthogonal slices on the subview image.|
+| `subview.label` | custom label used in UI for the plane  |
 | `subview.x_min` <sup>multi</sup> | minimum boundary (in pixels), on the subview image, of the space covered by orthogonal slices along x axis |
 | `subview.x_max` <sup>multi</sup> | maximum boundary (in pixels), on the subview image, of the space covered by orthogonal slices along x axis |
 | `subview.y_min` <sup>multi</sup> | same as above, but for y axis |
 | `subview.y_max` <sup>multi</sup> | same as above, but for y axis |
 | `subview.z_min` <sup>multi</sup> | same as above, but for z axis |
 | `subview.z_max` <sup>multi</sup> | same as above, but for z axis |
+| `subview.x_label` <sup>multi</sup> | custom label used in UI for the Sagittal plane |
+| `subview.y_label` <sup>multi</sup> | custom label used in UI for the Coronal plane |
+| `subview.z_label` <sup>multi</sup> | custom label used in UI for the Axial plane |
 | `delineations` | URL prefix of the regions delineation SVG location (using `publish_path` base URL) |
 | `tree` |  URL prefix of the detailed regions information location (using `publish_path` base URL) |
 | `verofdata.all`  |

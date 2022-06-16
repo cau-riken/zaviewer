@@ -8,7 +8,10 @@ import ExtraConfig from './ZAVConfig.json';
 export const AXIAL = 1;
 export const CORONAL = 2;
 export const SAGITTAL = 3;
-export const PLANE_LABELS = { [AXIAL]: 'axial', [CORONAL]: 'coronal', [SAGITTAL]: 'sagittal' };
+/* internal plane names */
+const PLANE_NAMES = { [AXIAL]: 'axial', [CORONAL]: 'coronal', [SAGITTAL]: 'sagittal' };
+/* external plane labels (UI) */
+const PLANE_LABELS = { [AXIAL]: 'axial', [CORONAL]: 'coronal', [SAGITTAL]: 'sagittal' };
 
 /** color of plane border  */
 export const PLANE_COLORS = { [AXIAL]: '#33dd33', [CORONAL]: '#ff4444', [SAGITTAL]: '#3399ff' };
@@ -42,6 +45,10 @@ class ZAVConfig {
     }
     static get SAGITTAL() {
         return SAGITTAL;
+    }
+
+    static getPlaneName(plane) {
+        return PLANE_NAMES[plane];
     }
 
     static getPlaneLabel(plane) {
@@ -500,6 +507,17 @@ class ZAVConfig {
             this.config.yMaxGlobal = (response.subview.y_max ? response.subview.y_max : subviewOrgSize) / this.config.subviewZoomRatio;
             this.config.zMinGlobal = (response.subview.z_min ? response.subview.z_min : 0) / this.config.subviewZoomRatio;
             this.config.zMaxGlobal = (response.subview.z_max ? response.subview.z_max : subviewOrgSize) / this.config.subviewZoomRatio;
+
+            if (response.subview.x_label) {
+                PLANE_LABELS[SAGITTAL] = response.subview.x_label;
+            }
+            if (response.subview.y_label) {
+                PLANE_LABELS[CORONAL] = response.subview.y_label;
+            }
+            if (response.subview.x_label) {
+                PLANE_LABELS[AXIAL] = response.subview.z_label;
+            }
+
         } else {
 
             if (this.config.hasBackend) {
@@ -511,6 +529,11 @@ class ZAVConfig {
                 this.config.xMaxGlobal = this.config.yMaxGlobal = this.config.zMaxGlobal = (response.subview.max ? response.subview.max : subviewOrgSize) / this.config.subviewZoomRatio;
                 this.config.xMinGlobal = this.config.yMinGlobal = this.config.zMinGlobal = (response.subview.min ? response.subview.min : 1) / this.config.subviewZoomRatio;
             }
+
+            if (response.subview.label) {
+                PLANE_LABELS[CORONAL] = response.subview.label;
+            }
+
         }
 
         if (response.delineations) {
@@ -582,16 +605,16 @@ class ZAVConfig {
 
             if (response.first_access.plane) {
                 switch (response.first_access.plane) {
-                    case PLANE_LABELS[AXIAL]:
+                    case PLANE_NAMES[AXIAL]:
                         this.config.firstActivePlane = AXIAL;
                         break;
 
-                    case PLANE_LABELS[CORONAL]:
+                    case PLANE_NAMES[CORONAL]:
                     default:
                         this.config.firstActivePlane = CORONAL;
                         break;
 
-                    case PLANE_LABELS[SAGITTAL]:
+                    case PLANE_NAMES[SAGITTAL]:
                         this.config.firstActivePlane = SAGITTAL;
                         break;
                 }
