@@ -244,6 +244,10 @@ class ViewerComposed extends React.Component {
             ViewerManager.setZoomFactor(50);
         }
 
+        //url of repo from where source images can be retrieved
+        const ginRepoBaseUrl= (this.props.config && this.props.config.dataset_info) ? this.props.config.dataset_info.ginRepoBaseUrl : null;
+        const layerFolderMap= ginRepoBaseUrl ? this.props.config.dataset_info.layerFolderMap : null;
+
         return (<HotkeysTarget2 hotkeys={this.hotkeys}>
 
             <div style={{ height: "100%" }}>
@@ -329,7 +333,11 @@ class ViewerComposed extends React.Component {
                     >
                         <SliderNavigatorPanel
                             hasDelineation={this.props.config && this.props.config.hasDelineation}
-                            displaySettings={this.state.layerDisplaySettings} />
+                            displaySettings={this.state.layerDisplaySettings} 
+                            ginRepoBaseUrl={ginRepoBaseUrl}
+                            layerFolderMap={layerFolderMap}
+                            chosenSlice={ginRepoBaseUrl ? this.state.chosenSlice : -1}
+                        />
                     </TitledCard>
 
                     {

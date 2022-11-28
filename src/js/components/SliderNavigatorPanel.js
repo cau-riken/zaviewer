@@ -1,6 +1,7 @@
 import React from 'react';
 
 import {
+    AnchorButton,
     ProgressBar,
     Switch
 } from "@blueprintjs/core";
@@ -21,6 +22,7 @@ class LayerSlider extends React.Component {
     render() {
         const {
             layerid, name,
+            downloadUrl, chosenSlice,
             opacity, initOpacity, enabled,
             contrast, initContrast, contrastEnabled,
             gamma, initGamma, gammaEnabled,
@@ -30,12 +32,32 @@ class LayerSlider extends React.Component {
 
         return (
             <div
-                style={{ width: 196, marginLeft: 10 }}
+                style={{ width: 216, marginLeft: 10 }}
             >
-
                 <div>
-                    {name}
-                    <div className="zav-thinProgressBar">
+                    <div style={{ position: 'relative' }}>
+                        <span>{name}</span>
+                        {downloadUrl ?
+                            <span
+                                style={{ position: 'absolute', top: 2, right: 0 }}
+                                title="Download source image"
+                            >
+                                <AnchorButton
+                                    small
+                                    icon="download"                                    
+                                    href={downloadUrl + 'slice1' + String(chosenSlice).padStart(4, '0') + '.png'}
+                                    target="_blank"
+                                />
+                            </span>
+                            :
+                            null
+                        }
+                    </div>
+
+                    <div 
+                        className="zav-thinProgressBar" 
+                        style={{ width: 186, }}
+                    >
                         {loading && enabled ? <ProgressBar className="zav-thinProgressBar" /> : null}
                     </div>
                 </div>
@@ -196,7 +218,20 @@ class SliderNavigatorPanel extends React.Component {
         const layerSliders = [];
         if (this.props.displaySettings) {
             Object.entries(this.props.displaySettings).forEach(([layerid, value]) => {
-                const params = { ...value, ...{ layerid: layerid } };
+
+                const params = {
+                    ...value,
+                    ...{ layerid: layerid },
+                    //url to download slice's source image from GIN server
+                    ...(this.props.ginRepoBaseUrl && this.props.layerFolderMap && this.props.layerFolderMap[value.name]
+                        ? 
+                        { downloadUrl: this.props.ginRepoBaseUrl + '/raw/master/' + this.props.layerFolderMap[value.name] + '/',
+                          chosenSlice: this.props.chosenSlice } 
+                        : 
+                        {}
+                        )
+                    
+                };
                 layerSliders.push(<LayerSlider key={"slid_" + layerid}  {...params} />);
                 layerSliders.push(<div key={"sepslid_" + layerid} style={{ borderBottom: "dotted 1px #8a8a8a", margin: "3px 0" }} />);
             });
