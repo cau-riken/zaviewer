@@ -45,7 +45,7 @@ class ViewerManager {
         //some continuous operations must not be recorded immediately in history (e.g. zooming, paning)
         this.makeHistoryStep = _.debounce(this.makeActualHistoryStep, 500);
 
-        this.history.listen((location, action) => {
+        this.history.listen(({location, action}) => {
             //reset viewer only when navigating the history with Back and Forth buttons
             if (action === "POP") {
                 const locParams = this.getParamsFromLocation(location);
