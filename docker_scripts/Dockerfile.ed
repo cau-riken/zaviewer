@@ -21,8 +21,8 @@ RUN find /usr/share/nginx/html/ -type d -exec chmod 755 {} \;
 RUN find /usr/share/nginx/html/ -type f -exec chmod 644 {} \;
 
 LABEL jp.riken.cau.product="ZAViewer User Interface + minimal backend for region editor" \
-    jp.riken.cau.version="2.3.0" \
-    jp.riken.cau.release-date="2022-06-06"
+    jp.riken.cau.version="2.4.0" \
+    jp.riken.cau.release-date="2023-01-26"
 
 
 EXPOSE 80

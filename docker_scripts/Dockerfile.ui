@@ -8,11 +8,12 @@ ENV PATH /app/node_modules/.bin:$PATH
 # copy required files from context
 COPY package.json ./
 COPY package-lock.json ./
+COPY .npmrc ./
 
 
 # download and install node modules
-RUN npm install --no-optional
-#RUN npm clean-install --no-optional
+RUN npm install --omit=optional
+#RUN npm clean-install --omit=optional
 
 #copy sources
 COPY . ./
@@ -25,8 +26,8 @@ RUN npm run build
 FROM nginx:stable-alpine
 
 LABEL jp.riken.cau.product="ZAViewer User Interface" \
-    jp.riken.cau.version="2.3.0" \
-    jp.riken.cau.release-date="2022-06-06"
+    jp.riken.cau.version="2.4.0" \
+    jp.riken.cau.release-date="2023-01-26"
 
 # copy generated bundles and assets from building stage image
 COPY --from=build /app/index.html /usr/share/nginx/html
