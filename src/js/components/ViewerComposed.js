@@ -38,6 +38,7 @@ import { TourContext } from './GuidedTour';
 
 import "./ViewerComposed.scss";
 
+const VolumeView = React.lazy(() => import('./VolumeView'));
 
 class TitledCard extends React.Component {
 
@@ -69,34 +70,34 @@ class BrandingMark extends React.Component {
 
         return (
             this.placeHolder ?
-            ReactDOM.createPortal(
-                <div style={{ color: '#E1E1E1', verticalAlign: 'middle', fontSize: '10px' }}>
-                    {this.props.brandingInfo && this.props.brandingInfo.short && <span>{this.props.brandingInfo.short}{' '}</span>}
-                    {this.props.brandingInfo && this.props.brandingInfo.descr && 
+                ReactDOM.createPortal(
+                    <div style={{ color: '#E1E1E1', verticalAlign: 'middle', fontSize: '10px' }}>
+                        {this.props.brandingInfo && this.props.brandingInfo.short && <span>{this.props.brandingInfo.short}{' '}</span>}
+                        {this.props.brandingInfo && this.props.brandingInfo.descr &&
 
-                    <Popover2
-                        content={
-                            <div
-                                style={{ maxWidth: '50vw', maxHeight: '50vh', overflowY: 'auto', padding: 10, fontSize: '12px'  }}>
-                                <p><br />{this.props.brandingInfo.descr.split('\n').map((l, i) => <p key={i}>{l}</p>)}</p>
-                            </div>
+                            <Popover2
+                                content={
+                                    <div
+                                        style={{ maxWidth: '50vw', maxHeight: '50vh', overflowY: 'auto', padding: 10, fontSize: '12px' }}>
+                                        <p><br />{this.props.brandingInfo.descr.split('\n').map((l, i) => <p key={i}>{l}</p>)}</p>
+                                    </div>
+                                }
+                                position={Position.RIGHT_BOTTOM}
+                                interactionKind={Popover2InteractionKind.HOVER}
+                            >
+                                <span
+                                    style={{ color: '#E1E1E1', backgroundColor: '#515151', borderRadius: 2, padding: '0 2px', }}
+                                //title="more info here!"
+                                ><Icon icon='more' size={12} /></span>
+                            </Popover2>
+
+
                         }
-                        position={Position.RIGHT_BOTTOM}
-                        interactionKind={Popover2InteractionKind.HOVER}
-                    >
-                        <span 
-                            style={{ color: '#E1E1E1', backgroundColor: '#515151', borderRadius: 2, padding: '0 2px',}}
-                            //title="more info here!"
-                        ><Icon icon='more' size={12} /></span>
-                    </Popover2>
-
-                        
-                    }
-                </div>,
-                this.el,
-            )
-            :
-            null
+                    </div>,
+                    this.el,
+                )
+                :
+                null
         );
     }
 }
@@ -186,6 +187,7 @@ class ViewerComposed extends React.Component {
                     >
                         <div
                             title="display dataset informations"
+                            className="zav-TitledCardButton"
                         >
                             <Icon
                                 icon="info-sign"
@@ -209,6 +211,7 @@ class ViewerComposed extends React.Component {
             >
                 <div
                     title="Help and guided tours!"
+                    className="zav-TitledCardButton"
                 >
                     <Icon
                         icon="help"
@@ -252,7 +255,7 @@ class ViewerComposed extends React.Component {
 
             <div style={{ height: "100%" }}>
 
-                <BrandingMark brandingInfo={this.props.config && this.props.config.branding}/>
+                <BrandingMark brandingInfo={this.props.config && this.props.config.branding} />
 
                 <div className="zav-StatusBar">
                     <div className="zav-StatusBarContent">
@@ -317,7 +320,38 @@ class ViewerComposed extends React.Component {
                         this.props.config && (this.props.config.getTotalSlidesCount() > 1) ?
                             <TitledCard
                                 className="zav-controlPanel_SliceNav"
-                                header={"Slices navigation" + subviewTitleSuffix}>
+                                header={
+                                    this.props.config.volumeUrl ?
+
+                                    <div style={{width: '100%', display: 'flex', flexDirection: 'row', justifyContent: 'space-between' }}>
+                                        <Popover2
+                                            interactionKind={Popover2InteractionKind.CLICK}
+                                            content={
+                                                <div
+                                                    style={{ width: '70vw', maxWidth: 850, height: '90vh', overflowY: 'auto' }}>
+                                                    <React.Suspense fallback={<div>Loading...</div>}>
+                                                        <VolumeView
+                                                            url={this.props.config.volumeUrl}
+                                                        />
+                                                    </React.Suspense>
+                                                </div>}
+                                            position={Position.LEFT}
+                                        >
+                                            <div
+                                                title="display 3D volume"
+                                                className="zav-TitledCardButton"
+                                            >
+                                                <Icon
+                                                    icon="cube"
+                                                    color='#FFF'
+                                                />
+                                            </div>
+                                        </Popover2>
+                                        <span>{"Slices navigation" + subviewTitleSuffix}</span>
+                                    </div>
+                                    :
+                                    <span>{"Slices navigation" + subviewTitleSuffix}</span>
+                                }>
                                 <SubViewPanel
                                     activePlane={this.state.activePlane}
                                     chosenSlice={this.state.chosenSlice}

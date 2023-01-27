@@ -13,8 +13,7 @@ import { createBrowserHistory } from 'history';
 
 import SplitPane from 'react-split-pane';
 
-
-import RegionTreePanel from './RegionTreePanel.js';
+const RegionTreePanel = React.lazy(() => import('./RegionTreePanel.js'));
 import ViewerComposed from './ViewerComposed.js';
 import { DrawerHandle, CollapseDirection } from './Drawer';
 import ZAVConfig from '../ZAVConfig.js';
@@ -172,7 +171,9 @@ const App = (props: AppProps) => {
 
           {
             RegionsManager.isReady()
-              ? <RegionTreePanel regionsStatus={regionsStatus} />
+              ? <React.Suspense fallback={<div>Loading...</div>} >
+                  <RegionTreePanel regionsStatus={regionsStatus} />
+                </React.Suspense> 
               : null
           }
         </div>

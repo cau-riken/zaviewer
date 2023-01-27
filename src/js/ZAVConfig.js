@@ -701,7 +701,9 @@ class ZAVConfig {
         if (response.branding) {
             this.config.branding = response.branding;
         }
-
+        if (response.volume && response.volume.url) {
+            this.config.volumeUrl = response.volume.url;
+        }
 
         if (callbackWhenReady && typeof (callbackWhenReady) === 'function') {
 

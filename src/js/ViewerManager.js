@@ -2088,7 +2088,7 @@ class ViewerManager {
             const sliceNum = this.getCurrentPlaneChosenSlice();
             const svgurl = Utils.makePath(
                 this.config.PUBLISH_PATH, this.config.svgFolerName,
-                (this.config.hasMultiPlanes ? ZAVConfig.getPlaneLabel(this.status.activePlane) : null),
+                (this.config.hasMultiPlanes ? ZAVConfig.getPlaneName(this.status.activePlane) : null),
                 "Anno_" + sliceNum + ".svg"
             );
             return svgurl;
@@ -2097,7 +2097,7 @@ class ViewerManager {
 
     static getFileTileSourceUrl(slideNum, key, ext, plane) {
         //if no plane param is specified (= single plane mode), returned plane label will be undefined, thus the url won't contain reference to any plane 
-        return Utils.makePath(this.config.dataRootPath, key, ZAVConfig.getPlaneLabel(plane), slideNum + ext);
+        return Utils.makePath(this.config.dataRootPath, key, ZAVConfig.getPlaneName(plane), slideNum + ext);
     }
 
     /**
@@ -2115,7 +2115,7 @@ class ViewerManager {
                 slideNum -= this.config.sagittalFirstIndex;
                 break;
         }
-        return this.config.dataRootPath + "/" + key + (this.config.hasMultiPlanes ? "/" + ZAVConfig.getPlaneLabel(this.status.activePlane) : "") + "/" + slideNum + "_files/" + level + "/" + x + "_" + y + ".jpg";
+        return this.config.dataRootPath + "/" + key + (this.config.hasMultiPlanes ? "/" + ZAVConfig.getPlaneName(this.status.activePlane) : "") + "/" + slideNum + "_files/" + level + "/" + x + "_" + y + ".jpg";
     }
 
     static getIIIFTileSourceUrl(slideNum, key, ext) {

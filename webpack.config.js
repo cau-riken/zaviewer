@@ -49,8 +49,10 @@ module.exports = (env, argv) => {
       .concat(extractCSS ? [new MiniCssExtractPlugin(
         {
           //## when using devServer, css will always be served in output.publicPath
+          //Note: in devmode, CSS is not extracted (see above)
           filename: production ? '../css/ZAViewer.css' : 'ZAViewer.css',
 
+          chunkFilename: production ? '../css/zav-[contenthash].css' : '../css/zav-[contenthash].css'
         }
       )
       ]
@@ -112,7 +114,11 @@ module.exports = (env, argv) => {
           use: {
             loader: "babel-loader",
             options: {
-              presets: ["@babel/preset-env", "@babel/preset-react"],
+              presets: ["@babel/preset-env",
+                "@babel/preset-react",
+                //prevent transpiling dynamic imports to deferred requires
+                // already included in @babel/preset-env ES2020 (babel >7.8)//  { exclude: ['proposal-dynamic-import'] }
+              ]
             }
           }
         },
@@ -146,11 +152,28 @@ Third party license information can be found in ${licenseFile}
     },
 
     output: {
+      ...{
+        // `path` is the folder where Webpack generates bundles
       path: path.resolve(__dirname, 'assets/js'),
+      },
+      ...production ?
+        {
+          // `filename` provides a template for naming your bundles (remember to use `[name]`)
+          filename: 'main.js',
+
+          // `chunkFilename` provides a template for naming code-split bundles (optional)
+          chunkFilename: 'chunk-[contenthash].js',
+
+          
+          publicPath: './assets/js/',
+        }
+        :
+        {
 
       filename: '[name].js',
 
       publicPath: '/assets/js',
+        }
     },
 
     devServer: {
