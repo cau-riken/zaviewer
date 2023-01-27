@@ -169,7 +169,7 @@ class RegionItem extends React.Component {
 class RegionDetail extends React.Component {
     constructor(props) {
         super(props);
-        this.goToSlice = this.goToSlice.bind(this);
+        this.goToSlice = this.goToCenterSlice.bind(this);
         this.showRegions = this.showRegions.bind(this);
     }
 
@@ -217,10 +217,11 @@ class RegionDetail extends React.Component {
                     ;
             }
 
+            const hasCenterSliceInfo = region?.centerSlices || typeof region?.centerSlice != 'undefined';
             const crumbs = []
             region.trail.forEach(rId => {
-                crumbs.push(<Icon style={{ color: "white" }} icon="slash" />);
-                crumbs.push(<span style={{ fontWeight: "bold" }}>{rId}</span>);
+                crumbs.push(<Icon key={"i-" + rId} style={{ color: "white" }} icon="slash" />);
+                crumbs.push(<span key={"s-" + rId} style={{ fontWeight: "bold" }}>{rId}</span>);
             });
 
             const trail = <div style={{ fontSize: 10 }}>{crumbs}{grouping}</div>;
@@ -234,7 +235,7 @@ class RegionDetail extends React.Component {
                     <div
                         style={{ marginTop: 12, marginLeft: 10 }}
                     >
-                        {region.centerSlice
+                        {hasCenterSliceInfo
                             ?
                             (<React.Fragment>
                                 <div>
@@ -242,7 +243,7 @@ class RegionDetail extends React.Component {
                                         icon="compass"
                                         minimal
                                         fill
-                                        onClick={this.goToSlice.bind(this, region.centerSlice, false)}
+                                        onClick={this.goToCenterSlice.bind(this, false)}
                                     >Go to slice containing region center</AnchorButton>
                                 </div>
                                 <div>
@@ -250,7 +251,7 @@ class RegionDetail extends React.Component {
                                         icon="locate"
                                         minimal
                                         fill
-                                        onClick={this.goToSlice.bind(this, region.centerSlice, true)}
+                                        onClick={this.goToCenterSlice.bind(this, true)}
                                     >Go to slice and focus on region center</AnchorButton>
                                 </div>
                             </React.Fragment>)
@@ -269,9 +270,10 @@ class RegionDetail extends React.Component {
         }
     }
 
-    goToSlice(sliceNum, centerOnRegion) {
+    goToCenterSlice(centerOnRegion) {
+        const centerSlice = RegionsManager.getRegionCenterSlice(this.props.regionId, this.props.hasMultiPlanes, ViewerManager.getActivePlane());
         const regionsToCenterOn = centerOnRegion ? [this.props.regionId] : null;
-        ViewerManager.goToSlice(sliceNum, regionsToCenterOn);
+        ViewerManager.goToSlice(centerSlice, regionsToCenterOn);
         if (!ViewerManager.isShowingRegions()) {
             RegionDetailToaster.show({
                 message: "Do you want to show Atlas regions?",
@@ -308,7 +310,7 @@ class RegionTree extends React.Component {
                 className="zav-Tree"
                 data-hasselectedregion={this.props.regionsStatus && this.props.regionsStatus.lastSelected != null}
             >
-                <ul className="zav-TreeSubItems">
+                <ul className="zav-TreeSubItems" style={{ marginLeft: -15 }}>
                     {this.props.regionsStatus ?
                         <RegionItem
                             regionsStatus={this.props.regionsStatus}
@@ -516,7 +518,7 @@ class RegionDetailPane extends React.Component {
                 {
                     this.props.regionsStatus && this.props.regionsStatus.lastSelected
                         ?
-                        <RegionDetail regionId={this.props.regionsStatus.lastSelected} />
+                        <RegionDetail regionId={this.props.regionsStatus.lastSelected} hasMultiPlanes={this.props.hasMultiPlanes} />
                         : null
 
                 }
@@ -537,7 +539,7 @@ class RegionTreePanel extends React.Component {
                 <div style={{ height: "100%", width: "100%", overflow: "hidden", backgroundColor: "#e1e1e1" }}>
                     <RegionTreeSearch regionsStatus={this.props.regionsStatus} />
                     <RegionTree regionsStatus={this.props.regionsStatus} />
-                    <RegionDetailPane regionsStatus={this.props.regionsStatus} />
+                    <RegionDetailPane regionsStatus={this.props.regionsStatus} hasMultiPlanes={this.props.hasMultiPlanes} />
                     <RegionTreeStatus regionsStatus={this.props.regionsStatus} />
                 </div>
             </div>

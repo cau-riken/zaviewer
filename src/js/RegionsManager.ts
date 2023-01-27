@@ -40,8 +40,13 @@ export interface IRegion {
     color: string,          // RGB hex value of the color associated to the region 
     children?: string[],    // [optional] list of abbreviation of sub-regions
     groups?: IGroupings,    //
-    slices?: number[],
-    centerSlice?: number[],
+    slices?: number[],      //FIXME Useless (not referenced, only support single axis, and slice's regions loaded from SVG)
+    centerSlice?: number,     //on single axis mode 
+    centerSlices?: {
+        a: number;
+        c: number;
+        s: number;
+    },      //on multi-plane mode, center slice numbers are indexed by axis shortnames
     trail?: string[],
     nameupper?: string,
     abbupper?: string,
@@ -101,7 +106,7 @@ class RegionsManager {
      * @param {function} callbackWhenChanged - function asynchronously invoked to signal that the region data have changed
      */
 
-    static init(data: IRegionsPayload, callbackWhenChanged: ICallbackWhenChanged) {
+    static init(data: IRegionsPayload, callbackWhenChanged: ICallbackWhenChanged, initSelectedRegion: string[] | undefined) {
 
 
         this.addListeners(callbackWhenChanged);
@@ -117,17 +122,17 @@ class RegionsManager {
             highlighted: new Set<string>(),
             filtered: new Set<string>(),
             expanded: new Map<string, boolean>(),
-            lastActionSource: '',
+            lastActionSource: 'init',
             loadedRegions: false,
         }
 
-        this.prepareData(data);
+        this.prepareData(data, initSelectedRegion);
     }
 
     /** @private */
 
 
-    static prepareData(data: IRegionsPayload) {
+    static prepareData(data: IRegionsPayload, initSelectedRegion: string[] | undefined) {
         const root = data.regions.find(r => null === r.parent);
         this.regionsData = {
             regionById: new Map(data.regions.map(r => [r.abb, r])),
@@ -167,9 +172,33 @@ class RegionsManager {
 
         this.status.loadedRegions = true;
 
-        /** only first level expanded at startup */
-        this._collapseAll();
-        this._setExpanded(this.status.lastActionSource, this.regionsData.root, true);
+        if (initSelectedRegion) {
+            //initial selection of region(s)
+            const validRegions = initSelectedRegion.filter((r) => this.regionsData.regionById.has(r));
+
+            const regionsAndLeaves = validRegions.map(r => {
+                const region = this.getRegion(r);
+                return [
+                    r,
+                    ...((region?.children && region?.children.length)
+                        ?
+                        this._getLeafChildrenRegions(r)
+                        :
+                        []
+                    )
+                ]
+            }).flat().reverse();
+
+            this._replaceAllSelected(this.status.lastActionSource, regionsAndLeaves, true);
+            //treeview needs to be expanded to display selection
+            regionsAndLeaves.forEach(r => this._expandFromRootTo(r));
+
+        } else {
+            /** only first level expanded at startup */
+            this._collapseAll();
+            this._setExpanded(this.status.lastActionSource, this.regionsData.root, true);
+        }
+
     }
 
     static setExistingRegions(existingRegions: string[]) {
@@ -258,6 +287,34 @@ class RegionsManager {
 
     static getRegion(regionId: string): IRegion | undefined {
         return this.regionsData ? this.regionsData.regionById.get(regionId) : undefined;
+    }
+
+    static getRegionCenterSlice(regionId: string, hasMultiPlanes: boolean = false, activePlane: number = 0): number | undefined {
+        const AXIAL = 1;
+        const CORONAL = 2;
+        const SAGITTAL = 3;
+
+        const region = this.getRegion(regionId);
+        let sliceNum = undefined;
+        if (hasMultiPlanes) {
+            if (activePlane) {
+                if (region?.centerSlices) {
+                    sliceNum = (activePlane == AXIAL) ?
+                        region?.centerSlices?.a
+                        : (activePlane == CORONAL) ?
+                            region?.centerSlices?.c
+                            : (activePlane == SAGITTAL) ?
+                                region?.centerSlices?.s
+                                : undefined;
+                }
+            } else {
+                //activeplane should be specified 
+            }
+        } else {
+            sliceNum = region?.centerSlice;
+        }
+        return sliceNum;
+
     }
 
     static isSelected(regionId: string | undefined): boolean {
@@ -375,6 +432,15 @@ class RegionsManager {
         } else {
             const children = parent?.children;
             return children ? (regionId === children[children.length - 1]) : true;
+        }
+    }
+
+    static _getLeafChildrenRegions(regionId: string): string[] {
+        const region = this.getRegion(regionId);
+        if (region?.children && region?.children.length) {
+            return region.children.map(childId => this._getLeafChildrenRegions(childId)).flat();
+        } else {
+            return [regionId];
         }
     }
 

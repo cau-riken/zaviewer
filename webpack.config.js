@@ -154,7 +154,7 @@ Third party license information can be found in ${licenseFile}
     output: {
       ...{
         // `path` is the folder where Webpack generates bundles
-      path: path.resolve(__dirname, 'assets/js'),
+        path: path.resolve(__dirname, 'assets/js'),
       },
       ...production ?
         {
@@ -170,9 +170,9 @@ Third party license information can be found in ${licenseFile}
         :
         {
 
-      filename: '[name].js',
+          filename: '[name].js',
 
-      publicPath: '/assets/js',
+          publicPath: '/assets/js',
         }
     },
 

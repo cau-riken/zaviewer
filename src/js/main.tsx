@@ -7,6 +7,8 @@ import "@blueprintjs/popover2/lib/css/blueprint-popover2.css";
 import * as React from 'react';
 import * as ReactDOM from 'react-dom';
 
+import Utils from './Utils.js';
+
 import App from './components/App';
 import { GuidedTour } from "./components/GuidedTour";
 
@@ -14,7 +16,7 @@ import { GuidedTour } from "./components/GuidedTour";
 /** retrieve configuration ID from url query param  
 */
 const getConfigParams = () => {
-  const params: { configId?: string, dataSrc?: string } = {};
+  const params: { configId?: string, dataSrc?: string, initConfig?: {} } = {};
   const url = location.search.substring(1).split('&');
 
   for (var i = 0; url[i]; i++) {
@@ -24,6 +26,9 @@ const getConfigParams = () => {
     } else if (k[0] == "datasrc") {
       params.dataSrc = k[1];
     }
+  }
+  if (location.hash) {
+    params.initConfig = Utils.getConfigFromLocation(location);
   }
   return params;
 }

@@ -181,6 +181,9 @@ class ViewerManager {
             /** set to true when all tiles are loaded for the current view */
             isAllLoaded: false,
 
+            /** open UI with right panel expanded */
+            initExpanded: false,
+
             /** visibility of region areas & delineations  */
             showRegions: this.config.showRegions,
             displayAreas: this.config.displayAreas,
@@ -1369,7 +1372,7 @@ class ViewerManager {
                         }
                     }
                     if (!hasBackground) {
-                        console.error("SVG without background: Region rendering and edition will likely fail! " + svgName);
+                        console.warn("SVG without background: Region rendering and edition will likely fail! " + svgName);
                     }
 
                     that.eventSource.raiseEvent('zav-regions-created', { svgUrl: svgName })
@@ -1511,8 +1514,12 @@ class ViewerManager {
             if (this.status.editModeOn) {
                 //scale edition overlay
                 const editGroup = document.getElementById('svgEditGroup');
+                if (editGroup) {
                 editGroup.setAttribute('transform', ' scale(' + zoom + ',' + zoom + ') translate(0,' + this.config.dzDiff + ')');
                 this.updateEditCursor();
+                } else {
+                    console.error('#svgEditGroup not found!')
+                }
             }
         }
     }
@@ -1749,6 +1756,10 @@ class ViewerManager {
         } else {
             return false;
         }
+    }
+
+    static getActivePlane() {
+        return this.status.activePlane;
     }
 
     static activatePlane(newPlane) {
@@ -3160,7 +3171,8 @@ class ViewerManager {
                 s: sliceNum, a: this.status.activePlane
             };
         }
-        Utils.pushHistoryStep(this.history, stepParams, ['px']);
+        //omitted param: expanded right panel, region selection 
+        Utils.pushHistoryStep(this.history, stepParams, ['px', 'rs']);
     }
 
     static getParamsFromCurrLocation() {

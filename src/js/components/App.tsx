@@ -19,6 +19,7 @@ import { DrawerHandle, CollapseDirection } from './Drawer';
 import ZAVConfig from '../ZAVConfig.js';
 
 import RegionsManager, { IRegionsStatus, IRegionsPayload, } from '../RegionsManager';
+import ViewerManager from '../ViewerManager.js'
 
 import Utils from '../Utils.js';
 import axios from 'axios';
@@ -41,13 +42,17 @@ const defaultSplitSize = 350;
 type AppProps = {
   configId?: string,
   dataSrc?: string,
+  initConfig?: {},
 }
 
 /** Main component of the ZAViewer */
 const App = (props: AppProps) => {
 
+  const needsExtraInit = React.useRef(true);
+
   const [config, setConfig] = React.useState(undefined);
-  const [isRegPanelExpanded, setIsRegPanelExpanded] = React.useState(false);
+  //display region panel expanded if any region selection specified
+  const [isRegPanelExpanded, setIsRegPanelExpanded] = React.useState(props?.initConfig?.rs);
   const [splitSize, setSplitSize] = React.useState(defaultSplitSize);
 
   const [regionsStatus, setRegionsStatus] = React.useState<IRegionsStatus | undefined>(undefined);
@@ -75,11 +80,35 @@ const App = (props: AppProps) => {
         .then(response => {
           const payload: IRegionsPayload = response.data;
 
+          //preselected regions (specified on opening URL)
+          const preselected = (props?.initConfig?.rs) ? String(props?.initConfig?.rs).split(',') : undefined;
+
           //retrieve region data asynchronously...
-          RegionsManager.init(payload, (regionsStatus) => {
-            //... and update state after region data change
-            setRegionsStatus(regionsStatus);
-          });
+          RegionsManager.init(
+            payload,
+            (newRegionsStatus) => {
+              if (needsExtraInit.current && preselected) {
+
+                //Perform the focus on selected region center only once
+                needsExtraInit.current = false;
+
+                //Try to switch to center slice of (last) selected region
+                const selectedRegion = RegionsManager.getLastSelected()
+                if (selectedRegion) {
+
+                  const centerSlice = RegionsManager.getRegionCenterSlice(selectedRegion, newConfig?.hasMultiPlanes, ViewerManager.getActivePlane());
+                  if (typeof centerSlice != 'undefined') {
+                    ViewerManager.goToSlice(centerSlice);
+                  }
+                }
+              }
+
+              //... and update state after region data change
+              setRegionsStatus(newRegionsStatus);
+
+            },
+            preselected
+          );
 
         })
         .catch(error => {
@@ -128,7 +157,7 @@ const App = (props: AppProps) => {
               </div>
               <div><img id="zav_logo" src="./assets/img/logo.png" height={23} draggable="false" /></div>
               <div style={{ verticalAlign: 'bottom' }}>
-                <div id="zav_BrandingPlaceHolder" style={{ maxWidth: 280, height: 32, overflow: 'clip'}}>
+                <div id="zav_BrandingPlaceHolder" style={{ maxWidth: 280, height: 32, overflow: 'clip' }}>
                 </div>
               </div>
             </div>
@@ -172,8 +201,8 @@ const App = (props: AppProps) => {
           {
             RegionsManager.isReady()
               ? <React.Suspense fallback={<div>Loading...</div>} >
-                  <RegionTreePanel regionsStatus={regionsStatus} />
-                </React.Suspense> 
+                <RegionTreePanel regionsStatus={regionsStatus} hasMultiPlanes={config?.hasMultiPlanes} />
+              </React.Suspense>
               : null
           }
         </div>
