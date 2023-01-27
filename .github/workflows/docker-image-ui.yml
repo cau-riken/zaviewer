@@ -28,6 +28,8 @@ jobs:
         with:
           context: .
           file: ./docker_scripts/Dockerfile.ui
+          build-args: |
+            "PACKAGEREAD_TOKEN=${{ secrets.PACKAGEREAD_TOKEN }}"
           push: true
           tags: |
             rikencau/zaviewer:2.4.0-ui

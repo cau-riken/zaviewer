@@ -10,6 +10,9 @@ COPY package.json ./
 COPY package-lock.json ./
 COPY .npmrc ./
 
+# set token to install package from github registry
+ARG PACKAGEREAD_TOKEN
+RUN echo ${PACKAGEREAD_TOKEN} >> ./.npmrc
 
 # download and install node modules
 RUN npm install --omit=optional
