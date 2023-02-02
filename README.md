@@ -341,22 +341,40 @@ ZAViewer UI source code is composed of Javascript and CSS files that are bundled
 
 ### requirement and dependencies
 
-* `NodeJs` ^v12.22.0 (and `npm` ^v6.14.11) must be installed on your platform beforehand
+* `NodeJs` ^v16.13.2 (and `npm` ^v8.13.1) must be installed on your platform beforehand
 
 
-* Use terminal windows and go to source folder 
+Use terminal windows and go to source folder
 
 ```sh
 cd zaviewer
 ```
 
-* For **first time build only**, modules and devtools dependencies have to be installed :
+#### For **first time build only**
+
+##### Set-up to install packages from Github registry <a id="dev-setupnpmrc"></a>
+
+Since one of the package dependency is published on [Github package registry](https://npm.pkg.github.com/), you'll need some sort of authentication to install it (yes, even if it's a public package; see more explanation on [authenticating to github packages](https://docs.github.com/en/packages/learn-github-packages/introduction-to-github-packages#authenticating-to-github-packages))
+
+Depending on your current settings, you may be in one of the 2 following cases:
+
+* If you are already using github package registry for other projects, and have some github token included in your global `.npmrc`, then you don't have to do anything more.
+
+* Alternatively, if you are not using github package registry, you'll require a github account and have to provide one of your github token to compile the project:
+
+    1. Go to your [github settings page](https://github.com/settings/tokens), and [create a personal (classic) token](https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/creating-a-personal-access-token#creating-a-personal-access-token-classic) with `read:packages` scope.
+    2. Create a new  local `.npmrc` in the project directory, including your token:
+    ```sh
+    (cat npmrc.template ; echo '<REPLACE_BY_YOUR_TOKEN>' >> .npmrc
+    ```
+
+##### Install modules and devtools dependencies
 
 ```sh
 npm install
 ```
 
-* build bundles from sources :
+#### Build bundles from sources
 
 ```sh
 npm run build

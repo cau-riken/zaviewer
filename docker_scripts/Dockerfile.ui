@@ -8,15 +8,20 @@ ENV PATH /app/node_modules/.bin:$PATH
 # copy required files from context
 COPY package.json ./
 COPY package-lock.json ./
-COPY .npmrc ./
+#copy npmrc template, and any existing .npmrc
+COPY .npmrc* ./
 
-# set token to install package from github registry
+# For github package registry access: if a token is supplied, use it to create (possibly overwrite) local .npmrc 
 ARG PACKAGEREAD_TOKEN
-RUN echo ${PACKAGEREAD_TOKEN} >> ./.npmrc
+RUN if [ ${PACKAGEREAD_TOKEN} ]; then (cat .npmrc_template ; echo '${PACKAGEREAD_TOKEN}') >> .npmrc ; fi
+
 
 # download and install node modules
 RUN npm install --omit=optional
 #RUN npm clean-install --omit=optional
+
+#
+RUN rm .npmrc
 
 #copy sources
 COPY . ./

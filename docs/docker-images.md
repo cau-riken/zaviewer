@@ -27,7 +27,6 @@ The provided Docker script will:
 
 * create an image containing a light memory footprint web server to serve the generated ZAViewer Web App.
 
-
 1. Go to working directory containing ZAViewer sources :
 
     ```sh
@@ -42,9 +41,13 @@ The provided Docker script will:
       -t rikencau/zaviewer:latest-ui .
     ```
 
+**Note:** As explained [there](../README.md#dev-setupnpmrc), a personal github token is required to build the project.
+
+If you've already created a local `.npmrc` in the project folder, it will be reused to build the Docker image.
+
+Alternatively, if you don't want to store your token in the `.npmrc`, you may provide it to the Docker build via a build argument added to the `docker build` command line, as follow : `--build-arg PACKAGEREAD_TOKEN='<REPLACE_BY_YOUR_TOKEN>'`
 
 ## Brain slice images import utility Docker image<a id="build-image-prepimg"></a>
-
 
 1. Go to working directory containing ZAViewer sources :
 
@@ -53,7 +56,7 @@ The provided Docker script will:
     ```
 
 2. Build the image
- 
+
     ```sh
     docker build --no-cache --network=host \
       -f docker_scripts/Dockerfile.prepDZIImages \
@@ -77,4 +80,3 @@ In order to save edited regions as SVG files, a minimal backend component needs 
       -f docker_scripts/Dockerfile.ed \
       -t rikencau/zaviewer:latest-ed .
     ```
-
