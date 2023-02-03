@@ -42,6 +42,7 @@ const defaultSplitSize = 350;
 type AppProps = {
   configId?: string,
   dataSrc?: string,
+  dataVersionTag?: string,
   initConfig?: {},
 }
 
@@ -60,14 +61,14 @@ const App = (props: AppProps) => {
   React.useEffect(() => {
 
     //retrieve config asynchronously...
-    ZAVConfig.getConfig(props.configId, props.dataSrc, (newConfig) => {
+    ZAVConfig.getConfig(props.configId, props.dataSrc, props.dataVersionTag, (newConfig) => {
       setConfig(newConfig);
 
       //load regions related data
       const treeDataUrl =
         newConfig.treeUrlPath
           ? newConfig.hasBackend
-            ? Utils.makePath(newConfig.PUBLISH_PATH, newConfig.treeUrlPath, "regionTreeGroup_" + newConfig.viewerId + ".json")
+            ? Utils.makePath(newConfig.PUBLISH_PATH, newConfig.treeUrlPath, "regionTreeGroup_" + newConfig.viewerId + ".json" + props.dataVersionTag)
             : Utils.makePath(newConfig.treeUrlPath, newConfig.fallbackTreeUrl)
           : newConfig.fallbackTreeUrl
 

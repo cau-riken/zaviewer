@@ -79,17 +79,18 @@ class ZAVConfig {
         return PLANE_PREFSUBVIEW[plane];
     }
 
-    static getConfig(configId, dataSrc, callbackWhenReady) {
-        return new ZAVConfig(configId, dataSrc ? dataSrc.toString().trim() : undefined, callbackWhenReady);
+    static getConfig(configId, dataSrc, dataVersionTag, callbackWhenReady) {
+        return new ZAVConfig(configId, dataSrc ? dataSrc.toString().trim() : undefined, dataVersionTag, callbackWhenReady);
     }
 
     /**
      * Create a configuration 
      * @param {string} configId - ID of the configuration.
      * @param {string} dataSrc -  when the configId is not specified, url from where to retrieve config & data
+     * @param {string} dataVersionTag -  optional version tag for cache busting purpose
      * @param {function} callbackWhenReady - function asynchronously invoked to signal that the configuration is fully loaded
      */
-    constructor(configId, dataSrc, callbackWhenReady) {
+    constructor(configId, dataSrc, dataVersionTag, callbackWhenReady) {
 
         /** default subview size */
         const _subviewSize = 200;
@@ -273,7 +274,7 @@ class ZAVConfig {
             this.config.fallbackExtension = 'dzi';
 
             /** URL path to the default tree region */
-            this.config.fallbackTreeUrl = Utils.makePath(this.config.baseConfigPath, "regionTree.json");
+            this.config.fallbackTreeUrl = Utils.makePath(this.config.baseConfigPath, "regionTree.json" + (dataVersionTag || ''));
 
         }
 

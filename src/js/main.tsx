@@ -13,6 +13,8 @@ import App from './components/App';
 import { GuidedTour } from "./components/GuidedTour";
 
 
+const DataVersion_PropName = 'data-dataversion';
+
 /** retrieve configuration ID from url query param  
 */
 const getConfigParams = () => {
@@ -33,15 +35,28 @@ const getConfigParams = () => {
   return params;
 }
 
+const parentContainer = document.getElementById('root');
+if (parentContainer) {
 
-ReactDOM.render(
-  <React.StrictMode>
-    <GuidedTour>
-      <App
-        //configID is undefined when the viewer is used without backend (i.e. shipped within its dataset)
-        {...getConfigParams()}
-      />
-    </GuidedTour>
-  </React.StrictMode>,
-  document.getElementById('root')
-);
+  //version tag for cache busting
+  const dataVersionTag = parentContainer.hasAttribute(DataVersion_PropName)
+    ?
+    '?ver=' + parentContainer.getAttribute(DataVersion_PropName)
+    :
+    //by default, no version tag
+    ''
+    ;
+
+  ReactDOM.render(
+    <React.StrictMode>
+      <GuidedTour>
+        <App
+          //configID is undefined when the viewer is used without backend (i.e. shipped within its dataset)
+          {...getConfigParams()}
+          dataVersionTag={dataVersionTag}
+        />
+      </GuidedTour>
+    </React.StrictMode>,
+    parentContainer
+  );
+}
