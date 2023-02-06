@@ -246,6 +246,11 @@ ZAVProcessings = function () { };
                 const imageObj = new Image();
                 //prepare to asynchronously draw result on top of layers, once image is created from canvas 
                 imageObj.onload = () => resolve(imageObj);
+                imageObj.onerror = (event) => {
+                    const message = "Error when converting processor result image";
+                    console.error(message, event);
+                    reject(message);
+                };
                 //create image from canvas 
                 imageObj.src = tmpCanvas.toDataURL("image/png");
 
