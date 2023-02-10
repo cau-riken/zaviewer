@@ -228,7 +228,7 @@ class ViewerManager {
 
             /** [topleft.x, topleft.y, width, height] in pixels */
             clippedRegion: undefined,
-            /** topleft corner of the previous respecting selected processor size constrtaint  */
+            /** top-left corner of the previous respecting selected processor size constraint  */
             constrainedClippedRegion: undefined,
 
             /** index of currently selected custom processor */
@@ -240,6 +240,8 @@ class ViewerManager {
             processedZoom: undefined,
             /** clip definition used for last processing */
             processedRegion: undefined,
+            /** processed image clip top-left pixel coords in the full size image */
+            processedTopleftPx: undefined,
 
             /** set to true while processing is being computed */
             processingActive: undefined,
@@ -2915,6 +2917,7 @@ class ViewerManager {
                 this.status.processedZoom = this.getZoomFactor();
                 this.status.processedRegion = this.status.constrainedClippedRegion;
                 this.status.processedImage = null;
+                this.status.processedTopleftPx = null;
 
                 //retrieve image data for custom processing
                 const tilescanvas = this.viewer.drawer.canvas;
@@ -2941,7 +2944,10 @@ class ViewerManager {
                                 }
                             })
                             .then((imageObj) => {
-                                imageObj.name = proc.name + ' -' + new Date().toISOString().slice(0, 19).replaceAll(/[:\-]/g, '');;
+                                imageObj.name = proc.name 
+                                    //info to identify processed image clip (top-left pixel coords in orginal image and zoom value)
+                                    + `-${this.status.processedTopleftPx[0]},${this.status.processedTopleftPx[1]}@${Math.round(this.status.processedZoom*100)/100.0}-`
+                                    + new Date().toISOString().slice(0, 19).replaceAll(/[:\-]/g, '');
                                 this.status.processedImage = imageObj;
                                 this.displayClipBox();
                             })
@@ -2974,6 +2980,7 @@ class ViewerManager {
 
                 const [lx, ty, w, h] = this.status.processedRegion;
 
+                this.status.processedTopleftPx = [Math.round(this.config.imageSize * vlx) , Math.round(this.config.imageSize * vty)];
 
                 if (vlx >= bounds.x && vty >= bounds.y && vrx <= (bounds.x + bounds.width) && vby <= (bounds.y + bounds.height)) {
                     //clipped regions within viewport boundaries, complete clipped region imageData is available
