@@ -242,17 +242,22 @@ ZAVProcessings = function () { };
         return new Promise((resolve, reject) => {
             try {
                 const tmpCanvas = modfn.imageDataToCanvas(imageData);
-                // extract canvas data into an image object
-                const imageObj = new Image();
-                //prepare to asynchronously draw result on top of layers, once image is created from canvas 
-                imageObj.onload = () => resolve(imageObj);
-                imageObj.onerror = (event) => {
-                    const message = "Error when converting processor result image";
-                    console.error(message, event);
-                    reject(message);
-                };
-                //create image from canvas 
-                imageObj.src = tmpCanvas.toDataURL("image/png");
+                //Beware: image created from blob can't be (directly) downloaded due to CSP (see https://github.com/w3c/FileAPI/issues/142 and related)
+                tmpCanvas.toBlob((blob) => {
+                    const url = URL.createObjectURL(blob);
+                    const imageObj = new Image();
+                    imageObj.onload = () => {
+                        // no longer need to read the blob so it's revoked
+                        URL.revokeObjectURL(url);
+                        resolve(imageObj);
+                    }
+                    imageObj.onerror = (event) => {
+                        const message = "Error when converting processor result image";
+                        console.error(message, event);
+                        reject(message);
+                    };
+                    imageObj.src = url;
+                });
 
             } catch (msg) {
                 reject(msg);

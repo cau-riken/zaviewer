@@ -112,11 +112,23 @@ class ProcessingPanel extends React.Component {
     handleSaveProcessedImage() {
         const imageObj = ViewerManager.getProcessedImage();
         if (imageObj) {
-            //trigger "download" of processed image
-            const link = document.createElement('a');
-            link.download = imageObj.name ? imageObj.name + '.png' : 'customprocessing-image.png';
-            link.href = imageObj.src;
-            link.click();
+            //Image was created from blob, hence can not be directly downloaded,
+            //thus, we recreate a blob via canvas
+            const tmpCanvas = document.createElement("canvas");
+            tmpCanvas.width = imageObj.width;
+            tmpCanvas.height = imageObj.height;
+            const tmpContext = tmpCanvas.getContext("2d");
+            tmpContext.drawImage(imageObj, 0, 0);
+            tmpCanvas.toBlob((blob) => {
+                const blobUrl = URL.createObjectURL(blob);
+                const link = document.createElement('a');
+                link.download = imageObj.name ? imageObj.name + '.png' : 'customprocessing-image.png';
+                link.href = blobUrl;
+                //trigger "download" of image
+                link.click();
+                //Allow download to start before releasing objectUrl 
+                setTimeout(() => URL.revokeObjectURL(blobUrl), 2000);
+            });
         }
     };
 
