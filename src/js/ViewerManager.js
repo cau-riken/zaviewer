@@ -1349,7 +1349,7 @@ class ViewerManager {
 
                             //Create Background path in the SVG dedicated to edition
                             that.createEditSVGBackground(paths[i]);
-                            hasBackground= true;
+                            hasBackground = true;
 
                         } else {
                             newPathElt.id = pathId;
@@ -3037,6 +3037,7 @@ class ViewerManager {
                             );
                         };
 
+                        const that = this;
                         //return a promise chain which trigger next pan move and image data collection
                         const getNextPanPromise = (imageDataArray) => new Promise((resolve, reject) => {
                             //while there is panning moves left
@@ -3050,24 +3051,35 @@ class ViewerManager {
                                 //event handler to detect when panning has been performed
                                 this.viewer.addOnceHandler('pan', (pannedEvent) => {
 
-                                    //FIXME currently only checking if first layer is fully loaded
-                                    const tiledImage = pannedEvent.eventSource.world.getItemAt(0);
+                                    let resolveDeferred = false;
 
-                                    //check if image is already fully loaded
-                                    if (!tiledImage.getFullyLoaded()) {
+                                    //attach a single event handler on the first visible layer not fully loaded 
+                                    for (var i = 0; i < that.viewer.world.getItemCount() && !resolveDeferred; i++) {
+                                        const tiledImage = that.viewer.world.getItemAt(i);
+                                        const layer = _.findWhere(that.status.layerDisplaySettings, { index: i });
 
-                                        //event handler to detect when tiled image has been fully loaded (for current viewport)
-                                        const hnd = (fullyLoadedChangeEvent) => {
-                                            if (fullyLoadedChangeEvent.fullyLoaded) {
-                                                tiledImage.removeHandler('fully-loaded-change', hnd);
+                                        if (layer && layer.enabled) {
+                                            //check if image is already fully loaded
+                                            if (!tiledImage.getFullyLoaded()) {
 
-                                                resolve(getDeferedCollectImageDataPromise(imageDataArray, panMove)
-                                                    .then((imgDtaArr) => getNextPanPromise(imgDtaArr))
+                                                //event handler to detect when all tiled images have been fully loaded (for current viewport)
+                                                that.eventSource.addOnceHandler(
+                                                    'zav-alllayers-loaded',
+                                                    (event) => {
+                                                        resolve(
+                                                            getDeferedCollectImageDataPromise(imageDataArray, panMove)
+                                                                .then((imgDtaArr) => getNextPanPromise(imgDtaArr))
+                                                        );
+                                                    }
                                                 );
+                                                // one single event handler is enough
+                                                resolveDeferred = true;
                                             }
-                                        };
-                                        tiledImage.addHandler('fully-loaded-change', hnd);
-                                    } else {
+                                        }
+                                    }
+
+                                    //if no handler was added, it means all tiles are fully loaded at this point
+                                    if (!resolveDeferred) {
                                         resolve(
                                             getDeferedCollectImageDataPromise(imageDataArray, panMove)
                                                 .then((imgDtaArr) => getNextPanPromise(imgDtaArr))
