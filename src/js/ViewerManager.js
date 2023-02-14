@@ -45,7 +45,7 @@ class ViewerManager {
         //some continuous operations must not be recorded immediately in history (e.g. zooming, paning)
         this.makeHistoryStep = _.debounce(this.makeActualHistoryStep, 500);
 
-        this.history.listen(({location, action}) => {
+        this.history.listen(({ location, action }) => {
             //reset viewer only when navigating the history with Back and Forth buttons
             if (action === "POP") {
                 const locParams = this.getParamsFromLocation(location);
@@ -1517,8 +1517,8 @@ class ViewerManager {
                 //scale edition overlay
                 const editGroup = document.getElementById('svgEditGroup');
                 if (editGroup) {
-                editGroup.setAttribute('transform', ' scale(' + zoom + ',' + zoom + ') translate(0,' + this.config.dzDiff + ')');
-                this.updateEditCursor();
+                    editGroup.setAttribute('transform', ' scale(' + zoom + ',' + zoom + ') translate(0,' + this.config.dzDiff + ')');
+                    this.updateEditCursor();
                 } else {
                     console.error('#svgEditGroup not found!')
                 }
@@ -2944,9 +2944,9 @@ class ViewerManager {
                                 }
                             })
                             .then((imageObj) => {
-                                imageObj.name = proc.name 
+                                imageObj.name = proc.name
                                     //info to identify processed image clip (top-left pixel coords in orginal image and zoom value)
-                                    + `-${this.status.processedTopleftPx[0]},${this.status.processedTopleftPx[1]}@${Math.round(this.status.processedZoom*100)/100.0}-`
+                                    + `-${this.status.processedTopleftPx[0]},${this.status.processedTopleftPx[1]}@${Math.round(this.status.processedZoom * 100) / 100.0}-`
                                     + new Date().toISOString().slice(0, 19).replaceAll(/[:\-]/g, '');
                                 this.status.processedImage = imageObj;
                                 this.displayClipBox();
@@ -2980,7 +2980,7 @@ class ViewerManager {
 
                 const [lx, ty, w, h] = this.status.processedRegion;
 
-                this.status.processedTopleftPx = [Math.round(this.config.imageSize * vlx) , Math.round(this.config.imageSize * vty)];
+                this.status.processedTopleftPx = [Math.round(this.config.imageSize * vlx), Math.round(this.config.imageSize * vty)];
 
                 if (vlx >= bounds.x && vty >= bounds.y && vrx <= (bounds.x + bounds.width) && vby <= (bounds.y + bounds.height)) {
                     //clipped regions within viewport boundaries, complete clipped region imageData is available
