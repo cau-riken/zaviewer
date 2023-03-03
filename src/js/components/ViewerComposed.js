@@ -258,14 +258,14 @@ class ViewerComposed extends React.Component {
                 <BrandingMark brandingInfo={this.props.config && this.props.config.branding} />
 
                 <div className="zav-StatusBar">
-                    <div className="zav-StatusBarContent">
+                    <div className={"zav-StatusBarContent" + (this.state.hoveredRegion ? " hasStatus" : "")}>
                         {
                             this.state.hoveredRegion
                                 ? <React.Fragment>
                                     <span><b>{this.state.hoveredRegion}</b>{" "}{regionName}{" "}{this.state.hoveredRegionSide}</span>
                                     {this.state.showRegions
                                         ? null
-                                        : <span style={{ color: "#dbdbff", fontSize: 9, marginLeft: 10 }}>[Shift]+Click on the image to reveal the border</span>
+                                        : <span className="zav-StatusBarHint">[Shift]+Click on the image to reveal the border</span>
                                     }
                                 </React.Fragment>
                                 : null
