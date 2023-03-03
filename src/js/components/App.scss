@@ -123,3 +123,23 @@ div#zav_licensecontainer .zav_miscLinks:hover {
 .Resizer.disabled:hover {
 	border-color: transparent;
 }
+
+.delin-NOTselect {
+	transition:
+		fill-opacity 0.5s,
+		stroke-opacity 0.3s;
+}
+
+.delin-select {}
+
+.delin-high {
+	transition:
+		fill-opacity 0.5s,
+		//immediate change to border when highlighting
+		stroke-opacity 0s;
+}
+
+.delin-NOThigh {
+	//slow fade-out of border, mainly for transient highlighting via shift-click  
+	transition: stroke-opacity 0.8s 0.05s;
+}

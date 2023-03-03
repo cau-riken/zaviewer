@@ -1474,7 +1474,7 @@ class ViewerManager {
                 } else if (e.shiftKey) {
 
                     that.applyMouseOverPresentation(raphElt, true);
-                    setTimeout(() => that.applyUnselectedPresentation(raphElt), 2500);
+                    setTimeout(() => that.applyMouseOutPresentation(raphElt), 2500);
                 }
             },
 
@@ -1618,15 +1618,25 @@ class ViewerManager {
     static applyMouseOverPresentation(element, forcedBorder = false) {
         const el = element.length ? element[0] : element;
         const color = el.node.getAttribute("fill");
+        const fillOpacity = (!this.status.displayAreas || this.status.regionsOpacity < 0.05) ? 0 : this.status.regionsOpacity + (this.status.regionsOpacity > 0.6 ? -0.4 : 0.4);
+        const strokeOpacity = forcedBorder || this.status.displayBorders ? 1 : 0;
         element.attr({
-            "fill-opacity": (!this.status.displayAreas || this.status.regionsOpacity < 0.05) ? 0 : this.status.regionsOpacity + (this.status.regionsOpacity > 0.6 ? -0.4 : 0.4),
-            "stroke-opacity": forcedBorder || this.status.displayBorders ? 1 : 0,
+            "fill-opacity": fillOpacity,
+            "stroke-opacity": strokeOpacity,
             "stroke-width": '4px',
             "stroke": color,
+        });
+        (element.length ? element : [element]).forEach(e => {
+            e.node.classList.add("delin-high")
+            e.node.classList.remove("delin-NOThigh")
         });
     }
 
     static applyMouseOutPresentation(element, isSelected) {
+        (element.length ? element : [element]).forEach(e => {
+            e.node.classList.remove("delin-high")
+            e.node.classList.add("delin-NOThigh")
+        });
         if (isSelected) {
             this.applySelectedPresentation(element);
         } else {
@@ -1635,22 +1645,34 @@ class ViewerManager {
     }
 
     static applySelectedPresentation(element) {
+        const fillOpacity = (!this.status.displayAreas || this.status.regionsOpacity < 0.05) ? 0 : this.status.regionsOpacity + (this.status.regionsOpacity > 0.6 ? -0.4 : 0.4);
+        const strokeOpacity = this.status.showRegions ? 0.7 : 0;
         element.attr({
-            "fill-opacity": (!this.status.displayAreas || this.status.regionsOpacity < 0.05) ? 0 : this.status.regionsOpacity + (this.status.regionsOpacity > 0.6 ? -0.4 : 0.4),
-            "stroke-opacity": this.status.showRegions ? 0.7 : 0,
+            "fill-opacity": fillOpacity,
+            "stroke-opacity": strokeOpacity,
             "stroke-width": '3px',
             "stroke": "#0000ff",
+        });
+        (element.length ? element : [element]).forEach(e => {
+            e.node.classList.add("delin-select");
+            e.node.classList.remove("delin-NOTselect");
         });
     }
 
     static applyUnselectedPresentation(element) {
         const el = element.length ? element[0] : element;
         const color = el.node.getAttribute("fill");
+        const fillOpacity = this.status.displayAreas ? this.status.regionsOpacity : 0;
+        const strokeOpacity = this.status.displayBorders ? 0.5 : 0;
         element.attr({
-            "fill-opacity": this.status.displayAreas ? this.status.regionsOpacity : 0,
-            "stroke-opacity": this.status.displayBorders ? 0.5 : 0,
+            "fill-opacity": fillOpacity,
+            "stroke-opacity": strokeOpacity,
             "stroke-width": '2px',
             "stroke": color,
+        });
+        (element.length ? element : [element]).forEach(e => {
+            e.node.classList.remove("delin-select");
+            e.node.classList.add("delin-NOTselect");
         });
     }
 
