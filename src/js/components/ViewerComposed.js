@@ -397,6 +397,9 @@ class ViewerComposed extends React.Component {
                                     initRegionsOpacity={this.state.initRegionsOpacity}
                                     displayAreas={this.state.displayAreas}
                                     displayBorders={this.state.displayBorders}
+                                    useCustomBorders={this.state.useCustomBorders}
+                                    customBorderColor={this.state.customBorderColor}
+                                    customBorderWidth={this.state.customBorderWidth}
                                 />
                                 {
                                     this.state.editModeOn

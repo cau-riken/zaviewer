@@ -5,6 +5,7 @@ import {
 } from "@blueprintjs/core";
 
 import ParamAdjusterLabel from './ParamAdjusterLabel.js';
+import BorderSettings from './BorderSettings';
 
 import ViewerManager from '../ViewerManager.js'
 
@@ -45,14 +46,27 @@ class RegionOptions extends React.Component {
                         enabled={this.props.displayAreas}
                     />
                 </div>
-                <span title="toggle display of regions' border">
-                    <Switch
-                        checked={this.props.displayBorders}
-                        onChange={this.handleBorderChange}
-                        inline
-                        label="borders"
-                    />
-                </span>
+                <div
+                    style={{ display: 'flex', justifyContent: 'space-between' }}
+                >
+                    <span title="toggle display of regions' border">
+                        <Switch
+                            checked={this.props.displayBorders}
+                            onChange={this.handleBorderChange}
+                            inline
+                            label="borders"
+                        />
+                    </span>
+
+                    <span title="click to set regions' custom border">
+                        <BorderSettings
+                            disabled={!this.props.displayBorders}
+                            useCustomBorders={this.props.useCustomBorders}
+                            customBorderColor={this.props.customBorderColor}
+                            customBorderWidth={this.props.customBorderWidth}
+                        />
+                    </span>
+                </div>
             </div>
         );
     }

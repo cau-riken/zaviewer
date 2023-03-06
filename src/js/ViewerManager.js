@@ -188,6 +188,9 @@ class ViewerManager {
             showRegions: this.config.showRegions,
             displayAreas: this.config.displayAreas,
             displayBorders: this.config.displayBorders,
+            useCustomBorders: this.config.useCustomBorders,
+            customBorderColor: this.config.customBorderColor,
+            customBorderWidth: this.config.customBorderWidth,
             initRegionsOpacity: 0.4,
             regionsOpacity: UserSettings.getNumItem(UserSettings.SettingsKeys.OpacityAtlasRegionArea, 0.4),
 
@@ -289,6 +292,18 @@ class ViewerManager {
                     } else if ('displayBorders' === property) {
                         target[property] = value;
                         UserSettings.setBoolItem(UserSettings.SettingsKeys.ShowAtlasRegionBorder, value);
+                        return true;
+                    } else if ('useCustomBorders' === property) {
+                        target[property] = value;
+                        UserSettings.setBoolItem(UserSettings.SettingsKeys.UseCustomRegionBorder, value);
+                        return true;
+                    } else if ('customBorderColor' === property) {
+                        target[property] = value;
+                        UserSettings.setStrItem(UserSettings.SettingsKeys.CustomRegionBorderColor, value);
+                        return true;
+                    } else if ('customBorderWidth' === property) {
+                        target[property] = value;
+                        UserSettings.setNumItem(UserSettings.SettingsKeys.CustomRegionBorderWidth, value);
                         return true;
                     } else if ('regionsOpacity' === property) {
                         target[property] = value;
@@ -1330,7 +1345,6 @@ class ViewerManager {
 
                         var newPathElt = that.status.paper.importSVG(paths[i]);
 
-                        that.applyMouseOutPresentation(newPathElt, false);
 
                         const isBackgroundElement = (regionId === BACKGROUND_PATHID);
                         if (isBackgroundElement) {
@@ -1615,6 +1629,24 @@ class ViewerManager {
         this.setBorderDisplay(!this.status.displayBorders);
     }
 
+    static toggleUseCustomBorders() {
+        this.status.useCustomBorders = !this.status.useCustomBorders;
+        this.updateRegionsVisibility();
+        this.updateRegionAreasPresentation();
+    }
+
+    static changeCustomBorderColor(color) {
+        this.status.customBorderColor = color;
+        this.updateRegionsVisibility();
+        this.updateRegionAreasPresentation();
+    }
+
+    static changeCustomBorderWidth(width) {
+        this.status.customBorderWidth = width;
+        this.updateRegionsVisibility();
+        this.updateRegionAreasPresentation();
+    }
+
     static applyMouseOverPresentation(element, forcedBorder = false) {
         const el = element.length ? element[0] : element;
         const color = el.node.getAttribute("fill");
@@ -1661,13 +1693,14 @@ class ViewerManager {
 
     static applyUnselectedPresentation(element) {
         const el = element.length ? element[0] : element;
-        const color = el.node.getAttribute("fill");
+        const color = (this.status.displayBorders && this.status.useCustomBorders) ? this.status.customBorderColor : el.node.getAttribute("fill")
         const fillOpacity = this.status.displayAreas ? this.status.regionsOpacity : 0;
         const strokeOpacity = this.status.displayBorders ? 0.5 : 0;
+        const strokeWidth =(this.status.useCustomBorders ? this.status.customBorderWidth : 2) + 'px';
         element.attr({
             "fill-opacity": fillOpacity,
             "stroke-opacity": strokeOpacity,
-            "stroke-width": '2px',
+            "stroke-width": strokeWidth,
             "stroke": color,
         });
         (element.length ? element : [element]).forEach(e => {

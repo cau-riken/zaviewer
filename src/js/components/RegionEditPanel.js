@@ -18,7 +18,7 @@ import {
     PopperPlacements
 } from "@blueprintjs/popover2";
 
-import { HuePicker } from 'react-color';
+import { HexColorPicker } from "react-colorful";
 
 import RegionsManager from '../RegionsManager'
 import ViewerManager from '../ViewerManager.js'
@@ -188,13 +188,23 @@ class RegionEditPanel extends React.Component {
                             popoverClassName={Classes.POPOVER2_CONTENT_SIZING}
                             disabled={!isEditing}
                             content={
-                                    <HuePicker
-                                        width={200}
-                                        color={color}
-                                        onChangeComplete={(color, event) => 
-                                            ViewerManager.changeEditedRegionFill(color.hex)
+                                <div style={{ padding: 10 }}>
+                                    <style>{`
+                                        #zav_editregioncolorpicker .react-colorful__saturation-pointer,
+                                        #zav_editregioncolorpicker .react-colorful__hue-pointer,
+                                        #zav_editregioncolorpicker .react-colorful__alpha-pointer {
+                                            width: 14px;
+                                            height: 14px;
                                         }
+                                    `}
+                                    </style>
+                                    <HexColorPicker
+                                        id="zav_editregioncolorpicker"
+                                        style={{ width: 180, height: 180 }}
+                                        color={color}
+                                        onChange={(color) => ViewerManager.changeEditedRegionFill(color)}
                                     />
+                                </div>
                             }
                         >
                             <ColorBullet

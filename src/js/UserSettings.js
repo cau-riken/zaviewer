@@ -4,22 +4,30 @@ class UserSettings {
         ShowAtlasRegionArea: "zav:global:atlasRegionsArea:show",
         ShowAtlasRegionBorder: "zav:global:atlasRegionsBorder:show",
         OpacityAtlasRegionArea: "zav:global:atlasRegionsArea:opacity",
+        UseCustomRegionBorder: "zav:global:atlasRegionsCustomBorder:use",
+        CustomRegionBorderColor: "zav:global:atlasRegionsCustomBorder:color",
+        CustomRegionBorderWidth: "zav:global:atlasRegionsCustomBorder:width",
     }
 
     static getLayerKeyPrefix(configId, layerId) {
         return `zav:${configId}:layer:${layerId}:`;
     }
 
-    static getStrItem(key) {
+    static getStrItem(key, defaultValue) {
         if (window.localStorage) {
-            return window.localStorage.getItem(key);
+            const value = window.localStorage.getItem(key);
+            if (value === null && typeof defaultValue != 'undefined') {
+                return defaultValue;
+            } else {
+                return value;
+            }
         } else {
             return null;
         }
     }
 
     static setStrItem(key, value) {
-        if (window.localStorage) {
+        if (window.localStorage && typeof value != 'undefined') {
             window.localStorage.setItem(key, value);
         }
     }

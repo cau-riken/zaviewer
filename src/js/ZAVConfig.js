@@ -151,6 +151,9 @@ class ZAVConfig {
             showRegions: false,
             displayAreas: true,
             displayBorders: false,
+            useCustomBorders: false,
+            customBorderColor: "#ff0000",
+            customBorderWidth: 2,            
 
             /** relative path to folder containing subview background images */
             subviewFolderName: undefined,
@@ -650,6 +653,9 @@ class ZAVConfig {
             //override dataset settings with users' settings
             this.config.displayAreas = UserSettings.getBoolItem(UserSettings.SettingsKeys.ShowAtlasRegionArea, this.config.displayAreas);
             this.config.displayBorders = UserSettings.getBoolItem(UserSettings.SettingsKeys.ShowAtlasRegionBorder, this.config.displayBorders);
+            this.config.useCustomBorders = UserSettings.getBoolItem(UserSettings.SettingsKeys.UseCustomRegionBorder, this.config.useCustomBorders);
+            this.config.customBorderColor = UserSettings.getStrItem(UserSettings.SettingsKeys.CustomRegionBorderColor, this.config.customBorderColor);
+            this.config.customBorderWidth = UserSettings.getNumItem(UserSettings.SettingsKeys.CustomRegionBorderWidth, this.config.customBorderWidth);
             this.config.showRegions = this.config.displayAreas || this.config.displayBorders;
 
             //start with the middle slice if none is specified 
