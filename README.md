@@ -365,7 +365,7 @@ Depending on your current settings, you may be in one of the 2 following cases:
     1. Go to your [github settings page](https://github.com/settings/tokens), and [create a personal (classic) token](https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/creating-a-personal-access-token#creating-a-personal-access-token-classic) with `read:packages` scope.
     2. Create a new  local `.npmrc` in the project directory, including your token:
     ```sh
-    (cat npmrc.template ; echo '<REPLACE_BY_YOUR_TOKEN>' >> .npmrc
+    (cat npmrc.template ; echo '<REPLACE_BY_YOUR_TOKEN>' > .npmrc
     ```
 
 ##### Install modules and devtools dependencies

@@ -13,7 +13,7 @@ COPY .npmrc* ./
 
 # For github package registry access: if a token is supplied, use it to create (possibly overwrite) local .npmrc 
 ARG PACKAGEREAD_TOKEN
-RUN if [ ${PACKAGEREAD_TOKEN} ]; then (cat .npmrc_template ; echo '${PACKAGEREAD_TOKEN}') >> .npmrc ; fi
+RUN if [ ${PACKAGEREAD_TOKEN} ]; then (cat .npmrc_template ; echo '${PACKAGEREAD_TOKEN}') > .npmrc ; fi
 
 
 # download and install node modules
