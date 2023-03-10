@@ -130,8 +130,17 @@ class ViewerManager {
             //protocol used with image server 
             useIIProtocol: overridingConf.protocol && "IIP" === overridingConf.protocol,
 
+            //
+            imageWidth: undefined,
+            imageHegith: undefined,
+
             //tile sources for every slice of first layer 
             tileSources: [],
+
+            //default tile infos
+            tileSize: 256,
+            tileOverlap: 1,
+            tileFormat: 'jpg',
 
             /** Raphael array-like object used to operate on region delineations */
             set: undefined,
@@ -440,16 +449,32 @@ class ViewerManager {
                     async: true,
                     dataType: "xml",
                     success: (dziInfo) => {
-                        const sizeNodes = dziInfo.getElementsByTagNameNS("http://schemas.microsoft.com/deepzoom/2008", "Size");
-                        if (sizeNodes.length) {
-                            const sizeNode = sizeNodes.item(0);
-                            const widthAttr = sizeNode.attributes["Width"];
-                            if (widthAttr) {
-                                that.status.imageWidth = parseInt(widthAttr.value);
+                        const imageNodes = dziInfo.getElementsByTagNameNS("http://schemas.microsoft.com/deepzoom/2008", "Image");
+                        if (imageNodes.length) {
+                            const imageNode = imageNodes.item(0);
+                            const titleSizeAttr = imageNode.attributes["TileSize"];
+                            if (titleSizeAttr) {
+                                that.status.tileSize = parseInt(titleSizeAttr.value);
                             }
-                            const heightAttr = sizeNode.attributes["Height"];
-                            if (heightAttr) {
-                                that.status.imageHeight = parseInt(heightAttr.value);
+                            const overlapAttr = imageNode.attributes["Overlap"];
+                            if (overlapAttr) {
+                                that.status.tileOverlap = parseInt(overlapAttr.value);
+                            }
+
+                            const formatAttr = imageNode.attributes["Format"];
+                            if (formatAttr) {
+                                that.status.tileFormat = formatAttr.value;
+                            }
+                            if (imageNode.childElementCount) {
+                                const sizeNode = imageNode.childNodes.item(0);
+                                const widthAttr = sizeNode.attributes["Width"];
+                                if (widthAttr) {
+                                    that.status.imageWidth = parseInt(widthAttr.value);
+                                }
+                                const heightAttr = sizeNode.attributes["Height"];
+                                if (heightAttr) {
+                                    that.status.imageHeight = parseInt(heightAttr.value);
+                                }
                             }
                         }
                         that.init2ndStage(overridingConf);
@@ -2183,7 +2208,10 @@ class ViewerManager {
                 slideNum -= this.config.sagittalFirstIndex;
                 break;
         }
-        return this.config.dataRootPath + "/" + key + (this.config.hasMultiPlanes ? "/" + ZAVConfig.getPlaneName(this.status.activePlane) : "") + "/" + slideNum + "_files/" + level + "/" + x + "_" + y + ".jpg";
+        return this.config.dataRootPath + "/" + key
+            + (this.config.hasMultiPlanes ? "/" + ZAVConfig.getPlaneName(this.status.activePlane) : "") + "/"
+            + slideNum + "_files/" + level + "/" + x + "_" + y
+            + "." + this.status.tileFormat;
     }
 
     static getIIIFTileSourceUrl(slideNum, key, ext) {
@@ -2236,9 +2264,9 @@ class ViewerManager {
             return {
                 width: this.config.dzLayerWidth,
                 height: this.config.dzLayerHeight,
-                tileSize: 256,
-
-                overlap: 1,
+                tileSize: this.status.tileSize,
+                overlap: this.status.tileOverlap,
+                tileFormat: this.status.tileFormat,
 
                 //minLevel: 0,
                 //maxLevel: 10, //maxLevel should correspond to the depth of the number of folders in the dzi subdirectory
