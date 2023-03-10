@@ -27,21 +27,20 @@ import PIL
 PIL.Image.MAX_IMAGE_PIXELS = None
 
 
-def createDeepZoomImage(source, output):
+def createDeepZoomImage(source, output, format, quality):
     # set up Deep Zoom Image creation parameters
     creator = deepzoom.ImageCreator(
         tile_size=256,
         tile_overlap=1,
-        # jpeg format because png tiles are rendered with black border in OSD (v2.4.2, maybe related to https://github.com/openseadragon/openseadragon/issues/1683 )
-        tile_format="jpg",
-        image_quality=0.5,
+        tile_format=format,
+        image_quality=quality,
         resize_filter="antialias"
     )
     # Create Deep Zoom image pyramid from source
     creator.create(source, output)
 
 
-def createDeepZoomImages(input_path, output_path):
+def createDeepZoomImages(input_path, output_path, format, quality):
 
     for infile in [f for f in os.scandir(input_path) if f.is_file()]:
         (short_filename, extension) = os.path.splitext(infile)
@@ -49,7 +48,7 @@ def createDeepZoomImages(input_path, output_path):
             source = os.path.join(input_path, short_filename + extension)
             output = os.path.join(output_path, short_filename + '.dzi')
             print(f"Creating DZI for {short_filename}{extension} ...")
-            createDeepZoomImage(source, output)
+            createDeepZoomImage(source, output, format, quality)
             print("\t... done.")
 
 # -----------------------------------------------------------------------------
@@ -356,7 +355,7 @@ def getLayersNFiles(input_path, config, phys_unit):
     return axisLayersFiles
 
 
-def prepareImages(axisLayersFiles, config, ouput_path, phys_unit):
+def prepareImages(axisLayersFiles, config, ouput_path, phys_unit, format, quality):
 
     # TODO for single plane mode, enabled users to select preferred subview insteqd of predefined value
     PLANE_PREFSUBVIEW = {"axial": "coronal",
@@ -426,11 +425,11 @@ def prepareImages(axisLayersFiles, config, ouput_path, phys_unit):
                 with tempfile.TemporaryDirectory() as tmpDir:
                     needsCropping = (image['width'] - image['origin'][0] > cropWidth) or (image['height'] - image['origin'][1] > cropHeigth)
                     if needsCropping:
-                        #create temporary cropped image
+                        # create temporary cropped image
                         tempImgPath = os.path.join(tmpDir, 'croppedImg' + image['ext'])
                         image2D = sitk.ReadImage(source)
 
-                        #extract subregion using ExtractImageFilter
+                        # extract subregion using ExtractImageFilter
                         extract = sitk.ExtractImageFilter()
                         extract.SetSize([cropWidth, cropHeigth])
                         extract.SetIndex([int(image['origin'][0]), int(image['origin'][1])])
@@ -444,8 +443,8 @@ def prepareImages(axisLayersFiles, config, ouput_path, phys_unit):
                         image['final_width'] = image['width']
                         image['final_height'] = image['height']
 
-                    #create actual DeepZoom image for the slice
-                    createDeepZoomImage(source, output)
+                    # create actual DeepZoom image for the slice
+                    createDeepZoomImage(source, output, format, quality)
 
                 bar.next()
 
@@ -567,19 +566,25 @@ def arg_parser():
                         help='path to folder where ouput is generated')
     parser.add_argument('-u', '--physicalunit', type=int, default=1,
                         help='physical unit used in the image spacing properties (in µm)')
+
+    # Beware that png tiles might be rendered with black border in OSD (v2.4.2, see https://github.com/openseadragon/openseadragon/issues/1683 )
+    parser.add_argument('-f', '--tileformat', type=str, default='jpg',
+                        help='image format of generated tiles (png | jpg)')
+    parser.add_argument('-q', '--tilequality', type=float, default=0.90,
+                        help='image quality of generated tiles ([0.1 ~ 1.0], the higher the better)')
     return parser
+
 
 def startGuidedImport():
     mount_path = "/mnt/hostdir"
 
     args = arg_parser().parse_args()
 
-    interactive = args.outputpath is None or args.inputpath is None 
+    interactive = args.outputpath is None or args.inputpath is None
 
     displayouput_path = args.outputpath
     (displayouput_path, ouput_path) = getCleanedAndCheckedPath(
         "Please indicate output path", "Output path not found", mount_path, displayouput_path, interactive)
-
 
     print(f"Config & data will be generated in : {displayouput_path}")
     config = {}
@@ -619,13 +624,19 @@ def startGuidedImport():
     (displayinput_path, input_path) = getCleanedAndCheckedPath(
         "Path of the source images", "Path of the source images not found", mount_path, displayinput_path, interactive)
 
+    tileformat = args.tileformat
+    tilequality = args.tilequality
     # physical unit used in the image spacing properties, hence can be used to determine physical size of the image
     phys_unit = args.physicalunit
     if interactive:
         phys_unit = float(input(
             f"Physical unit used in images, in micrometer ({phys_unit}) : ") or phys_unit)
+        tileformat = str(input(
+            f"Image format of tiles, (jpg, png)) ({tileformat}) : ") or tileformat)
+        tilequality = float(input(
+            f"Image quality of tiles, [0.1 ~ 1.0] ({tilequality}) : ") or tilequality)
 
-    #copy provided hierarchical region information resource to output folder
+    # copy provided hierarchical region information resource to output folder
     REGIONTREE_FILENAME = 'regionTree.json'
     regionTreeFilePath = os.path.join(os.path.dirname(__file__), 'assets', REGIONTREE_FILENAME)
     print(f"Copying hierarchical regions info ({regionTreeFilePath}) in output folder.")
@@ -634,7 +645,7 @@ def startGuidedImport():
 
     axisLayersFiles = getLayersNFiles(input_path, config, phys_unit)
     # print("axisLayersFiles :",  json.dumps(axisLayersFiles, indent=2))
-    prepareImages(axisLayersFiles, config, ouput_path, phys_unit)
+    prepareImages(axisLayersFiles, config, ouput_path, phys_unit, tileformat, tilequality)
     saveConfig(config_filepath, prev_config, config)
 
 
