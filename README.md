@@ -572,6 +572,7 @@ Since its contents is almost identical to `json.php` of descriptors described ab
 | `slice_step` | _see above_ |
 | `data` |  |
 | `data.` _layerId_  `.metadata` | _see above_  |
+| `data.` _layerId_  `.colortable` | Color table file (.ctbl) to be used with this layer. If defined this layer will be used as a raster labelmap (i.e. layer pixel color map a region, as specified in the color table) **Important: This layer's tiles must be in .PNG format** |
 
  <sup>1</sup> : at least one axis image set must be defined!  
  <sup>single</sup> : single-plane mode only  

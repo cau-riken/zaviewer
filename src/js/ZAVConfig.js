@@ -1,4 +1,8 @@
 import _ from 'underscore';
+
+import axios from 'axios';
+import LabelMapper from './LabelMapper';
+
 import Utils from './Utils.js';
 
 import UserSettings from './UserSettings.js';
@@ -154,6 +158,9 @@ class ZAVConfig {
             useCustomBorders: false,
             customBorderColor: "#ff0000",
             customBorderWidth: 2,            
+
+            //pixel color to label map, used when a raster labelMap is defined
+            color2labelMap: undefined,
 
             /** relative path to folder containing subview background images */
             subviewFolderName: undefined,
@@ -580,6 +587,7 @@ class ZAVConfig {
                 if (that.config.hasBackend && (i == 0)) {
                     //showInfoText(key);
                     that.config.infoTextName = value.metadata;
+
                     //FIXME probably useless
                     $.ajax({
                         url: Utils.makePath(that.config.PUBLISH_PATH, key, "/info.txt"),
@@ -592,6 +600,21 @@ class ZAVConfig {
                             that.config.infoText = "";
                         }
                     });
+                }
+
+                if (value.colortable) {
+                    axios({
+                        method: "GET",
+                        url: Utils.makePath(that.config.PUBLISH_PATH, value.colortable),
+                    })
+                        .then(response => {
+                            that.config.color2labelMap = LabelMapper.parseColorTable(response.data);
+                        })
+                        .catch(error => {
+                            console.warn("Could not load ColorTable", error);
+                            that.config.color2labelMap = undefined;
+                        });
+
                 }
 
                 that.config.layers[key] = {

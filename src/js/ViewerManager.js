@@ -3,6 +3,7 @@ import _ from 'underscore';
 import paper from 'paper';
 import Color from 'color';
 
+import LabelMapper from './LabelMapper';
 import Utils from './Utils.js';
 
 import RegionsManager from './RegionsManager'
@@ -64,6 +65,8 @@ class ViewerManager {
             //FIXME should use another method than name to identify tracer signal layer
             const isTracer = value.metadata.includes("nn_tracer");
 
+            const isLabelMap = typeof value.colortable != "undefined";
+
             const itemKeyLayerPrefix = UserSettings.getLayerKeyPrefix(config.viewerId, key)
 
             const useIIProtocol = value.protocol === 'IIP';
@@ -87,6 +90,8 @@ class ViewerManager {
                 dilation: 0,
                 manualDilation: 0,
                 autoDilation: 0,
+
+                isLabelMap: isLabelMap,
 
                 defaultProtocol: value.protocol || 'IIIF',
                 useIIProtocol: useIIProtocol,
@@ -206,6 +211,9 @@ class ViewerManager {
             /** info about region currently hovered by mouse cursor */
             hoveredRegion: null,
             hoveredRegionSide: null,
+
+            /** one of the layers is a raster labelMap  */
+            hasLabelMap: false,
 
             /** path id of the last selected region */
             lastSelectedPath: null,
@@ -516,6 +524,18 @@ class ViewerManager {
             autoResize: true,
         });
 
+
+        //Initialize labelMap handler
+        this.status.hasLabelMap = LabelMapper.initLabelMapper(
+            this.viewer,
+            this.status.layerDisplaySettings,
+            this.config.color2labelMap,
+            (color, classLabel) => {
+                this.status.hoveredRegion = classLabel!="Background" ? classLabel : null ;
+                this.signalStatusChanged(this.status);
+            },
+        );
+
         if (this.config.matrix) {
             const pixelsPerMeter = 1000 / this.config.matrix[0];
             this.viewer.scalebar({
@@ -728,6 +748,11 @@ class ViewerManager {
 
             //some filter might need to be adjusted after zoom changed
             that.adjustFiltersAfterZoom(zoomEvent.zoom);
+
+            //reset hoveredRegion when using labelMap
+            if (that.status.hasLabelMap) {
+                that.status.hoveredRegion = undefined;
+            }
         });
 
         this.viewer.addHandler('pan', (panEvent) => {
@@ -2283,7 +2308,11 @@ class ViewerManager {
         var options = {
             tileSource: this.getTileSourceDef(key, ext),
             opacity: this.getLayerOpacity(key),
-            success: (event) => this.setAllFilters()
+            success: (event) => this.setAllFilters(),
+
+            //force labelMap layer's tiles loading even when the image is hidden by zero opacity
+            preload: this.status.layerDisplaySettings[key].isLabelMap,
+
         };
 
         this.viewer.addTiledImage(options);

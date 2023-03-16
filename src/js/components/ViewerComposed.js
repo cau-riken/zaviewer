@@ -263,7 +263,7 @@ class ViewerComposed extends React.Component {
                             this.state.hoveredRegion
                                 ? <React.Fragment>
                                     <span><b>{this.state.hoveredRegion}</b>{" "}{regionName}{" "}{this.state.hoveredRegionSide}</span>
-                                    {this.state.showRegions
+                                    {!this.props.config.hasDelineation || this.state.showRegions
                                         ? null
                                         : <span className="zav-StatusBarHint">[Shift]+Click on the image to reveal the border</span>
                                     }
