@@ -599,11 +599,16 @@ class ViewerManager {
                 location: that.viewer.viewport.imageToViewportRectangle(new OpenSeadragon.Rect(0, 0, dimensions.x, dimensions.y)),
             });
 
-            Object.entries(that.config.layers).forEach(([key, value]) => {
+            const layers = Object.entries(that.config.layers);
+            layers.forEach(([key, value]) => {
                 if (value.index != 0) {
                     that.addLayer(key, value.name, value.ext);
                 } else {
                     that.setLayerOpacity(key);
+                    //Ensure filters are applied for single layer instances
+                    if (layers.length === 1) {
+                        that.setAllFilters();
+                    }
                 }
             });
 
