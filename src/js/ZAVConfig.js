@@ -155,9 +155,10 @@ class ZAVConfig {
             showRegions: false,
             displayAreas: true,
             displayBorders: false,
+            displayLabels: false,
             useCustomBorders: false,
             customBorderColor: "#ff0000",
-            customBorderWidth: 2,            
+            customBorderWidth: 2,
 
             //pixel color to label map, used when a raster labelMap is defined
             color2labelMap: undefined,
@@ -676,6 +677,7 @@ class ZAVConfig {
             //override dataset settings with users' settings
             this.config.displayAreas = UserSettings.getBoolItem(UserSettings.SettingsKeys.ShowAtlasRegionArea, this.config.displayAreas);
             this.config.displayBorders = UserSettings.getBoolItem(UserSettings.SettingsKeys.ShowAtlasRegionBorder, this.config.displayBorders);
+            this.config.displayLabels = UserSettings.getBoolItem(UserSettings.SettingsKeys.ShowAtlasRegionLabel, this.config.displayLabels);
             this.config.useCustomBorders = UserSettings.getBoolItem(UserSettings.SettingsKeys.UseCustomRegionBorder, this.config.useCustomBorders);
             this.config.customBorderColor = UserSettings.getStrItem(UserSettings.SettingsKeys.CustomRegionBorderColor, this.config.customBorderColor);
             this.config.customBorderWidth = UserSettings.getNumItem(UserSettings.SettingsKeys.CustomRegionBorderWidth, this.config.customBorderWidth);

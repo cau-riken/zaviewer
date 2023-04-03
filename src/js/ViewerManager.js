@@ -202,6 +202,7 @@ class ViewerManager {
             showRegions: this.config.showRegions,
             displayAreas: this.config.displayAreas,
             displayBorders: this.config.displayBorders,
+            displayLabels: this.config.displayLabels,
             useCustomBorders: this.config.useCustomBorders,
             customBorderColor: this.config.customBorderColor,
             customBorderWidth: this.config.customBorderWidth,
@@ -309,6 +310,10 @@ class ViewerManager {
                     } else if ('displayBorders' === property) {
                         target[property] = value;
                         UserSettings.setBoolItem(UserSettings.SettingsKeys.ShowAtlasRegionBorder, value);
+                        return true;
+                    } else if ('displayLabels' === property) {
+                        target[property] = value;
+                        UserSettings.setBoolItem(UserSettings.SettingsKeys.ShowAtlasRegionLabel, value);
                         return true;
                     } else if ('useCustomBorders' === property) {
                         target[property] = value;
@@ -1311,20 +1316,47 @@ class ViewerManager {
         return listener;
     }
 
-    static connectRegionListeners(newPathElt, regionListener) {
-        newPathElt.mouseover(function (e) { regionListener.mouseover(e, this); });
-        newPathElt.mouseout(function (e) { regionListener.mouseout(e, this); });
-        newPathElt.click(function (e) {
-            if (_.isArray(regionListener.click)) {
-                for (let clickListener of regionListener.click) {
-                    clickListener(e, this);
+    static connectRegionListeners(targetElt, regionListener, pathElt) {
+        if (targetElt.mouseover) {
+            //Raphael element
+
+            targetElt.mouseover(function (e) { regionListener.mouseover(e, this); });
+            targetElt.mouseout(function (e) { regionListener.mouseout(e, this); });
+            targetElt.click(function (e) {
+                if (_.isArray(regionListener.click)) {
+                    for (let clickListener of regionListener.click) {
+                        clickListener(e, this);
+                    }
+                } else {
+                    regionListener.click(e, this);
                 }
-            } else {
-                regionListener.click(e, this);
+            });
+            if (regionListener.dblclick) {
+                targetElt.dblclick(function (e) { regionListener.dblclick(e, this); });
             }
-        });
-        if (regionListener.dblclick) {
-            newPathElt.dblclick(function (e) { regionListener.dblclick(e, this); });
+
+        } else {
+            //SVG DOM element 
+
+            targetElt.addEventListener("mouseover", function (e) {
+                regionListener.mouseover(e, pathElt);
+            });
+            targetElt.addEventListener("mouseout", function (e) {
+                regionListener.mouseout(e, pathElt);
+            });
+
+            targetElt.addEventListener("click", function (e) {
+                if (_.isArray(regionListener.click)) {
+                    for (let clickListener of regionListener.click) {
+                        clickListener(e, pathElt);
+                    }
+                } else {
+                    regionListener.click(e, pathElt);
+                }
+            });
+            if (regionListener.dblclick) {
+                targetElt.addEventListener("dblclick", function (e) { regionListener.dblclick(e, pathElt); });
+            }
         }
     }
 
@@ -1383,6 +1415,15 @@ class ViewerManager {
 
                     let hasBackground = false;
                     const svgElement = overlayElement.getElementsByTagName('svg')[0];
+
+                    //add group for region labels
+                    const labelsg = document.createElementNS(SVGNS, "g");
+                    labelsg.setAttribute('id', 'region_labels');
+                    that.status.labelsg = labelsg;
+
+                    //labels from the source SVG
+                    const labelSrcGroup = root.getElementById('region-labels');
+
                     for (var i = 0; i < paths.length; i++) {
 
                         let regionId = paths[i].getAttribute('bma:regionId') ? paths[i].getAttribute('bma:regionId').trim() : null;
@@ -1439,12 +1480,40 @@ class ViewerManager {
                                 modifiedRegionInDom.setAttribute('bma:regionId', regionId);
                                 //make path's stroke width independant of scaling transformations 
                                 modifiedRegionInDom.setAttribute("vector-effect", "non-scaling-stroke");
+
+                                //add corresponding label, if any
+                                if (labelSrcGroup) {
+                                    const labelSrc = root.getElementById('lbl-' + pathId);
+                                    if (labelSrc) {
+                                        const labelElt = document.createElementNS(SVGNS, 'text');
+                                        labelElt.setAttribute("class", "zav-region-label");
+                                        //labelElt.setAttribute("x", center.x);
+                                        //labelElt.setAttribute("y", center.y);
+
+                                        const x = labelSrc.getAttribute("x");
+                                        const y = labelSrc.getAttribute("y");
+                                        labelElt.setAttribute("transform", `translate(${x}, ${y})`);
+                                        labelElt.setAttribute("text-anchor", "middle");
+                                        labelElt.innerHTML = labelSrc.innerHTML;
+                                        labelsg.appendChild(labelElt);
+
+                                        that.connectRegionListeners(labelElt, that.status.regionEventListeners[pathId], newPathElt);
+
+                                    }
+                                }
+
                             }
                         }
                     }
                     if (!hasBackground) {
                         console.warn("SVG without background: Region rendering and edition will likely fail! " + svgName);
                     }
+
+                    //append region labels' group 
+                    const regionsGroup = svgElement.getElementsByTagName('g')[0]
+                    regionsGroup.appendChild(labelsg);
+                    that.applyLabelPresentation();
+
 
                     that.eventSource.raiseEvent('zav-regions-created', { svgUrl: svgName })
 
@@ -1498,7 +1567,7 @@ class ViewerManager {
 
             mouseover: (e, raphElt) => {
                 //highlight border and display info about hovered region
-                if (that.status.showRegions) {
+                if (raphElt && that.status.showRegions) {
                     that.applyMouseOverPresentation(raphElt);
                 }
                 that.status.hoveredRegion = abbrev;
@@ -1508,7 +1577,7 @@ class ViewerManager {
 
             mouseout: (e, raphElt) => {
                 //remove highlighted border and info when cursor move out of region
-                if (that.status.showRegions) {
+                if (raphElt && that.status.showRegions) {
                     that.applyMouseOutPresentation(raphElt, RegionsManager.isSelected(abbrev));
                 }
                 that.status.hoveredRegion = null;
@@ -1540,7 +1609,7 @@ class ViewerManager {
                     that.status.userClickedRegion = true;
                     that.selectRegions(RegionsManager.getSelectedRegions());
 
-                } else if (e.shiftKey) {
+                } else if (raphElt && e.shiftKey) {
 
                     that.applyMouseOverPresentation(raphElt, true);
                     setTimeout(() => that.applyMouseOutPresentation(raphElt), 2500);
@@ -1702,6 +1771,20 @@ class ViewerManager {
         this.updateRegionAreasPresentation();
     }
 
+    static setLabelDisplay(active) {
+        this.status.displayLabels = active;
+        this.applyLabelPresentation();
+    }
+
+    static toggleLabelDisplay() {
+        this.setLabelDisplay(!this.status.displayLabels);
+    }
+
+    static applyLabelPresentation() {
+        this.status.labelsg.style.opacity = (this.status.displayLabels ? "1" : "0");
+        this.signalStatusChanged(this.status);
+    }
+
     static applyMouseOverPresentation(element, forcedBorder = false) {
         const el = element.length ? element[0] : element;
         const color = el.node.getAttribute("fill");
@@ -1751,7 +1834,7 @@ class ViewerManager {
         const color = (this.status.displayBorders && this.status.useCustomBorders) ? this.status.customBorderColor : el.node.getAttribute("fill")
         const fillOpacity = this.status.displayAreas ? this.status.regionsOpacity : 0;
         const strokeOpacity = this.status.displayBorders ? 0.5 : 0;
-        const strokeWidth =(this.status.useCustomBorders ? this.status.customBorderWidth : 2) + 'px';
+        const strokeWidth = (this.status.useCustomBorders ? this.status.customBorderWidth : 2) + 'px';
         element.attr({
             "fill-opacity": fillOpacity,
             "stroke-opacity": strokeOpacity,

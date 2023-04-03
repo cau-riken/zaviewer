@@ -17,6 +17,7 @@ class RegionOptions extends React.Component {
         this.handleClickHideShow = this.handleClickHideShow.bind(this);
         this.handleOpacityChange = this.handleOpacityChange.bind(this);
         this.handleBorderChange = this.handleBorderChange.bind(this);
+        this.handleClickLabelsShow = this.handleClickLabelsShow.bind(this);
     }
 
     render() {
@@ -67,6 +68,14 @@ class RegionOptions extends React.Component {
                         />
                     </span>
                 </div>
+                <div title="toggle display of region labels">
+                    <Switch
+                        checked={this.props.displayLabels}
+                        onChange={this.handleClickLabelsShow}
+                        inline
+                        label="labels"
+                    />
+                </div>
             </div>
         );
     }
@@ -82,6 +91,11 @@ class RegionOptions extends React.Component {
     handleBorderChange() {
         ViewerManager.toggleBorderDisplay();
     }
+
+    handleClickLabelsShow() {
+        ViewerManager.toggleLabelDisplay();
+    }
+
 }
 
 export default RegionOptions;

@@ -143,3 +143,19 @@ div#zav_licensecontainer .zav_miscLinks:hover {
 	//slow fade-out of border, mainly for transient highlighting via shift-click  
 	transition: stroke-opacity 0.8s 0.05s;
 }
+
+#region_labels {
+	//slow fade-out of label text
+	transition: opacity 0.5s ;
+}
+
+.zav-region-label {
+    stroke: none;
+    font-family: sans-serif;
+    fill: #000;
+	font-size: 6px;
+
+    text-shadow: 1px 1px 2px #fff;
+
+	cursor: default;
+}
