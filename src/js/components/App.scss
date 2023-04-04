@@ -150,11 +150,16 @@ div#zav_licensecontainer .zav_miscLinks:hover {
 }
 
 .zav-region-label {
-    stroke: none;
     font-family: sans-serif;
-    fill: #000;
 	font-size: 6px;
-	text-shadow: 1px 1px 2px #fff;
+
+	stroke: #000;
+	fill: #FFF;
+	stroke-width: 1.2px;
+	stroke-opacity: 0.6;
+	stroke-linecap: round;
+	stroke-linejoin: round;
+	paint-order: stroke;
 
 	dominant-baseline: middle;
 	text-anchor: middle;	
