@@ -154,8 +154,11 @@ div#zav_licensecontainer .zav_miscLinks:hover {
     font-family: sans-serif;
     fill: #000;
 	font-size: 6px;
+	text-shadow: 1px 1px 2px #fff;
 
-    text-shadow: 1px 1px 2px #fff;
+	dominant-baseline: middle;
+	text-anchor: middle;	
+
 
 	cursor: default;
 }

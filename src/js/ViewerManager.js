@@ -156,6 +156,8 @@ class ViewerManager {
             currentSVGName: undefined,
             /** set to true if the above one correspond to an actual (and loaded) SVG */
             hasCurrentSVG: false,
+            /** set to true if region delineation SVG includes labels */
+            hasRegionLabels: false,
 
             /** 2D context of canvas used to draw measuring tape */
             ctx: null,
@@ -1423,6 +1425,7 @@ class ViewerManager {
 
                     //labels from the source SVG
                     const labelSrcGroup = root.getElementById('region-labels');
+                    that.status.hasRegionLabels =  labelSrcGroup!=null;
 
                     for (var i = 0; i < paths.length; i++) {
 
@@ -1493,7 +1496,6 @@ class ViewerManager {
                                         const x = labelSrc.getAttribute("x");
                                         const y = labelSrc.getAttribute("y");
                                         labelElt.setAttribute("transform", `translate(${x}, ${y})`);
-                                        labelElt.setAttribute("text-anchor", "middle");
                                         labelElt.innerHTML = labelSrc.innerHTML;
                                         labelsg.appendChild(labelElt);
 

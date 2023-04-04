@@ -397,6 +397,7 @@ class ViewerComposed extends React.Component {
                                     initRegionsOpacity={this.state.initRegionsOpacity}
                                     displayAreas={this.state.displayAreas}
                                     displayBorders={this.state.displayBorders}
+                                    hasRegionLabels={this.state.hasRegionLabels}
                                     displayLabels={this.state.displayLabels}
                                     useCustomBorders={this.state.useCustomBorders}
                                     customBorderColor={this.state.customBorderColor}

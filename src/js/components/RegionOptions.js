@@ -68,14 +68,19 @@ class RegionOptions extends React.Component {
                         />
                     </span>
                 </div>
-                <div title="toggle display of region labels">
-                    <Switch
-                        checked={this.props.displayLabels}
-                        onChange={this.handleClickLabelsShow}
-                        inline
-                        label="labels"
-                    />
-                </div>
+                {this.props.hasRegionLabels
+                    ?
+                    <div title="toggle display of region labels">
+                        <Switch
+                            checked={this.props.displayLabels}
+                            onChange={this.handleClickLabelsShow}
+                            inline
+                            label="labels"
+                        />
+                    </div>
+                    :
+                    null
+                }
             </div>
         );
     }
