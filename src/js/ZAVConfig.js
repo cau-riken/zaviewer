@@ -244,6 +244,10 @@ class ZAVConfig {
 
             /** raw configuration data for layers */
             data: undefined,
+
+            /** data version tag for cache busting purpose */
+            dataVersionTag: dataVersionTag,
+
         };
 
 

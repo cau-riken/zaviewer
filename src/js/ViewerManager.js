@@ -2297,7 +2297,7 @@ class ViewerManager {
             const svgurl = Utils.makePath(
                 this.config.PUBLISH_PATH, this.config.svgFolerName,
                 (this.config.hasMultiPlanes ? ZAVConfig.getPlaneName(this.status.activePlane) : null),
-                "Anno_" + sliceNum + ".svg"
+                "Anno_" + sliceNum + ".svg" + (this.config.dataVersionTag ? this.config.dataVersionTag : '')
             );
             return svgurl;
         }
