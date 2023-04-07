@@ -1727,6 +1727,7 @@ class ViewerManager {
         this.status.displayAreas = false;
         this.status.displayBorders = false;
         this.status.showRegions = false;
+        this.setLabelDisplay(false);
         this.updateRegionsVisibility();
         this.updateRegionAreasPresentation();
     }

@@ -101,6 +101,11 @@ const App = (props: AppProps) => {
                   if (typeof centerSlice != 'undefined') {
                     ViewerManager.goToSlice(centerSlice);
                   }
+                  //display at least regions' border, and labels
+                  if (!ViewerManager.isShowingRegions()) {
+                    ViewerManager.setBorderDisplay(true);
+                  }
+                  ViewerManager.setLabelDisplay(true);
                 }
               }
 
