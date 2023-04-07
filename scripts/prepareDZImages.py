@@ -263,7 +263,7 @@ def getLayersNFiles(input_path, config, phys_unit):
                 }
 
                 print(
-                    f"\t{len(images)} images(s) found in layer '{layer['name']}'\n")
+                    f"\t{len(images)} images(s) found in layer '{layer['name']}' [{size[0]}x{size[1]}]\n")
 
             #
             axisLayersFiles['axis'][axis]['overlays'] = {}
@@ -357,7 +357,7 @@ def getLayersNFiles(input_path, config, phys_unit):
 
 def prepareImages(axisLayersFiles, config, ouput_path, phys_unit, format, quality):
 
-    # TODO for single plane mode, enabled users to select preferred subview insteqd of predefined value
+    # TODO for single plane mode, enable users to select preferred subview instead of predefined value
     PLANE_PREFSUBVIEW = {"axial": "coronal",
                          "coronal": "sagittal",
                          "sagittal": "axial"}
@@ -526,17 +526,36 @@ def prepareImages(axisLayersFiles, config, ouput_path, phys_unit, format, qualit
 
             bar.finish()
 
-    refImage = axisLayersFiles['axis'][referenceAxis]['layers'][referenceLayerName]['images'][0]
+    sizesByAxis = {}
+    for axis in axisLayersFiles['axis'].keys():
+        sizesByAxis[axis + '_size'] = axisLayersFiles['axis'][axis]['layers'][referenceLayerName]['images'][0]['final_width']
 
-    if 'image_size' not in config:
-        config['image_size'] = refImage['final_width']
+    hasSingleSize = len(set(sizesByAxis.values()))==1
+    
+    if ('image_size' not in config 
+        and 'coronal_size' not in config
+        and 'sagittal_size' not in config
+        and 'axial_size' not in config):
+        if hasSingleSize:
+            config['image_size'] = sizesByAxis.values()[0]
+        else:
+            config.update(sizesByAxis)
 
-    if 'matrix' not in config:
+    def makeMatrix(refImage):
         matrix = [0] * 16
         # spacing along image dimensions, in millimeters
         matrix[0] = refImage['spacing'][0] * phys_unit * 1E-3
         matrix[10] = refImage['spacing'][1] * phys_unit * 1E-3
-        config['matrix'] = ','.join(str(v) for v in matrix)
+        return ','.join(str(v) for v in matrix)
+
+    if 'matrix' not in config:
+        if hasSingleSize:
+            refImg = axisLayersFiles['axis'][referenceAxis]['layers'][referenceLayerName]['images'][0]
+            config['matrix'] = makeMatrix(refImg)
+        else:
+            for axis in axisLayersFiles['axis'].keys():
+                refImg = axisLayersFiles['axis'][axis]['layers'][referenceLayerName]['images'][0]
+                config[axis + '_matrix'] = makeMatrix(refImg)
 
 
 def saveConfig(config_filepath, prev_config, config):

@@ -46,7 +46,7 @@ It is usually served from a remote web server, but can be conveniently executed 
 
 ## A) Try Online demo <a id="online-demo"></a>
 
-Have a look at the [Brain/MINDS Marmoset Atlas in ZAViewer](https://dataportal.brainminds.jp/ZAViewer_BMA_2019/)
+Have a look at the [Brain/MINDS Marmoset Atlas in ZAViewer](https://dataportal.brainminds.jp/ZAViewer_BMA_2023/)
 
 ---
 
@@ -117,7 +117,7 @@ If several layers are defined :
 
 Moreover, in case of multiplane configuration:
 
-* All axis must have the same layer/overlay composition.
+* All axis must have the same layer/overlay composition, however image sizes may be different between axis.
 
 ##### 1.1.2 Parameters
 
@@ -568,6 +568,9 @@ Since its contents is almost identical to `json.php` of descriptors described ab
 | `first_access.delineations` | _see above_ |
 | `matrix` | _see above_ |
 | `image_size` | _see above_ |
+| `axial_size` | _optional_ <sup>1</sup> _see above_ |
+| `coronnal_size` | _optional_ <sup>1</sup> _see above_ |
+| `sagital_size` | _optional_ <sup>1</sup> _see above_ |
 | `slide_count` | _see above_ |
 | `slice_step` | _see above_ |
 | `data` |  |

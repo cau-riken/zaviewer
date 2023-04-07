@@ -204,15 +204,50 @@ class ZAVConfig {
 
             /** matrix to convert image space to physical space (values expressed in millimeters) */
             matrix: undefined,
+            anyMatrix: undefined,
 
-            imageSize: 1000,
+            /** image size (of current plane) */
+            imageSize: undefined,
+            /** plane specific image sizes */
+            axial_size: undefined,
+            coronal_size: undefined,
+            sagittal_size: undefined,
 
 
+            anyImageSize: 1000,
             dzWidth: 1000.0,
             dzHeight: 1000.0,
 
             dzLayerWidth: 1000,
             dzLayerHeight: 1000,
+
+            setPlaneSizes: function (plane) {
+                switch (plane) {
+                    case AXIAL:
+                        this.imageSize = this.axial_size;
+                        this.matrix = this.axial_matrix;
+                        break;
+                    case CORONAL:
+                        this.imageSize = this.coronal_size;
+                        this.matrix = this.coronal_matrix;
+                        break;
+                    case SAGITTAL:
+                        this.imageSize = this.sagittal_size;
+                        this.matrix = this.sagittal_matrix;
+                        break;
+                    default:
+                        this.imageSize = this.anyImageSize;
+                        this.matrix = this.anyMatrix;
+                }
+                //FIXME assume that images are square
+                this.dzWidth = this.imageSize;
+                this.dzHeight = this.imageSize;
+                this.dzLayerWidth = this.imageSize;
+                this.dzLayerHeight = this.imageSize;
+                //zooming limits proportional to image resolution
+                this.minImageZoom = this.minImageZoom / this.imageSize * 1000;
+                this.maxImageZoom = this.maxImageZoom / this.imageSize * 1000;
+            },            
 
             //FIXME magic values
             /** zooming limits */
@@ -559,7 +594,13 @@ class ZAVConfig {
             this.config.hasDelineation = false;
         }
 
-        this.config.matrix = response.matrix ? response.matrix.split(",") : this.config.matrix;
+        this.config.anyMatrix = response.matrix ? response.matrix.split(",") : this.config.anyMatrix;
+        //handle different matrices for each planes
+        if (this.config.hasMultiPlanes) {
+            this.config.axial_matrix = response.axial_matrix ? response.axial_matrix.split(",") : this.config.anyMatrix;
+            this.config.coronal_matrix = response.coronal_matrix ? response.coronal_matrix.split(",")  : this.config.anyMatrix;
+            this.config.sagittal_matrix = response.sagittal_matrix ? response.sagittal_matrix.split(",")  : this.config.anyMatrix;
+        }
 
         if (this.config.hasMultiPlanes) {
             this.config.axialSliceStep = response.axial_slice_step ? parseInt(response.axial_slice_step) : 0;
@@ -572,15 +613,15 @@ class ZAVConfig {
             this.config.sagittalSliceStep = this.config.hasSagittalPlane ? sliceStep : 0;
         }
 
-        this.config.imageSize = response.image_size ? parseInt(response.image_size) : this.config.imageSize;
-        //FIXME assume that images are square
-        this.config.dzWidth = this.config.imageSize;
-        this.config.dzHeight = this.config.imageSize;
-        this.config.dzLayerWidth = this.config.imageSize;
-        this.config.dzLayerHeight = this.config.imageSize;
-        //zooming limits proportional to image resolution
-        this.config.minImageZoom = this.config.minImageZoom / this.config.imageSize * 1000;
-        this.config.maxImageZoom = this.config.maxImageZoom / this.config.imageSize * 1000;
+        this.config.anyImageSize = response.image_size ? parseInt(response.image_size) : this.config.anyImageSize;
+        //handle different sizes for each planes
+        if (this.config.hasMultiPlanes) {
+            this.config.axial_size = response.axial_size ? parseInt(response.axial_size) : this.config.anyImageSize;
+            this.config.coronal_size = response.coronal_size ? parseInt(response.coronal_size) : this.config.anyImageSize;
+            this.config.sagittal_size = response.sagittal_size ? parseInt(response.sagittal_size) : this.config.anyImageSize;
+        }
+        this.config.setPlaneSizes(null);
+
 
         if (response.data) {
             this.config.data = response.data;
@@ -728,6 +769,7 @@ class ZAVConfig {
         } else {
             this.config.firstActivePlane = CORONAL;
         }
+        this.config.setPlaneSizes(this.config.firstActivePlane);
 
         if (response.verofdata) {
             if (response.verofdata.all) {

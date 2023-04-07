@@ -20,7 +20,7 @@ WORKDIR /usr/src/app
 ENTRYPOINT ["python", "./scripts/prepareDZImages.py"]
 
 LABEL jp.riken.cau.product="ZAViewer Deep Zoom Images preparation utility" \
-    jp.riken.cau.version="2.3.0" \
-    jp.riken.cau.release-date="2022-06-06"
+    jp.riken.cau.version="2.4.0" \
+    jp.riken.cau.release-date="2023-04-07"
 
 

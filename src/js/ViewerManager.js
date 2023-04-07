@@ -538,7 +538,7 @@ class ViewerManager {
             this.status.layerDisplaySettings,
             this.config.color2labelMap,
             (color, classLabel) => {
-                this.status.hoveredRegion = classLabel!="Background" ? classLabel : null ;
+                this.status.hoveredRegion = classLabel != "Background" ? classLabel : null;
                 this.signalStatusChanged(this.status);
             },
         );
@@ -1425,7 +1425,7 @@ class ViewerManager {
 
                     //labels from the source SVG
                     const labelSrcGroup = root.getElementById('region-labels');
-                    that.status.hasRegionLabels =  labelSrcGroup!=null;
+                    that.status.hasRegionLabels = labelSrcGroup != null;
 
                     for (var i = 0; i < paths.length; i++) {
 
@@ -1945,6 +1945,7 @@ class ViewerManager {
         //allow switching to another plane only if it exits!
         if (this.config.hasPlane(newPlane)) {
             this.status.activePlane = newPlane;
+            this.config.setPlaneSizes(this.status.activePlane);
             this.status.chosenSlice = this.getCurrentPlaneChosenSlice();
 
             this.viewer.goToPage(this.getPageNumForCurrentSlice());
