@@ -2,7 +2,6 @@ import React from 'react';
 
 import {
     Icon,
-    Radio,
     Slider,
     Switch,
 } from "@blueprintjs/core";
@@ -49,11 +48,96 @@ class AxisArrow extends React.Component {
     }
 }
 
-class SubView extends React.Component {
+class SubViewOrthoPlanBar extends React.Component {
 
     constructor(props) {
         super(props);
         this.getPlaneSlicePercentOffset = this.getPlaneSlicePercentOffset.bind(this);
+    }
+
+    render() {
+        const markerLineWidth = 1;
+        const dragMargin = 3;
+
+        if (this.props.vertical) {
+            const orthoVertical = ZAVConfig.getPlaneOrthoVertical(this.props.viewPlane);
+            if (this.props.config.hasPlane(orthoVertical)) {
+                const orthoVSlicePct = this.getPlaneSlicePercentOffset(orthoVertical);
+
+                const hRange = this.props.config.getSubviewHRange(this.props.viewPlane);
+                let hOffset;
+                if (this.props.config.hasMultiPlanes) {
+                    //in multi-plane mode, origin of horizontal axis is at the right
+                    hOffset = this.props.scale * (this.props.config.subviewSize - (hRange.min + hRange.len * orthoVSlicePct));
+                } else {
+                    //in single plane mode, origin of horizontal axis is at the left  
+                    hOffset = this.props.scale * (hRange.min + hRange.len * orthoVSlicePct);
+                }
+                const verticalLine =
+                    <g
+                        style={{ cursor: "col-resize" }}
+                        onPointerDown={this.props.startDrag}
+                    >
+                        <rect
+                            x={hOffset - dragMargin} y="0"
+                            width={dragMargin * 2 + markerLineWidth} height={this.props.size}
+                            stroke='none' fill='transparent'
+                        />
+                        <line
+                            x1={hOffset} y1="0"
+                            x2={hOffset} y2={this.props.size}
+                            stroke={ZAVConfig.getPlaneColor(orthoVertical)} strokeWidth={markerLineWidth}
+                        />
+                    </g>;
+                return verticalLine;
+            }
+        } else {
+            const orthoHorizontal = ZAVConfig.getPlaneOrthoHorizontal(this.props.viewPlane);
+            if (this.props.config.hasPlane(orthoHorizontal)) {
+                const orthoHSlicePct = this.getPlaneSlicePercentOffset(orthoHorizontal);
+
+                const vRange = this.props.config.getSubviewVRange(this.props.viewPlane);
+                //note: origin of vertical axis is at the bottom
+
+                const vOffset = this.props.scale * (this.props.config.subviewSize - (vRange.min + vRange.len * orthoHSlicePct));
+                const horizontalLine =
+                    <g
+                        style={{ cursor: "row-resize" }}
+                        onPointerDown={(e) => this.props.startDrag()}
+                    >
+                        <rect
+                            x="0" y={vOffset - dragMargin}
+                            width={this.props.size} height={dragMargin * 2 + markerLineWidth}
+                            stroke='none' fill='transparent'
+                        />
+                        <line
+                            x1="0" y1={vOffset}
+                            x2={this.props.size} y2={vOffset}
+                            stroke={ZAVConfig.getPlaneColor(orthoHorizontal)} strokeWidth={markerLineWidth}
+                        />
+                    </g>;
+                return horizontalLine;
+            }
+        }
+        return null;
+    }
+
+    getPlaneSlicePercentOffset(plane) {
+        return ViewerManager.getPlaneChosenSlice(plane) / (ViewerManager.getPlaneSlideCount(plane) - 1);
+    }
+
+}
+
+class SubView extends React.Component {
+
+    constructor(props) {
+        super(props);
+
+        this.state = {
+            dragging: null,//bar beeing dragged, if any
+            bbox: null, //bounding box of subview
+        };
+        this.svgRef = React.createRef();
         this.getSliceForWidgetPos = this.getSliceForWidgetPos.bind(this);
     }
 
@@ -65,7 +149,6 @@ class SubView extends React.Component {
         const border = this.props.activePlane && this.props.activePlane === this.props.viewPlane ? 3 : 1;
         const gap = this.props.activePlane && this.props.activePlane === this.props.viewPlane ? 1 : 3;
         const margin = 2 * border + 2 * gap;
-        const markerLineWidth = 1;
 
         let horizontalLine, verticalLine, horizontalArrow, verticalArrow, imageUrl;
         const arrowLen = size * 1 / 3 - 6;
@@ -75,16 +158,14 @@ class SubView extends React.Component {
             const scale = size / this.props.config.subviewSize;
 
             //line marker for orthogonal plane crossing the subview plane horizontally
-            const orthoHorizontal = ZAVConfig.getPlaneOrthoHorizontal(this.props.viewPlane);
-            if (this.props.config.hasPlane(orthoHorizontal)) {
-                const orthoHSlicePct = this.getPlaneSlicePercentOffset(orthoHorizontal);
-
-                const vRange = this.props.config.getSubviewVRange(this.props.viewPlane);
-                //note: origin of vertical axis is at the bottom
-
-                const vOffset = scale * (this.props.config.subviewSize - (vRange.min + vRange.len * orthoHSlicePct));
-                horizontalLine = <line x1="0" y1={vOffset} x2={size} y2={vOffset} stroke={ZAVConfig.getPlaneColor(orthoHorizontal)} strokeWidth={markerLineWidth} />
-            }
+            horizontalLine = <SubViewOrthoPlanBar
+                vertical={false}
+                viewPlane={this.props.viewPlane}
+                size={size}
+                scale={scale}
+                config={this.props.config}
+                startDrag={this.onDragStart.bind(this, 'H')}
+            />
             const vArrow = {
                 pX: size - 6,
                 pY: size * 2 / 3,
@@ -94,21 +175,14 @@ class SubView extends React.Component {
             verticalArrow = <AxisArrow horizontal={false} {...vArrow} />;
 
             //line marker for orthogonal plane crossing the subview plane vertically
-            const orthoVertical = ZAVConfig.getPlaneOrthoVertical(this.props.viewPlane);
-            if (this.props.config.hasPlane(orthoVertical)) {
-                const orthoVSlicePct = this.getPlaneSlicePercentOffset(orthoVertical);
-
-                const hRange = this.props.config.getSubviewHRange(this.props.viewPlane);
-                let hOffset;
-                if (this.props.config.hasMultiPlanes) {
-                    //in multi-plane mode, origin of horizontal axis is at the right
-                    hOffset = scale * (this.props.config.subviewSize - (hRange.min + hRange.len * orthoVSlicePct));
-                } else {
-                    //in single plane mode, origin of horizontal axis is at the left  
-                    hOffset = scale * (hRange.min + hRange.len * orthoVSlicePct);
-                }
-                verticalLine = <line x1={hOffset} y1="0" x2={hOffset} y2={size} stroke={ZAVConfig.getPlaneColor(orthoVertical)} strokeWidth={markerLineWidth} />;
-            }
+            verticalLine = <SubViewOrthoPlanBar
+                vertical={true}
+                viewPlane={this.props.viewPlane}
+                size={size}
+                scale={scale}
+                config={this.props.config}
+                startDrag={this.onDragStart.bind(this, 'V')}
+            />
             const hArrow = {
                 pX: size * 2 / 3,
                 pY: size - 6,
@@ -147,13 +221,15 @@ class SubView extends React.Component {
                     src={imageUrl}
                 />
                 <svg
+                    ref={this.svgRef}
                     width={size}
                     style={{ position: 'absolute', top: gap, left: gap }}
                     height={size}
                     viewBox={"0 0 " + size + "" + size}
                     xmlns="http://www.w3.org/2000/svg"
                     xmlnsXlink="http://www.w3.org/1999/xlink"
-                    onClick={this.onClick.bind(this)}
+                    onPointerUp={this.onDragEnd.bind(this)}
+                    onPointerMove={this.onPointerMove.bind(this)}
                 >
                     {horizontalLine}
                     {verticalLine}
@@ -165,36 +241,58 @@ class SubView extends React.Component {
         );
     }
 
-    onClick(e) {
-        const newSlices = {};
-
-        const size = this.props.size ? this.props.size : 200;
-        const scale = size / this.props.config.subviewSize;
-
-        var bnds = e.target.getBoundingClientRect();
-
-        var subviewY = (e.clientY - bnds.top);
-        const orthoHorizontal = ZAVConfig.getPlaneOrthoHorizontal(this.props.viewPlane);
-        if (this.props.config.hasPlane(orthoHorizontal)) {
-            const vRange = this.props.config.getSubviewVRange(this.props.viewPlane);
-            const vSliceNum = this.getSliceForWidgetPos(orthoHorizontal, vRange, this.props.config.subviewSize, scale, subviewY);
-            newSlices[orthoHorizontal] = vSliceNum;
-        }
-
-        var subviewX = (e.clientX - bnds.left);
-        const orthoVertical = ZAVConfig.getPlaneOrthoVertical(this.props.viewPlane);
-        if (this.props.config.hasPlane(orthoVertical)) {
-            const hRange = this.props.config.getSubviewHRange(this.props.viewPlane);
-            const hSliceNum = this.getSliceForWidgetPos(orthoVertical, hRange, this.props.config.subviewSize, scale, subviewX, !this.props.config.hasMultiPlanes);
-            newSlices[orthoVertical] = hSliceNum;
-        }
-
-        ViewerManager.changeSlices(newSlices);
+    onDragStart(axis, e) {
+        this.setState({
+            dragging: axis,
+            bbox: this.svgRef.current ?
+                this.svgRef.current.getBoundingClientRect()
+                :
+                null
+        });
     }
 
+    onPointerMove(e) {
+        if (this.state.dragging && this.state.bbox) {
 
-    getPlaneSlicePercentOffset(plane) {
-        return ViewerManager.getPlaneChosenSlice(plane) / (ViewerManager.getPlaneSlideCount(plane) - 1);
+            //check that left button is still pressed, as an untracked pointerUp might have happened outside the subview
+            if ((e.buttons & 1) != 1) {
+                this.setState({ dragging: null });
+                return;
+            }
+
+            const newSlices = {};
+            const size = this.props.size ? this.props.size : 200;
+            const scale = size / this.props.config.subviewSize;
+
+            const bnds = this.state.bbox;
+
+            if (this.state.dragging === 'H') {
+                const subviewY = (e.clientY - bnds.top);
+                const orthoHorizontal = ZAVConfig.getPlaneOrthoHorizontal(this.props.viewPlane);
+                if (this.props.config.hasPlane(orthoHorizontal)) {
+                    const vRange = this.props.config.getSubviewVRange(this.props.viewPlane);
+                    const vSliceNum = this.getSliceForWidgetPos(orthoHorizontal, vRange, this.props.config.subviewSize, scale, subviewY);
+                    newSlices[orthoHorizontal] = vSliceNum;
+                }
+
+            } else if (this.state.dragging === 'V') {
+                const subviewX = (e.clientX - bnds.left);
+                const orthoVertical = ZAVConfig.getPlaneOrthoVertical(this.props.viewPlane);
+                if (this.props.config.hasPlane(orthoVertical)) {
+                    const hRange = this.props.config.getSubviewHRange(this.props.viewPlane);
+                    const hSliceNum = this.getSliceForWidgetPos(orthoVertical, hRange, this.props.config.subviewSize, scale, subviewX, !this.props.config.hasMultiPlanes);
+                    newSlices[orthoVertical] = hSliceNum;
+                }
+
+            }
+            ViewerManager.changeSlices(newSlices);
+        }
+    }
+
+    onDragEnd(e) {
+        if (this.state.dragging) {
+            this.setState({ dragging: null });
+        }
     }
 
     getSliceForWidgetPos(plane, range, subviewSize, scale, pos, invertedSliceIndex) {
