@@ -247,7 +247,7 @@ class ZAVConfig {
                 //zooming limits proportional to image resolution
                 this.minImageZoom = this.minImageZoom / this.imageSize * 1000;
                 this.maxImageZoom = this.maxImageZoom / this.imageSize * 1000;
-            },            
+            },
 
             //FIXME magic values
             /** zooming limits */
@@ -598,8 +598,8 @@ class ZAVConfig {
         //handle different matrices for each planes
         if (this.config.hasMultiPlanes) {
             this.config.axial_matrix = response.axial_matrix ? response.axial_matrix.split(",") : this.config.anyMatrix;
-            this.config.coronal_matrix = response.coronal_matrix ? response.coronal_matrix.split(",")  : this.config.anyMatrix;
-            this.config.sagittal_matrix = response.sagittal_matrix ? response.sagittal_matrix.split(",")  : this.config.anyMatrix;
+            this.config.coronal_matrix = response.coronal_matrix ? response.coronal_matrix.split(",") : this.config.anyMatrix;
+            this.config.sagittal_matrix = response.sagittal_matrix ? response.sagittal_matrix.split(",") : this.config.anyMatrix;
         }
 
         if (this.config.hasMultiPlanes) {
@@ -703,26 +703,43 @@ class ZAVConfig {
             }
 
 
+            const getShowSettings = (setting) => {
+                //override user settings if setting specified all in capital letters
+                const forced = (setting === "SHOW") || (setting === "HIDE");
 
-            //initial state for displaying regions
-            const regionVisibility = response.first_access.delineations === "hide"
-                ?
-                false
-                :
-                response.first_access.delineations === "show"
-                    ?
-                    true
-                    :
-                    null;
+                const lcSetting = setting ? setting.toLowerCase() : '';
+                const display = (lcSetting === "hide") ?
+                    false
+                    : (lcSetting === "show") ?
+                        true
+                        :
+                        null;
+
+                return [display, forced]
+            }
+
+            //default value for displaying regions
+            const [regionVisibility, forcedRegionVisibility] = getShowSettings(response.first_access.delineations);
             if (regionVisibility != null) {
                 this.config.showRegions = regionVisibility;
                 this.config.displayAreas = regionVisibility;
             }
 
+            //default value for displaying regions' labels
+            const [displayLabels, forceddisplayLabels] = getShowSettings(response.first_access.region_labels);
+            if (displayLabels != null) {
+                this.config.displayLabels = displayLabels;
+            }
+
             //override dataset settings with users' settings
-            this.config.displayAreas = UserSettings.getBoolItem(UserSettings.SettingsKeys.ShowAtlasRegionArea, this.config.displayAreas);
-            this.config.displayBorders = UserSettings.getBoolItem(UserSettings.SettingsKeys.ShowAtlasRegionBorder, this.config.displayBorders);
-            this.config.displayLabels = UserSettings.getBoolItem(UserSettings.SettingsKeys.ShowAtlasRegionLabel, this.config.displayLabels);
+            if (!forcedRegionVisibility) {
+                this.config.displayAreas = UserSettings.getBoolItem(UserSettings.SettingsKeys.ShowAtlasRegionArea, this.config.displayAreas);
+                this.config.displayBorders = UserSettings.getBoolItem(UserSettings.SettingsKeys.ShowAtlasRegionBorder, this.config.displayBorders);
+            }
+            if (!forceddisplayLabels) {
+                this.config.displayLabels = UserSettings.getBoolItem(UserSettings.SettingsKeys.ShowAtlasRegionLabel, this.config.displayLabels);
+            }
+
             this.config.useCustomBorders = UserSettings.getBoolItem(UserSettings.SettingsKeys.UseCustomRegionBorder, this.config.useCustomBorders);
             this.config.customBorderColor = UserSettings.getStrItem(UserSettings.SettingsKeys.CustomRegionBorderColor, this.config.customBorderColor);
             this.config.customBorderWidth = UserSettings.getNumItem(UserSettings.SettingsKeys.CustomRegionBorderWidth, this.config.customBorderWidth);

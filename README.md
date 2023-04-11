@@ -456,6 +456,7 @@ When ZAViewer is used with images along a single axis (aka "single-plane mode") 
 | `first_access.plane` <sup>multi</sup> | plane displayed by default after loading (allowed values: `axial`,`coronal` or `sagittal` ) |
 | `first_access.slide` | initial slide to display |
 | `first_access.delineations` | set whether Atlas region area are displayed by default (allowed values: `show` or `hide` ) |
+| `first_access.region_labels` | set whether Atlas region labels are displayed by default (allowed values: `show` or `hide` ) |
 | `matrix` | Matrix to convert image space coordinates to physical space coordinates : String representation of a single dimensional vector with the entries (values expressed in millimeters) in row major order |
 | **[unused]** `gamma` | _not used_ |
 | **[unused]** `bright` | _not used_ |
@@ -566,6 +567,7 @@ Since its contents is almost identical to `json.php` of descriptors described ab
 | `first_access.plane` <sup>multi</sup> | _see above_ |
 | `first_access.slide` | _see above_ |
 | `first_access.delineations` | _see above_ |
+| `first_access.region_labels` | _see above_ |
 | `matrix` | _see above_ |
 | `image_size` | _see above_ |
 | `axial_size` | _optional_ <sup>1</sup> _see above_ |
