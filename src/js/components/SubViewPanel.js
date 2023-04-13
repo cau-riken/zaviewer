@@ -74,21 +74,11 @@ class SubViewOrthoPlanBar extends React.Component {
                     hOffset = this.props.scale * (hRange.min + hRange.len * orthoVSlicePct);
                 }
                 const verticalLine =
-                    <g
-                        style={{ cursor: "col-resize" }}
-                        onPointerDown={this.props.startDrag}
-                    >
-                        <rect
-                            x={hOffset - dragMargin} y="0"
-                            width={dragMargin * 2 + markerLineWidth} height={this.props.size}
-                            stroke='none' fill='transparent'
-                        />
-                        <line
-                            x1={hOffset} y1="0"
-                            x2={hOffset} y2={this.props.size}
-                            stroke={ZAVConfig.getPlaneColor(orthoVertical)} strokeWidth={markerLineWidth}
-                        />
-                    </g>;
+                    <line
+                        x1={hOffset} y1="0"
+                        x2={hOffset} y2={this.props.size}
+                        stroke={ZAVConfig.getPlaneColor(orthoVertical)} strokeWidth={markerLineWidth}
+                    />;
                 return verticalLine;
             }
         } else {
@@ -101,21 +91,11 @@ class SubViewOrthoPlanBar extends React.Component {
 
                 const vOffset = this.props.scale * (this.props.config.subviewSize - (vRange.min + vRange.len * orthoHSlicePct));
                 const horizontalLine =
-                    <g
-                        style={{ cursor: "row-resize" }}
-                        onPointerDown={(e) => this.props.startDrag()}
-                    >
-                        <rect
-                            x="0" y={vOffset - dragMargin}
-                            width={this.props.size} height={dragMargin * 2 + markerLineWidth}
-                            stroke='none' fill='transparent'
-                        />
-                        <line
-                            x1="0" y1={vOffset}
-                            x2={this.props.size} y2={vOffset}
-                            stroke={ZAVConfig.getPlaneColor(orthoHorizontal)} strokeWidth={markerLineWidth}
-                        />
-                    </g>;
+                    <line
+                        x1="0" y1={vOffset}
+                        x2={this.props.size} y2={vOffset}
+                        stroke={ZAVConfig.getPlaneColor(orthoHorizontal)} strokeWidth={markerLineWidth}
+                    />;
                 return horizontalLine;
             }
         }
@@ -134,7 +114,7 @@ class SubView extends React.Component {
         super(props);
 
         this.state = {
-            dragging: null,//bar beeing dragged, if any
+            dragging: false,//true when dragging is on
             bbox: null, //bounding box of subview
         };
         this.svgRef = React.createRef();
@@ -164,7 +144,6 @@ class SubView extends React.Component {
                 size={size}
                 scale={scale}
                 config={this.props.config}
-                startDrag={this.onDragStart.bind(this, 'H')}
             />
             const vArrow = {
                 pX: size - 6,
@@ -181,7 +160,6 @@ class SubView extends React.Component {
                 size={size}
                 scale={scale}
                 config={this.props.config}
-                startDrag={this.onDragStart.bind(this, 'V')}
             />
             const hArrow = {
                 pX: size * 2 / 3,
@@ -223,11 +201,15 @@ class SubView extends React.Component {
                 <svg
                     ref={this.svgRef}
                     width={size}
-                    style={{ position: 'absolute', top: gap, left: gap }}
+                    style={{
+                        position: 'absolute', top: gap, left: gap,
+                        cursor: 'crosshair',
+                    }}
                     height={size}
                     viewBox={"0 0 " + size + "" + size}
                     xmlns="http://www.w3.org/2000/svg"
                     xmlnsXlink="http://www.w3.org/1999/xlink"
+                    onPointerDown={this.onDragStart.bind(this)}
                     onPointerUp={this.onDragEnd.bind(this)}
                     onPointerMove={this.onPointerMove.bind(this)}
                 >
@@ -241,14 +223,13 @@ class SubView extends React.Component {
         );
     }
 
-    onDragStart(axis, e) {
+    onDragStart(e) {
+        const bbox = this.svgRef.current ? this.svgRef.current.getBoundingClientRect() : null;
         this.setState({
-            dragging: axis,
-            bbox: this.svgRef.current ?
-                this.svgRef.current.getBoundingClientRect()
-                :
-                null
+            dragging: true,
+            bbox: bbox
         });
+        this.setOrthoSlices(e.clientX, e.clientY, bbox);
     }
 
     onPointerMove(e) {
@@ -256,42 +237,42 @@ class SubView extends React.Component {
 
             //check that left button is still pressed, as an untracked pointerUp might have happened outside the subview
             if ((e.buttons & 1) != 1) {
-                this.setState({ dragging: null });
+                this.setState({ dragging: false });
                 return;
             }
-
-            const newSlices = {};
-            const size = this.props.size ? this.props.size : 200;
-            const scale = size / this.props.config.subviewSize;
-
-            const bnds = this.state.bbox;
-
-            if (this.state.dragging === 'H') {
-                const subviewY = (e.clientY - bnds.top);
-                const orthoHorizontal = ZAVConfig.getPlaneOrthoHorizontal(this.props.viewPlane);
-                if (this.props.config.hasPlane(orthoHorizontal)) {
-                    const vRange = this.props.config.getSubviewVRange(this.props.viewPlane);
-                    const vSliceNum = this.getSliceForWidgetPos(orthoHorizontal, vRange, this.props.config.subviewSize, scale, subviewY);
-                    newSlices[orthoHorizontal] = vSliceNum;
-                }
-
-            } else if (this.state.dragging === 'V') {
-                const subviewX = (e.clientX - bnds.left);
-                const orthoVertical = ZAVConfig.getPlaneOrthoVertical(this.props.viewPlane);
-                if (this.props.config.hasPlane(orthoVertical)) {
-                    const hRange = this.props.config.getSubviewHRange(this.props.viewPlane);
-                    const hSliceNum = this.getSliceForWidgetPos(orthoVertical, hRange, this.props.config.subviewSize, scale, subviewX, !this.props.config.hasMultiPlanes);
-                    newSlices[orthoVertical] = hSliceNum;
-                }
-
-            }
-            ViewerManager.changeSlices(newSlices);
+            this.setOrthoSlices(e.clientX, e.clientY, this.state.bbox);
         }
     }
 
     onDragEnd(e) {
         if (this.state.dragging) {
-            this.setState({ dragging: null });
+            this.setState({ dragging: false });
+        }
+    }
+
+    setOrthoSlices(clientX, clientY, bnds) {
+        if (bnds) {
+            const newSlices = {};
+            const size = this.props.size ? this.props.size : 200;
+            const scale = size / this.props.config.subviewSize;
+
+            const subviewY = (clientY - bnds.top);
+            const orthoHorizontal = ZAVConfig.getPlaneOrthoHorizontal(this.props.viewPlane);
+            if (this.props.config.hasPlane(orthoHorizontal)) {
+                const vRange = this.props.config.getSubviewVRange(this.props.viewPlane);
+                const vSliceNum = this.getSliceForWidgetPos(orthoHorizontal, vRange, this.props.config.subviewSize, scale, subviewY);
+                newSlices[orthoHorizontal] = vSliceNum;
+            }
+
+            const subviewX = (clientX - bnds.left);
+            const orthoVertical = ZAVConfig.getPlaneOrthoVertical(this.props.viewPlane);
+            if (this.props.config.hasPlane(orthoVertical)) {
+                const hRange = this.props.config.getSubviewHRange(this.props.viewPlane);
+                const hSliceNum = this.getSliceForWidgetPos(orthoVertical, hRange, this.props.config.subviewSize, scale, subviewX, !this.props.config.hasMultiPlanes);
+                newSlices[orthoVertical] = hSliceNum;
+            }
+
+            ViewerManager.changeSlices(newSlices);
         }
     }
 
