@@ -33,7 +33,7 @@ const BorderSettingsWrapper = (props: {
         <Popover2
             interactionKind={Popover2InteractionKind.CLICK}
             position={Position.BOTTOM_RIGHT}
-            boundary="window"
+            hasBackdrop={true}
 
             onClosed={() => {
                 ViewerManager.changeCustomBorderColor(color);
