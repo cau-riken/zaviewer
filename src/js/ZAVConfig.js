@@ -303,7 +303,7 @@ class ZAVConfig {
             this.config.THUMB_EXTENSION = "/full/250,/0/default.jpg"; //".ptif/full/250,/0/default.jpg";
 
             /** url to retrieve extra info for dataset */
-            this.config.fmDatasetsInfoUrl = "/datasets.json";
+            this.config.fmDatasetsInfoUrl = "../datasets.json";
 
         } else {
 
