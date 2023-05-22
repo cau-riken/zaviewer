@@ -64,16 +64,19 @@
 	border-color: #bbbbbb;
 }
 
+$zavstatusbar-contentwidth: 680px;
+
 .zav-StatusBar {
 	position: absolute;
 	z-index: 150;
 	bottom: 10px;
-	width: 100%;
+	width: $zavstatusbar-contentwidth;
+	left: calc( ( 100vw - $zavstatusbar-contentwidth ) / 2 );	
 }
 
 .zav-StatusBarContent {
 	margin: auto;
-	width: 50%;
+	width: 100%;
 	background-color: #1835798f;
 	color: #fff;
 	font-size: 16px;
