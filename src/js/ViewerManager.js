@@ -509,7 +509,7 @@ class ViewerManager {
 
         const initialPage = this.config.initialPage;
 
-        this.viewer = OpenSeadragon({
+        this.viewer = OpenSeadragon(Object.assign({
             id: VIEWER_ID,
             tileSources: this.status.tileSources,
             initialPage: initialPage,
@@ -528,8 +528,10 @@ class ViewerManager {
             showFullPageControl: false,
             //keep image size (and zoom) when container/window is resized
             preserveImageSizeOnResize: true,
-            autoResize: true,
-        });
+            autoResize: true },
+            //necessary for filtering when images are loaded from different origin (using datasrcurl param)
+            (this.config.hasCOSource ? {crossOriginPolicy: 'Anonymous'} : {})
+        ));
 
 
         //Initialize labelMap handler
