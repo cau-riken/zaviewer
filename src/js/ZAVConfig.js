@@ -509,7 +509,12 @@ class ZAVConfig {
         this.config.hasCoronalPlane = _.has(response.subview, 'coronal_slide');
         this.config.hasSagittalPlane = _.has(response.subview, 'sagittal_slide');
         //single or multi-plane mode?
-        this.config.hasMultiPlanes = (this.config.hasAxialPlane + this.config.hasCoronalPlane + this.config.hasSagittalPlane) > 1;
+        const nbDefinedPlanes = this.config.hasAxialPlane + this.config.hasCoronalPlane + this.config.hasSagittalPlane;
+        this.config.hasMultiPlanes = nbDefinedPlanes > 1;
+        //if no plane explicitely specified
+        if (nbDefinedPlanes == 0) {
+            this.config.hasCoronalPlane = true;
+        }
 
         this.config.treeUrlPath = response.tree;
 
@@ -600,6 +605,10 @@ class ZAVConfig {
             this.config.axial_matrix = response.axial_matrix ? response.axial_matrix.split(",") : this.config.anyMatrix;
             this.config.coronal_matrix = response.coronal_matrix ? response.coronal_matrix.split(",") : this.config.anyMatrix;
             this.config.sagittal_matrix = response.sagittal_matrix ? response.sagittal_matrix.split(",") : this.config.anyMatrix;
+        } else {
+            this.config.axial_matrix = this.config.hasAxialPlane ? this.config.anyMatrix : this.config.axial_matrix;
+            this.config.coronal_matrix = this.config.hasCoronalPlane ? this.config.anyMatrix : this.config.coronal_matrix;
+            this.config.sagittal_matrix = this.config.hasSagittalPlane ? this.config.anyMatrix : this.config.sagittal_matrix;
         }
 
         if (this.config.hasMultiPlanes) {
@@ -619,6 +628,10 @@ class ZAVConfig {
             this.config.axial_size = response.axial_size ? parseInt(response.axial_size) : this.config.anyImageSize;
             this.config.coronal_size = response.coronal_size ? parseInt(response.coronal_size) : this.config.anyImageSize;
             this.config.sagittal_size = response.sagittal_size ? parseInt(response.sagittal_size) : this.config.anyImageSize;
+        } else {
+            this.config.axial_size = this.config.hasAxialPlane ? this.config.anyImageSize : this.config.axial_size;
+            this.config.coronal_size = this.config.hasCoronalPlane ? this.config.anyImageSize : this.config.coronal_size;
+            this.config.sagittal_size = this.config.hasSagittalPlane ? this.config.anyImageSize : this.config.sagittal_size;
         }
         this.config.setPlaneSizes(null);
 
