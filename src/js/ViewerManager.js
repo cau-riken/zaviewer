@@ -773,6 +773,37 @@ class ViewerManager {
             //change must be recorded in browser's history
             that.makeHistoryStep();
         });
+
+        //--------------------------------------------------
+        //Adjust label text size depending on zoom level
+
+        //first retrieve CSS rule to be updated
+        let ruleToUpdate;
+        for (const sheet of document.styleSheets) {
+            try {
+                if (sheet.cssRules.length > 0) {
+                    //region's text-label css rule is the first rule of its sheet (inlined within document head)
+                    const rule = sheet.cssRules[0];
+                    if (rule.selectorText === ".zav-region-label") {
+                        ruleToUpdate = rule;
+                        break;
+                    }
+                }
+            } catch (e) {
+                //SecurityError maybe raised when accessing cross-origin stylesheet, which can be disregarded
+            }
+        }
+
+        if (ruleToUpdate) {        
+            const changeLabelSizeDebounced = _.debounce((zoomEvent) => {
+                const pf = 100 / this.getZoomFactor();
+                ruleToUpdate.style.setProperty('font-size', `${pf * 12}px`);
+                ruleToUpdate.style.setProperty('stroke-width', `${pf * 2.4}px`);
+            }, 150);
+
+            this.viewer.addHandler('zoom', changeLabelSizeDebounced);
+        }
+
         //--------------------------------------------------
         this.viewer.addViewerInputHook({
             hooks: [
