@@ -749,6 +749,7 @@ class ViewerManager {
                 }
             }
 
+            changeLabelSizeDebounced();
         });
 
         this.viewer.addHandler('page', (zoomEvent) => {
@@ -794,13 +795,13 @@ class ViewerManager {
             }
         }
 
-        if (ruleToUpdate) {        
-            const changeLabelSizeDebounced = _.debounce((zoomEvent) => {
-                const pf = 100 / this.getZoomFactor();
-                ruleToUpdate.style.setProperty('font-size', `${pf * 12}px`);
-                ruleToUpdate.style.setProperty('stroke-width', `${pf * 2.4}px`);
-            }, 150);
+        const changeLabelSizeDebounced = _.debounce((zoomEvent) => {
+            const pf = 100 / this.getZoomFactor();
+            ruleToUpdate.style.setProperty('font-size', `${pf * 15}px`);
+            ruleToUpdate.style.setProperty('stroke-width', `${pf * 2.0}px`);
+        }, 150);
 
+        if (ruleToUpdate) {        
             this.viewer.addHandler('zoom', changeLabelSizeDebounced);
         }
 
