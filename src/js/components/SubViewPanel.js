@@ -398,7 +398,7 @@ class SubViewPanel extends React.Component {
                             icon="chevron-left"
                             title="go to previous slice"
                             style={{ marginLeft: -16, verticalAlign: "top" }}
-                            onClick={this.onGoToSlice.bind(this, currentSlice - 1)}
+                            onClick={this.onImmediateGoToSlice.bind(this, currentSlice - 1)}
                         />
 
                         <Slider
@@ -408,6 +408,7 @@ class SubViewPanel extends React.Component {
                             stepSize={1}
                             labelStepSize={maxSliceNum}
                             onChange={this.onGoToSlice.bind(this)}
+                            onRelease={this.onImmediateGoToSlice.bind(this)}
                             value={currentSlice}
                             showTrackFill={false}
                             labelRenderer={(value) => value * sliceStep}
@@ -416,7 +417,7 @@ class SubViewPanel extends React.Component {
                             icon="chevron-right"
                             title="go to next slice"
                             style={{ marginRight: -16, verticalAlign: "top" }}
-                            onClick={this.onGoToSlice.bind(this, currentSlice + 1)}
+                            onClick={this.onImmediateGoToSlice.bind(this, currentSlice + 1)}
                         />
 
                     </div>
@@ -432,6 +433,10 @@ class SubViewPanel extends React.Component {
 
     onGoToSlice(sliceNum) {
         ViewerManager.goToSlice(sliceNum);
+    }
+
+    onImmediateGoToSlice(sliceNum) {
+        ViewerManager.goToSlice(sliceNum, undefined, false, true);
     }
 
     onChangePlane(plane) {

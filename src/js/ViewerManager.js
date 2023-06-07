@@ -12,8 +12,13 @@ import ZAVConfig from './ZAVConfig.js';
 import CustomFilters from './CustomFilters.js';
 import UserSettings from './UserSettings.js';
 
+import { LayerImageLoadingTracker, LoadingStatus } from './common/LayerImageLoadingTracker';
+
 export const VIEWER_ID = "openseadragon1";
 export const NAVIGATOR_ID = "navigatorDiv";
+export const REGIONOVERLAY_ID = "svgDelineationOverlay";
+export const REGIONEDITOVERLAY_ID = "svgEditOverlay";
+export const LOADERWIDGET_ID = "loaderWidget1";
 
 
 const VIEWER_ACTIONSOURCEID = 'VIEWER';
@@ -32,6 +37,9 @@ class ViewerManager {
         return NAVIGATOR_ID;
     }
 
+    static get LOADERWIDGET_ID() {
+        return LOADERWIDGET_ID;
+    }
 
     /**
      * Create ViewManager from the specified config and setup underlying OpenSeaDragon and related components
@@ -194,6 +202,9 @@ class ViewerManager {
             /** layers display values */
             layerDisplaySettings: initLayerDisplaySettings,
 
+            /** info about layers' images currently in the scene (might be several entry for one layer at one time )  */
+            wli: LayerImageLoadingTracker.create(),
+
             /** set to true when all tiles are loaded for the current view */
             isAllLoaded: false,
 
@@ -229,6 +240,7 @@ class ViewerManager {
 
             /** currently displayed slice on active plane */
             chosenSlice: undefined,
+            currentPage: undefined,
 
             /** currently selected slice for each plane */
             axialChosenSlice: (overridingConf.sliceNum && overridingPlane === ZAVConfig.AXIAL)
@@ -347,6 +359,9 @@ class ViewerManager {
     static setupTileSources(overridingConf) {
         const layerEntries = Object.values(this.config.layers);
         const firstLayer = layerEntries.length > 0 ? layerEntries[0] : undefined;
+
+        //first layer image of first slice
+        const imgInc = this.status.wli.enqueueImage(firstLayer.key, true);
 
         if (this.config.hasBackend) {
             if (this.config.data) {
@@ -509,15 +524,14 @@ class ViewerManager {
 
         const initialPage = this.config.initialPage;
 
+        this.status.currentPage = this.config.initialPage;
         this.viewer = OpenSeadragon(Object.assign({
             id: VIEWER_ID,
-            tileSources: this.status.tileSources,
-            initialPage: initialPage,
+            tileSources: this.status.tileSources[this.status.currentPage],
             minZoomLevel: 0,
             minZoomImageRatio: 0.5,
             maxZoomLevel: 16,
             maxImageCacheCount: 2000,
-            sequenceMode: true,
             preserveViewport: true,
             showHomeControl: false,
             showZoomControl: false,
@@ -528,11 +542,13 @@ class ViewerManager {
             showFullPageControl: false,
             //keep image size (and zoom) when container/window is resized
             preserveImageSizeOnResize: true,
-            autoResize: true },
+            autoResize: true
+        },
             //necessary for filtering when images are loaded from different origin (using datasrcurl param)
-            (this.config.hasCOSource ? {crossOriginPolicy: 'Anonymous'} : {})
+            (this.config.hasCOSource ? { crossOriginPolicy: 'Anonymous' } : {})
         ));
 
+        //this.viewer.setDebugMode(true);
 
         //Initialize labelMap handler
         this.status.hasLabelMap = LabelMapper.initLabelMapper(
@@ -564,75 +580,20 @@ class ViewerManager {
         }
 
 
-        this.viewer.addHandler('add-overlay', function (event) {
-            //add overlay is called for each page change
+        this.viewer.addHandler('add-overlay', (event) => {
+            //add overlay is called for each page change (in sequenceMode)
             //Reference 1): http://chrishewett.com/blog/openseadragon-svg-overlays/
-            if (that.config.svgFolerName != "") {
-                //load region delineations in the dedicated overlay
-                if (event.element.id === 'svgDelineationOverlay') {
-                    if (that.config.hasDelineation) {
-                        that.status.hasCurrentSVG = false;
-                        const svgPath = that.getRegionsSVGUrl();
-                        that.addSVGData(svgPath, event.element);
-                    }
-                }
-            }
+            this.refreshOverlay(event.element.id, event.element);
         });
 
-        this.viewer.addHandler('open', function (event) {
-
-
-            if (!that.viewer.source) { return; }
-            const dimensions = that.viewer.source.dimensions;
-
-            if (that.status.editModeOn) {
-                /** overlay to hold currently edited region */
-                const editOverlay = document.createElement("div");
-                editOverlay.className = "overlay";
-                editOverlay.id = "svgEditOverlay";
-                editOverlay.style.zIndex = 0;
-
-                that.viewer.addOverlay({
-                    element: editOverlay,
-                    location: that.viewer.viewport.imageToViewportRectangle(new OpenSeadragon.Rect(0, 0, dimensions.x, dimensions.y)),
-                });
-            }
-
-            /** overlay to hold region delineations (triggers 'add-overlay' event) */
-            const regionOverlay = document.createElement("div");
-            regionOverlay.className = "overlay";
-            regionOverlay.id = "svgDelineationOverlay";
-
-            that.viewer.addOverlay({
-                element: regionOverlay,
-                location: that.viewer.viewport.imageToViewportRectangle(new OpenSeadragon.Rect(0, 0, dimensions.x, dimensions.y)),
-            });
-
-            const layers = Object.entries(that.config.layers);
-            layers.forEach(([key, value]) => {
-                if (value.index != 0) {
-                    that.addLayer(key, value.name, value.ext);
-                } else {
-                    that.setLayerOpacity(key);
-                    //Ensure filters are applied for single layer instances
-                    if (layers.length === 1) {
-                        that.setAllFilters();
-                    }
-                }
-            });
-
-
-            if (that.status.mousemoveHandler) {
-                that.viewer.canvas.removeEventListener('mousemove', that.status.mousemoveHandler);
-            }
-            that.status.mousemoveHandler = that.mousemoveHandler.bind(that);
-            that.viewer.canvas.addEventListener('mousemove', that.status.mousemoveHandler);
+        this.viewer.addHandler('open', (event) => {
+            this.initOverlays();
         });
 
 
         //--------------------------------------------------
         /** quickfix: ensure that whole image is visible at startup */
-        this.viewer.addOnceHandler('open', function () {
+        this.viewer.addOnceHandler('open', function (event) {
             const containerSize = that.viewer.viewport.getContainerSize();
             //FIXME id is a  constant
             const rightPanelWidth = document.getElementById("ZAV-rightPanel").getBoundingClientRect().width;
@@ -646,116 +607,118 @@ class ViewerManager {
         });
 
         //--------------------------------------------------
+        const orderedLayers = Object.keys(this.config.layers);
+        const firstLayerKey = orderedLayers[0];
+
         //TODO replace by fixed image
         /** set image displayed in navigator as the one loaded in first layer */
-        this.viewer.addHandler("open", function (event) {
+        this.viewer.navigator.world.addHandler("add-item", (event) => {
+            //ignore event if it's caused by image replacing triggered just below
+            if (event.userExtra && event.userExtra.replacing) {
+                return;
+            }
 
             // items are automatically added to navigator when layers are added to viewer,
             // but only first layer at 100% opacity is needed
-            const navItemReplaceHnd = function (event) {
-                if (that.viewer.navigator.world.getItemCount() == 1 && event.userData.replaced == 0) {
 
-                    var tiledImage = that.viewer.navigator.world.getItemAt(0);
-                    //replace first item in navigator view by a clone with forced 100% opacity
-                    var options = {
-                        tileSource: event.item.source,
-                        originalTiledImage: tiledImage,
-                        opacity: 1,
-                        replace: true,
-                        index: 0
-                    };
-                    event.userData.replaced = 1;
-                    that.viewer.navigator.addTiledImage(options);
+            //get the last added first layer image
+            const mostRecentFirstLayer = this.status.wli.getMostRecentInLayer(firstLayerKey);
+            if (mostRecentFirstLayer && mostRecentFirstLayer.tiledImage) {
 
-                } else if (that.viewer.navigator.world.getItemCount() > 1) {
-
-                    //remove any extra items from the navigator
-                    event.userData.removed += 1;
-                    that.viewer.navigator.world.removeItem(that.viewer.navigator.world.getItemAt(that.viewer.navigator.world.getItemCount() - 1));
-                }
-
-                //
-                if (event.userData.replaced == 1 && event.userData.removed == _.size(that.config.layers) - 1) {
-
-                    //remove current handler once replacement/removal has been performed
-                    that.viewer.navigator.world.removeHandler("add-item", navItemReplaceHnd);
-                }
+                const tiledImage = this.viewer.navigator.world.getItemAt(0);
+                //replace first item in navigator view by a clone with forced 100% opacity
+                var options = {
+                    tileSource: mostRecentFirstLayer.tiledImage.source,
+                    originalTiledImage: tiledImage,
+                    opacity: 1,
+                    replace: true,
+                    index: 0,
+                    //to prevent endless loop
+                    userExtra: { replacing: true }
+                };
+                this.viewer.navigator.addTiledImage(options);
             }
 
-            that.viewer.navigator.world.addHandler("add-item", navItemReplaceHnd, { replaced: 0, removed: 0 });
-        });
-
-        //--------------------------------------------------
-        //Apply filter on tracer signal once it is fully loaded
-
-        this.viewer.world.addHandler('add-item', (addItemEvent) => {
-            const tiledImage = addItemEvent.item;
-            //retrieve layer info associated to added tiled image
-            for (var i = 0; i < that.viewer.world.getItemCount(); i++) {
-                if (that.viewer.world.getItemAt(i) === tiledImage) {
-                    const layer = _.findWhere(that.status.layerDisplaySettings, { index: i });
-
-                    //if this tiled image corresponds to tracer signal
-                    if (layer && layer.isTracer) {
-                        //handler to set filter on once the image is fully loaded
-                        const hnd = (fullyLoadedChangeEvent) => {
-                            //this handler is called anytime the fullyLoaded status changes
-                            if (fullyLoadedChangeEvent.fullyLoaded) {
-
-                                // apply filter
-                                that.setAllFilters();
-
-                                //
-                                tiledImage.removeHandler('fully-loaded-change', hnd);
-                            }
-                        };
-                        tiledImage.addHandler('fully-loaded-change', hnd);
-                    }
-                    break;
+            //remove any items except the first one
+            for (let i = this.viewer.navigator.world.getItemCount() - 1; i > 0; i--) {
+                const uselessTileImage = this.viewer.navigator.world.getItemAt(i);
+                if (uselessTileImage) {
+                    this.viewer.navigator.world.removeItem(uselessTileImage);
                 }
             }
         });
 
+        //--------------------------------------------------
+
+        this.viewer.world.addHandler('add-item-failed', (addItemEvent) => {
+            console.error('Add-item FAILED!', addItemEvent);
+        });
 
         //--------------------------------------------------
-        this.viewer.world.addHandler('add-item', (addItemEvent) => {
+        this.viewer.world.addHandler('add-item', (event) => {
+            const { item: tiledImage, userExtra } = event;
+            //WARNING: the tiled image associated to event is NOT the one in viewer.world !!!
+            // this.viewer.world.getIndexOfItem(event.tiledImage) yields -1
 
-            const i = that.viewer.world.getIndexOfItem(addItemEvent.item);
-            const tiledImage = addItemEvent.item;
+            let addedTileImage;
             //retrieve layer info associated to tiled image source of the event
+            if (userExtra && userExtra.ordnum) {
+                addedTileImage = this.status.wli.getInfosByOrdnum(userExtra.ordnum);
+                if (addedTileImage) {
+                    this.status.wli.setStatus(addedTileImage.ordnum, LoadingStatus.added);
+                }
+            }
+            if (!addedTileImage) {
+                addedTileImage = this.status.wli.getBotstrapInfos();
+                if (addedTileImage) {
+                    //case of bootstraping image 
+                    this.status.wli.setStatus(addedTileImage.ordnum, LoadingStatus.added, this.viewer.world.getItemAt(0));
+                }
+            }
 
-            const layers = Object.values(that.status.layerDisplaySettings)
-            const layer = i < layers.length ? layers[i] : undefined;
-            if (layer) {
-                //signal loading started for current tiledImage
-                that.eventSource.raiseEvent('zav-layer-loading', { layer: layer.key });
+            if (addedTileImage) {
+
+                let raisedCount = 0;
+                const eventPayload = { layer: addedTileImage.key, ordnum: addedTileImage.ordnum }
+
 
                 //register event handler to track loaded state (loaded state will change after panning & zomming)
                 tiledImage.addHandler('fully-loaded-change', (fullyLoadedChangeEvent) => {
                     if (fullyLoadedChangeEvent.fullyLoaded) {
 
-                        that.eventSource.raiseEvent('zav-layer-loaded', { layer: layer.key });
+                        this.status.wli.setLoaded(addedTileImage.ordnum);
+                        this.eventSource.raiseEvent('zav-layer-loaded', { ...eventPayload, raisedCount: raisedCount++ });
 
                     } else {
 
-                        that.eventSource.raiseEvent('zav-layer-loading', { layer: layer.key });
+                        this.status.wli.setLoading(addedTileImage.ordnum);
+                        this.eventSource.raiseEvent('zav-layer-loading', { ...eventPayload, raisedCount: raisedCount++ });
                     }
                 });
 
-                //if tiledImage is already loaded by then, event handler might not be called...
-                if (tiledImage.getFullyLoaded()) {
-                    //... thus, signal loading finished for current tiledImage
-                    that.eventSource.raiseEvent('zav-layer-loaded', { layer: layer.key })
-                }
+                setTimeout(() => {
+                    //if tiledImage is already loaded by then, event handler might not be called...
+                    if (tiledImage.getFullyLoaded()) {
+                        this.status.wli.setLoading(addedTileImage.ordnum);
+                        this.status.wli.setLoaded(addedTileImage.ordnum);
+
+                        //signal loading started for current tiledImage
+                        this.eventSource.raiseEvent('zav-layer-loading', { ...eventPayload, raisedCount: raisedCount++ });
+
+                        //... thus, signal loading finished for current tiledImage
+                        this.eventSource.raiseEvent('zav-layer-loaded', { ...eventPayload, raisedCount: raisedCount++ });
+                    }
+                }, 250);
             }
 
             changeLabelSizeDebounced();
         });
 
-        this.viewer.addHandler('page', (zoomEvent) => {
-            //discard previous custom processing result if any
-            that.status.processedImage = null;
+        this.status.wli.addEventListener((event) => {
+            this.setLoadingWidget(!event.allLoaded);
         });
+
+        //--------------------------------------------------
 
         this.viewer.addHandler('zoom', (zoomEvent) => {
             //change must be recorded in browser's history
@@ -801,7 +764,7 @@ class ViewerManager {
             ruleToUpdate.style.setProperty('stroke-width', `${pf * 2.0}px`);
         }, 150);
 
-        if (ruleToUpdate) {        
+        if (ruleToUpdate) {
             this.viewer.addHandler('zoom', changeLabelSizeDebounced);
         }
 
@@ -851,7 +814,7 @@ class ViewerManager {
         });
         this.eventSource.addHandler('zav-layer-loaded', (event) => {
             this.status.layerDisplaySettings[event.layer].loading = false;
-            const isAllLoaded = !_.findKey(this.status.layerDisplaySettings, function (val, key) { return val.loading; });
+            const isAllLoaded = this.status.wli.isAllLoaded();
             if (isAllLoaded && !this.status.isAllLoaded) {
                 this.eventSource.raiseEvent('zav-alllayers-loaded');
             }
@@ -877,8 +840,8 @@ class ViewerManager {
     //create SVG element where all editing related drawing is performed  
     static createEditSVGElement() {
         if (this.status.editModeOn) {
-            const editOverlay = document.getElementById('svgEditOverlay');
-            const regionSVG = document.getElementById('svgDelineationOverlay').getElementsByTagName('svg')[0];
+            const editOverlay = document.getElementById(REGIONEDITOVERLAY_ID);
+            const regionSVG = document.getElementById(REGIONOVERLAY_ID).getElementsByTagName('svg')[0];
 
             const svg = document.createElementNS(SVGNS, "svg");
             //same size a region delineation SVG
@@ -1038,7 +1001,7 @@ class ViewerManager {
             targetElt.style.display = 'none';
 
             //place the editing overlay on top of region overlay while editing is being done
-            const editOverlay = document.getElementById('svgEditOverlay');
+            const editOverlay = document.getElementById(REGIONEDITOVERLAY_ID);
             editOverlay.style.zIndex = 1;
 
             this.updateEditCursor();
@@ -1127,7 +1090,7 @@ class ViewerManager {
         if (this.status.editPathId) {
 
             //restore region overlay above edition
-            const editOverlay = document.getElementById('svgEditOverlay');
+            const editOverlay = document.getElementById(REGIONEDITOVERLAY_ID);
             editOverlay.style.zIndex = 0;
 
             this.removeEditCursor();
@@ -1421,26 +1384,32 @@ class ViewerManager {
     */
     static addSVGData(svgName, overlayElement) {
 
-        this.status.paper = Raphael(overlayElement);
-        this.status.set = this.status.paper.set();
-        //clear the set if necessary
-        this.status.set.remove();
+        const resetSVGOverlay = () => {
+            //clear previous content
+            overlayElement.replaceChildren();
+
+            this.status.paper = Raphael(overlayElement);
+            this.status.set = this.status.paper.set();
+            //clear the set if necessary
+            this.status.set.remove();
+
+            //Create SVG element dedicated to edition
+            this.createEditSVGElement();
+        };
 
         this.status.currentSVGName = svgName;
-        //console.log("svg " + svgName);
-
-        //Create SVG element dedicated to edition
-        this.createEditSVGElement();
-
         const that = this;
 
         //load SVG
-        $.ajax({
+        jQuery.ajax({
             url: svgName,
             async: true,
             success: function (svgFile) {
                 // process retrieved data only if it's the last one requested to ensure current slice SVG is loaded
                 if (svgName === that.status.currentSVGName) {
+
+                    resetSVGOverlay();
+
                     const root = svgFile.getElementsByTagName('svg')[0];
                     that.status.hasCurrentSVG = (typeof root !== "undefined");
                     var paths = root.getElementsByTagName('path');
@@ -1569,7 +1538,8 @@ class ViewerManager {
 
                     that.signalStatusChanged(that.status);
                 }
-            }
+            },
+            error: resetSVGOverlay,
         });
 
 
@@ -1983,7 +1953,7 @@ class ViewerManager {
             this.config.setPlaneSizes(this.status.activePlane);
             this.status.chosenSlice = this.getCurrentPlaneChosenSlice();
 
-            this.viewer.goToPage(this.getPageNumForCurrentSlice());
+            this.goToPage(this.getPageNumForCurrentSlice(), true);
             this.claerPosition();
             return true;
         } else {
@@ -2095,10 +2065,187 @@ class ViewerManager {
         }
     }
 
+
+    static refreshOverlay(overlayId, overlayElement) {
+        if (this.config.svgFolerName != "") {
+            //load region delineations in the dedicated overlay
+            if (overlayId === REGIONOVERLAY_ID) {
+                if (this.config.hasDelineation) {
+                    this.status.hasCurrentSVG = false;
+                    const svgPath = this.getRegionsSVGUrl();
+                    this.addSVGData(svgPath, overlayElement);
+                }
+            }
+        }
+    };
+
+    static initOverlays() {
+        if (!this.viewer.source) { return; }
+        const dimensions = this.viewer.source.dimensions;
+
+        if (this.status.editModeOn) {
+            /** overlay to hold currently edited region */
+            const editOverlay = document.createElement("div");
+            editOverlay.className = "overlay";
+            editOverlay.id = REGIONEDITOVERLAY_ID;
+            editOverlay.style.zIndex = 0;
+
+            this.viewer.addOverlay({
+                element: editOverlay,
+                location: this.viewer.viewport.imageToViewportRectangle(new OpenSeadragon.Rect(0, 0, dimensions.x, dimensions.y)),
+            });
+        }
+
+        /** overlay to hold region delineations (triggers 'add-overlay' event) */
+        const regionOverlay = document.createElement("div");
+        regionOverlay.className = "overlay";
+        regionOverlay.id = REGIONOVERLAY_ID;
+
+        this.viewer.addOverlay({
+            element: regionOverlay,
+            location: this.viewer.viewport.imageToViewportRectangle(new OpenSeadragon.Rect(0, 0, dimensions.x, dimensions.y)),
+        });
+
+        if (this.status.mousemoveHandler) {
+            this.viewer.canvas.removeEventListener('mousemove', this.status.mousemoveHandler);
+        }
+        this.status.mousemoveHandler = this.mousemoveHandler.bind(this);
+        this.viewer.canvas.addEventListener('mousemove', this.status.mousemoveHandler);
+    }
+
+    static removeOldLayer(layerKey, beforeOrdnum, keepSubstitute) {
+        const cancelables = this.status.wli.collectRemovableInfos(layerKey, beforeOrdnum, keepSubstitute);
+        const canceled = [];
+        cancelables.forEach(infos => {
+            if (infos.tiledImage) {
+                const index = this.viewer.world.getIndexOfItem(infos.tiledImage);
+                if (index >= 0) {
+                    this.viewer.world.removeItem(infos.tiledImage);
+                    canceled.push(infos);
+                } else {
+                    console.error('Unknown image', infos);
+
+                }
+            }
+        });
+        this.status.wli.removeInfos(canceled);
+    }
+
+    static setLoadingWidget(visible) {
+        const widget = document.getElementById(ViewerManager.LOADERWIDGET_ID);
+        if (widget) {
+            widget.style.display = visible ? 'block' : 'none';
+        }
+    }
+
+
+    static goToPage(page, immediate) {
+
+        this.status.currentPage = page;
+
+        //discard previous custom processing result if any
+        this.status.processedImage = null;
+
+        this.refreshOverlay(REGIONOVERLAY_ID, document.getElementById(REGIONOVERLAY_ID));
+
+        //first layer is the one at the bottom of the stack
+        const firstLayerIndex = 0;
+        const firstLayerKey = Object.keys(this.config.layers)[firstLayerIndex];
+
+        const afterPageChange1 = (newTiledImage, imgInc) => {
+            this.clearAllFilters();
+            setTimeout(() => {
+                //only keep the more recently added image (and optionally the previous one as image substitute to prevent transition to black)
+                const keepSubstitute = !Boolean(immediate);
+                this.removeOldLayer(firstLayerKey, imgInc, keepSubstitute);
+                if (keepSubstitute) {
+                    //to be sure the substite is eventually removed
+                    setTimeout(() => {
+                        this.removeOldLayer(firstLayerKey, imgInc, false);
+                    }, 1000);
+                }
+
+                //perform transition
+                const opacity = this.getLayerOpacity(firstLayerKey);
+                newTiledImage.setOpacity(opacity);
+            }, 50);
+
+        };
+
+        const afterPageChange2 = (newTiledImage, imgInc) => {
+            // add other layers
+            const layers = Object.entries(this.config.layers);
+            let hasNoVisibleOtherLayer = true;
+            layers.forEach(([key, value]) => {
+                if (value.index != 0) {
+                    hasNoVisibleOtherLayer = hasNoVisibleOtherLayer && this.getLayerOpacity(key) == 0;
+                    this.addLayer(key, value.name, value.ext);
+                }
+            });
+
+            //if no other visible layers, won't get event to disable loading-widget, thus let's hide it now
+            if (hasNoVisibleOtherLayer) {
+                setTimeout(this.setAllFilters.bind(this), 50);
+                this.setLoadingWidget(false);
+            }
+
+        };
+
+        const tileSrc = this.status.tileSources[page];
+        const imgInc = this.status.wli.enqueueImage(firstLayerKey);
+
+        const hnd = (event) => {
+            const infos = this.status.wli.getInfosByOrdnum(imgInc);
+            if (infos && infos.tiledImage == event.tiledImage) {
+                afterPageChange1(infos.tiledImage, imgInc)
+                this.viewer.removeHandler('tile-drawn', hnd);
+            }
+        };
+        this.viewer.addHandler('tile-drawn', hnd);
+
+        const options = {
+            tileSource: tileSrc,
+            opacity: 0,
+            //some opacity to get the drawn event            
+            opacity: 0.01,
+            //preload: true,
+            userExtra: { ordnum: imgInc, layer: firstLayerKey },
+            success: ({ item: newTiledImage }) => {
+
+                this.status.wli.setStatus(imgInc, LoadingStatus.starting, newTiledImage);
+
+                if (newTiledImage.getFullyLoaded()) {
+                    afterPageChange2(newTiledImage, imgInc);
+                } else {
+                    const hnd = (fullyLoadedChangeEvent) => {
+                        if (fullyLoadedChangeEvent.fullyLoaded) {
+                            //execute after little delay to give OSD a chance to draw the loaded tiles
+                            setTimeout(() => { afterPageChange2(newTiledImage, imgInc); }, 50);
+                            newTiledImage.removeHandler('fully-loaded-change', hnd);
+                        }
+                    };
+                    newTiledImage.addHandler('fully-loaded-change', hnd);
+                }
+
+            },
+            error: () => {
+                this.status.wli.setStatus(imgInc, LoadingStatus.error);
+                console.error('Error adding layer', key)
+            },
+
+            preload: true,
+
+        };
+
+        this.removeOldLayer(firstLayerKey, imgInc, true);
+        this.viewer.addTiledImage(options);
+
+    };
+
     /**  
     * @public
     */
-    static goToPlaneSlice(plane, chosenSlice, regionsToCenterOn, force) {
+    static goToPlaneSlice(plane, chosenSlice, regionsToCenterOn, force, immediate) {
         //TODO use plane 
         if (force || plane != this.status.activePlane || chosenSlice != this.getCurrentPlaneChosenSlice()) {
             this.status.activePlane = plane;
@@ -2114,7 +2261,7 @@ class ViewerManager {
             }
 
             const pageNum = this.getPageNumForCurrentSlice();
-            this.viewer.goToPage(pageNum);
+            this.goToPage(pageNum, immediate);
 
             //change must be recorded (immediately) in browser's history
             this.makeActualHistoryStep({ s: chosenSlice, a: this.status.activePlane });
@@ -2123,12 +2270,12 @@ class ViewerManager {
         }
     }
 
-    static goToSlice(chosenSlice, regionsToCenterOn, force) {
-        this.goToPlaneSlice(this.status.activePlane, chosenSlice, regionsToCenterOn, force);
+    static goToSlice(chosenSlice, regionsToCenterOn, force, immediate) {
+        this.goToPlaneSlice(this.status.activePlane, chosenSlice, regionsToCenterOn, force, immediate);
     }
 
     static shiftToSlice(increment, force) {
-        this.goToPlaneSlice(this.status.activePlane, this.status.chosenSlice + increment, null, force);
+        this.goToPlaneSlice(this.status.activePlane, this.status.chosenSlice + increment, null, force, true);
     }
 
     static changeSlices(slicesByPlane) {
@@ -2310,6 +2457,7 @@ class ViewerManager {
     static getRegionsSVGEditUrl(extraParams) {
         const sliceNum = this.getCurrentPlaneChosenSlice();
         const url = new URL(Utils.makePath("../", this.config.ADMIN_PATH, 'SVG.php'), window.location);
+        //const url = new URL(Utils.makePath(this.config.ADMIN_PATH, 'SVG.php'))
         const params = this.config.viewerId ?
             {
                 dataset: this.config.viewerId,
@@ -2431,16 +2579,35 @@ class ViewerManager {
      * Called once 1rst layer is opened to add other layers
      */
     static addLayer(key, name, ext) {
-        var options = {
+
+        const opacity = this.getLayerOpacity(key);
+        const imgInc = this.status.wli.enqueueImage(key);
+        if (opacity == 0) {
+            this.status.wli.setVisible(imgInc, false);
+        }
+
+        const options = {
             tileSource: this.getTileSourceDef(key, ext),
-            opacity: this.getLayerOpacity(key),
-            success: (event) => this.setAllFilters(),
+            opacity: opacity,
+            userExtra: { ordnum: imgInc, layer: key },
+            success: ({ item: newTiledImage }) => {
+
+                this.status.wli.setStatus(imgInc, LoadingStatus.starting, newTiledImage);
+                this.removeOldLayer(key, imgInc);
+
+                setTimeout(this.setAllFiltersDebounced.bind(this), 50);
+            },
+            error: (event) => {
+                this.status.wli.setStatus(imgInc, LoadingStatus.error);
+                console.error('Error adding layer', key, name)
+            },
 
             //force labelMap layer's tiles loading even when the image is hidden by zero opacity
             preload: this.status.layerDisplaySettings[key].isLabelMap,
 
         };
 
+        this.removeOldLayer(key, imgInc);
         this.viewer.addTiledImage(options);
 
     }
@@ -2451,6 +2618,7 @@ class ViewerManager {
             this.status.layerDisplaySettings[layerid].enabled = enabled;
             this.status.layerDisplaySettings[layerid].opacity = opacity;
             this.setLayerOpacity(layerid);
+            this.setAllFilters();
             this.signalStatusChanged(this.status);
         }
     }
@@ -2479,6 +2647,10 @@ class ViewerManager {
         let tracerNum = 0;
         Object.values(this.status.layerDisplaySettings).forEach((layer) => {
             const processors = [];
+            const opacity = this.getLayerOpacity(layer.key);
+            if (opacity == 0) {
+                return;
+            }
 
             if (layer.isTracer) {
                 //change filters only if dilation kernel size changed
@@ -2501,19 +2673,32 @@ class ViewerManager {
             }
 
             if (processors.length) {
-                const tiledImage = this.viewer.world.getItemAt(layer.index);
-                filters.push({
-                    items: tiledImage,
-                    processors: processors
-                });
+                //only apply filter to layer's last loaded image
+                const tiledImageInfo = this.status.wli.getMostRecentInLayer(layer.key);
+                if (tiledImageInfo && tiledImageInfo.tiledImage) {
+                    filters.push({
+                        items: tiledImageInfo.tiledImage,
+                        processors: processors
+                    });
+                }
             }
 
         });
         this.viewer.setFilterOptions({
-            filters: filters
+            filters: filters,
+            loadMode: 'async',
         });
 
     }
+
+    static clearAllFilters() {
+        this.viewer.setFilterOptions({
+            filters: [],
+            loadMode: 'sync',
+        });
+    }
+
+    static setAllFiltersDebounced = _.debounce(this.setAllFilters, 300);
 
     static resetTiledImageCache(layerid) {
         const layerIndex = Object.keys(this.status.layerDisplaySettings).findIndex(id => id === layerid);
@@ -3207,18 +3392,20 @@ class ViewerManager {
                     }
                 };
 
-                //collect info to check if part of the clipped region is outside of the screen
+                const imageSize = this.config.imageSize
                 const bounds = this.viewer.viewport.getBounds(true);
-                const vpCoord1 = this.viewer.viewport.imageToViewportCoordinates(this.status.position[1].x, this.status.position[1].y);
-                const vpCoord2 = this.viewer.viewport.imageToViewportCoordinates(this.status.position[2].x, this.status.position[2].y);
+                for (var i = 0; i < this.viewer.world.getItemCount(); i++) {
+                    const tiledImage = this.viewer.world.getItemAt(i);
+                    const layer = _.findWhere(this.status.layerDisplaySettings, { index: i });
                 const vlx = Math.min(vpCoord1.x, vpCoord2.x)
                 const vrx = Math.max(vpCoord1.x, vpCoord2.x)
                 const vty = Math.min(vpCoord1.y, vpCoord2.y)
                 const vby = Math.max(vpCoord1.y, vpCoord2.y)
 
                 const [lx, ty, w, h] = this.status.processedRegion;
+                const iby = Math.max(this.status.position[1].y, this.status.position[2].y)
 
-                this.status.processedTopleftPx = [Math.round(this.config.imageSize * vlx), Math.round(this.config.imageSize * vty)];
+                this.status.processedTopleftPx = [Math.round(imageSize * vlx), Math.round(imageSize * vty)];
 
                 if (vlx >= bounds.x && vty >= bounds.y && vrx <= (bounds.x + bounds.width) && vby <= (bounds.y + bounds.height)) {
                     //clipped regions within viewport boundaries, complete clipped region imageData is available
@@ -3506,7 +3693,7 @@ class ViewerManager {
             //change active plane and page
             this.switchPlane(targetPlane);
         } else if (typeof params.sliceNum !== "undefined") {
-            this.viewer.goToPage(this.getPageNumForCurrentSlice());
+            this.goToPage(this.getPageNumForCurrentSlice(), true);
         }
 
         this.status.editModeOn = params.editMode === true;

@@ -8515,9 +8515,10 @@ $.extend( $.Viewer.prototype, $.EventSource.prototype, $.ControlDock.prototype, 
                 if (_this.collectionMode) {
                     _this.world.setAutoRefigureSizes(false);
                 }
-                _this.world.addItem( tiledImage, {
-                    index: queueItem.options.index
-                });
+                _this.world.addItem( tiledImage, Object.assign(
+                    { index: queueItem.options.index },
+                    queueItem.options.userExtra ? {userExtra: queueItem.options.userExtra} : {}
+                ));
 
                 if (_this._loadQueue.length === 0) {
                     //this restores the autoRefigureSizes flag to true.
@@ -22450,9 +22451,10 @@ $.extend( $.World.prototype, $.EventSource.prototype, /** @lends OpenSeadragon.W
          * @property {OpenSeadragon.TiledImage} item - The item that has been added.
          * @property {?Object} userData - Arbitrary subscriber-defined object.
          */
-        this.raiseEvent( 'add-item', {
-            item: item
-        } );
+        this.raiseEvent( 'add-item', Object.assign(
+            { item: item },
+            options.userExtra ? {userExtra: options.userExtra} : {}
+        ));
     },
 
     /**
