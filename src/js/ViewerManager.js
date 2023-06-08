@@ -780,12 +780,12 @@ class ViewerManager {
 
         this.viewer.addHandler('resize', function (event) {
             that.resizeCanvas();
-            that.adjustResizeRegionsOverlay(that.status.set);
+            that.adjustResizeRegionsOverlay();
         });
 
 
         this.viewer.addHandler('animation', function (event) {
-            that.adjustResizeRegionsOverlay(that.status.set);
+            that.adjustResizeRegionsOverlay();
         });
 
         //--------------------------------------------------
@@ -1522,7 +1522,7 @@ class ViewerManager {
 
                     that.eventSource.raiseEvent('zav-regions-created', { svgUrl: svgName })
 
-                    that.adjustResizeRegionsOverlay(that.status.set);
+                    that.adjustResizeRegionsOverlay();
 
                     //restore presentation of regions selected in previous slice
                     that.selectRegions(RegionsManager.getSelectedRegions());
@@ -1638,7 +1638,7 @@ class ViewerManager {
     /**  
      * @private
     */
-    static adjustResizeRegionsOverlay(el) {
+    static adjustResizeRegionsOverlay() {
         if (this.viewer.world.getItemCount()) {
 
             var zoom = this.viewer.world.getItemAt(0).viewportToImageZoom(this.viewer.viewport.getZoom(true));
@@ -2173,6 +2173,9 @@ class ViewerManager {
         };
 
         const afterPageChange2 = (newTiledImage, imgInc) => {
+            //apply SVG correct scaling, because it might have been loaded before first layer image
+            this.adjustResizeRegionsOverlay();
+
             // add other layers
             const layers = Object.entries(this.config.layers);
             let hasNoVisibleOtherLayer = true;
