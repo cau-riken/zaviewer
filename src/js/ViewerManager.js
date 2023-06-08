@@ -1788,8 +1788,10 @@ class ViewerManager {
     }
 
     static applyLabelPresentation() {
-        this.status.labelsg.style.opacity = (this.status.displayLabels ? "1" : "0");
-        this.signalStatusChanged(this.status);
+        if (this.status.labelsg) {
+            this.status.labelsg.style.opacity = (this.status.displayLabels ? "1" : "0");
+            this.signalStatusChanged(this.status);
+        }
     }
 
     static applyMouseOverPresentation(element, forcedBorder = false) {
@@ -2146,7 +2148,10 @@ class ViewerManager {
         //discard previous custom processing result if any
         this.status.processedImage = null;
 
-        this.refreshOverlay(REGIONOVERLAY_ID, document.getElementById(REGIONOVERLAY_ID));
+        const overlayElt = document.getElementById(REGIONOVERLAY_ID);
+        if (overlayElt) {
+            this.refreshOverlay(REGIONOVERLAY_ID, overlayElt);
+        }
 
         //first layer is the one at the bottom of the stack
         const firstLayerIndex = 0;
