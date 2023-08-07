@@ -42,6 +42,20 @@
 	border-radius: 4px;
 }
 
+.zav-TitledCardHead {
+	display: grid;
+	grid-template-columns: 22px 1fr;
+}
+
+.zav-TitledCardHeadExpColButton {
+	text-align: center;
+	margin-left: -6px;
+}
+
+.zav-TitledCardHeadExpColButton:hover {
+	background-color: #87868680;
+}
+
 .zav-TitledCardTitle {
 	margin-top: 3px;
 	margin-bottom: 6px;

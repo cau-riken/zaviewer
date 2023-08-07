@@ -4,6 +4,7 @@ import classNames from "classnames";
 
 import {
     Classes,
+    Collapse,
     HotkeyConfig,
     HotkeysTarget2,
     Icon,
@@ -42,11 +43,36 @@ const VolumeView = React.lazy(() => import('./VolumeView'));
 
 class TitledCard extends React.Component {
 
+    constructor(props) {
+        super(props);
+        this.state = { isOpen: true, isCollapsible: props.collapsed || Boolean(props.isCollapsible), isOpen: !Boolean(props.collapsed) };
+    }
+
     render() {
         return (
             <div className={"zav-TitledCard" + (this.props.className ? ' ' + this.props.className : '')} >
-                <div className="zav-TitledCardTitle">{this.props.header}</div>
-                {this.props.children}
+                <div className={"zav-TitledCardHead"} >
+                    {this.state.isCollapsible
+                        ?
+                        <div
+                            className="zav-TitledCardHeadExpColButton"
+                            onClick={() => this.setState(state => ({ isOpen: !this.state.isOpen }))}
+                        >
+                            <Icon
+                                icon={(this.state.isOpen ? 'chevron-up' : 'chevron-down')}
+                                size={12}
+                            />
+                        </div>
+                        :
+                        null
+                    }
+                    <div
+                        style={(this.state.isCollapsible ? {} : { gridColumn: "1/3" })}
+                        className="zav-TitledCardTitle">{this.props.header}</div>
+                </div>
+                <Collapse isOpen={this.state.isOpen}>
+                    {this.props.children}
+                </Collapse>
             </div>
         );
     }
@@ -364,6 +390,7 @@ class ViewerComposed extends React.Component {
                     <TitledCard
                         className="zav-controlPanel_Layers"
                         header={"Layers control"}
+                        isCollapsible={true}
                     >
                         <SliderNavigatorPanel
                             hasDelineation={this.props.config && this.props.config.hasDelineation}
@@ -376,7 +403,9 @@ class ViewerComposed extends React.Component {
 
                     {
                         ViewerManager.hasProcessingsModule() ?
-                            <TitledCard header={"Processing"}>
+                            <TitledCard header={"Processing"}
+                                isCollapsible={true}
+                            >
                                 <ProcessingPanel
                                     posCount={this.state.position ? this.state.position[0].c : 0}
                                     pos={this.state.pos}
@@ -390,6 +419,7 @@ class ViewerComposed extends React.Component {
                             <TitledCard
                                 className="zav-controlPanel_Regions"
                                 header={"Atlas regions"}
+                                isCollapsible={true}
                             >
                                 <RegionOptions
                                     showRegions={this.state.showRegions}
@@ -430,6 +460,8 @@ class ViewerComposed extends React.Component {
                             <TitledCard
                                 className="zav-controlPanel_Distance"
                                 header={"Distance measurement"}
+                                isCollapsible={true}
+                                collapsed={true}
                             >
                                 <MeasureInfoPanel
                                     posCount={this.state.position ? this.state.position[0].c : 0}
