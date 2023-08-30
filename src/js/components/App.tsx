@@ -157,7 +157,7 @@ const App = (props: AppProps) => {
           <div id="zav_logoPlaceHolder">
             <div id="zav_logoContainer">
               <div>
-                <a id="bm_logo" href="https://dataportal.brainminds.jp/"  >
+                <a id="bm_logo" href="https://dataportal.brainminds.jp/" title="Click to go to Brain/MINDS dataportal">
                   <img src="./assets/img/brain-minds_borderlogo.svg" height={32} />
                 </a>
               </div>

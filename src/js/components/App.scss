@@ -56,6 +56,27 @@ div#zav_logoContainer > div {
 	outline: none;
 }
 
+#bm_logo>img {
+	border-radius: 5%;
+}
+
+#bm_logo>img:hover {
+	background: linear-gradient(45deg, rgba(255, 255, 255, 0.40) 40%, rgba(0, 0, 0, 0.40) 60%);
+	animation: logo-grad-anim 1s ease infinite alternate;
+	background-size: 200% 200%;
+}
+
+@keyframes logo-grad-anim {
+	0% {
+		background-position: 0% 100%;
+		transform: rotate3d(0);
+	}
+	100% {
+		background-position: 100% 100%;
+		transform: rotate3d(0, 1, 0, 40deg) rotate3d(1, 0, 0, 20deg);
+	}
+}
+
 
 div#zav_licensecontainer {
 	position: fixed;
