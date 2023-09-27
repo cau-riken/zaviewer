@@ -14,6 +14,9 @@ export const CORONAL = 2;
 export const SAGITTAL = 3;
 /* internal plane names */
 const PLANE_NAMES = { [AXIAL]: 'axial', [CORONAL]: 'coronal', [SAGITTAL]: 'sagittal' };
+/* plane abbrev */
+export const PLANE_ABBREVS = { [AXIAL]: 'a', [CORONAL]: 'c', [SAGITTAL]: 's' };
+
 /* external plane labels (UI) */
 const PLANE_LABELS = { [AXIAL]: 'axial', [CORONAL]: 'coronal', [SAGITTAL]: 'sagittal' };
 
@@ -156,6 +159,7 @@ class ZAVConfig {
             displayAreas: true,
             displayBorders: false,
             displayLabels: false,
+            displayROIs: false,
             useCustomBorders: false,
             customBorderColor: "#ff0000",
             customBorderWidth: 2,
@@ -752,6 +756,8 @@ class ZAVConfig {
             if (!forceddisplayLabels) {
                 this.config.displayLabels = UserSettings.getBoolItem(UserSettings.SettingsKeys.ShowAtlasRegionLabel, this.config.displayLabels);
             }
+
+            this.config.displayROIs = UserSettings.getBoolItem(UserSettings.SettingsKeys.ShowOverlayROI, this.config.displayROIs);
 
             this.config.useCustomBorders = UserSettings.getBoolItem(UserSettings.SettingsKeys.UseCustomRegionBorder, this.config.useCustomBorders);
             this.config.customBorderColor = UserSettings.getStrItem(UserSettings.SettingsKeys.CustomRegionBorderColor, this.config.customBorderColor);

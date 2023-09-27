@@ -8,6 +8,7 @@ import Utils from './Utils.js';
 
 import RegionsManager from './RegionsManager'
 import ZAVConfig from './ZAVConfig.js';
+import RoiInfos from "./RoiInfo";
 
 import CustomFilters from './CustomFilters.js';
 import UserSettings from './UserSettings.js';
@@ -158,6 +159,8 @@ class ViewerManager {
             hasCurrentSVG: false,
             /** set to true if region delineation SVG includes labels */
             hasRegionLabels: false,
+            /** set to true if current slice region delineation SVG includes miscellanous ROI such as volume of injection */
+            hasROIs: false,
 
             /** 2D context of canvas used to draw measuring tape */
             ctx: null,
@@ -205,6 +208,7 @@ class ViewerManager {
             displayAreas: this.config.displayAreas,
             displayBorders: this.config.displayBorders,
             displayLabels: this.config.displayLabels,
+            displayROIs: this.config.displayROIs,
             useCustomBorders: this.config.useCustomBorders,
             customBorderColor: this.config.customBorderColor,
             customBorderWidth: this.config.customBorderWidth,
@@ -214,6 +218,10 @@ class ViewerManager {
             /** info about region currently hovered by mouse cursor */
             hoveredRegion: null,
             hoveredRegionSide: null,
+
+            /** info about ROI currently hovered by mouse cursor */
+            hoveredROI: null,
+            hoveredROILabel: null,
 
             /** one of the layers is a raster labelMap  */
             hasLabelMap: false,
@@ -316,6 +324,10 @@ class ViewerManager {
                     } else if ('displayLabels' === property) {
                         target[property] = value;
                         UserSettings.setBoolItem(UserSettings.SettingsKeys.ShowAtlasRegionLabel, value);
+                        return true;
+                    } else if ('displayROIs' === property) {
+                        target[property] = value;
+                        UserSettings.setBoolItem(UserSettings.SettingsKeys.ShowOverlayROI, value);
                         return true;
                     } else if ('useCustomBorders' === property) {
                         target[property] = value;
@@ -1443,7 +1455,6 @@ class ViewerManager {
                 if (svgName === that.status.currentSVGName) {
                     const root = svgFile.getElementsByTagName('svg')[0];
                     that.status.hasCurrentSVG = (typeof root !== "undefined");
-                    var paths = root.getElementsByTagName('path');
 
                     that.status.currentSliceRegions.clear();
                     //new set of mouse event listeners 
@@ -1451,6 +1462,74 @@ class ViewerManager {
 
                     let hasBackground = false;
                     const svgElement = overlayElement.getElementsByTagName('svg')[0];
+
+                    //add group for ROI
+                    const roig = document.createElementNS(SVGNS, "g");
+                    roig.setAttribute('id', 'rois');
+                    that.status.roig = roig;
+
+                    //ROIs from the source SVG
+                    const ROISrcGroup = root.getElementById('rois');
+                    that.status.hasROIs = ROISrcGroup != null;
+
+                    const ROIListener = {
+                        mouseover: (roiID, roiLabel) => {
+                            that.status.hoveredROI = roiID;
+                            that.status.hoveredROILabel = roiLabel;
+                            that.signalStatusChanged(that.status);
+                        },
+
+                        mouseout: () => {
+                            that.status.hoveredROI = null;
+                            that.status.hoveredROILabel = null;
+                            that.signalStatusChanged(that.status);
+                        },
+                    };
+
+
+                    if (that.status.hasROIs) {
+                        //import ROI's SVG path elements
+                        const rois_paths = ROISrcGroup.getElementsByTagName('path');
+                        for (var i = 0; i < rois_paths.length; i++) {
+                            const roiPath = rois_paths[i];
+                            const roiElt = document.createElementNS(SVGNS, 'path');
+
+                            let roiID, roiLabel;
+                            //copy all attributes except ID and class
+                            for (let j = 0; j < roiPath.attributes.length; j++) {
+                                const attr = roiPath.attributes[j];
+                                if (attr.name != "id" && attr.name != "class" && attr.name != "zav:roi-label") {
+                                    roiElt.setAttribute(attr.name, attr.value);
+                                }
+                                if (attr.name == "zav:roi-id") {
+                                    roiID = attr.value;
+                                    //duplicate id without custom ns to access with css selector
+                                    roiElt.setAttribute("zav-roi-id", roiID);
+
+                                } else if (attr.name == "zav:roi-label") {
+                                    roiLabel = attr.value;
+                                }
+                            };
+
+                            //get color from ROIs descriptor file
+                            const roiInfo = RoiInfos.getRoiById(roiID);
+                            if (roiInfo) {
+                                roiLabel = roiInfo.roiLabel;
+                                roiElt.setAttribute("fill", roiInfo.fill);
+                            }
+                            roiElt.setAttribute("class", "zav-roi");
+                            roiElt.setAttribute("vector-effect", "non-scaling-stroke");
+
+                            //attach listener to track ROI hover
+                            roiElt.addEventListener("mouseover", () => ROIListener.mouseover(roiID, roiLabel));
+                            roiElt.addEventListener("mouseout", ROIListener.mouseout);
+
+                            roig.appendChild(roiElt);
+                        }
+
+                        const defs = document.createElementNS(SVGNS, "defs");
+                        svgElement.appendChild(defs);
+                    }
 
                     //add group for region labels
                     const labelsg = document.createElementNS(SVGNS, "g");
@@ -1461,22 +1540,24 @@ class ViewerManager {
                     const labelSrcGroup = root.getElementById('region-labels');
                     that.status.hasRegionLabels = labelSrcGroup != null;
 
-                    for (var i = 0; i < paths.length; i++) {
-
-                        let regionId = paths[i].getAttribute('bma:regionId') ? paths[i].getAttribute('bma:regionId').trim() : null;
+                    const regionSrcGroup = root.getElementsByTagName('g')[0];
+                    const region_paths = regionSrcGroup.getElementsByTagName('path');
+                    for (var i = 0; i < region_paths.length; i++) {
+                        const regionPath = region_paths[i];
+                        let regionId = regionPath.getAttribute('bma:regionId') ? regionPath.getAttribute('bma:regionId').trim() : null;
                         let pathId;
                         if (regionId) {
                             //when a specific attribute holding region id exists, SVG path's id is garanteed to be unique
-                            pathId = paths[i].getAttribute('id').trim();
+                            pathId = regionPath.getAttribute('id').trim();
                         } else {
                             //Legacy SVG : regionId is specified in the id attribute of the path
-                            regionId = paths[i].getAttribute('id').trim();
+                            regionId = regionPath.getAttribute('id').trim();
                             //append ordinal number to ensure unique id (case of non-contiguous regions)
                             pathId = regionId + (regionId === BACKGROUND_PATHID ? '' : ('-' + i));
-                            paths[i].setAttribute('id', pathId);
+                            regionPath.setAttribute('id', pathId);
                         }
 
-                        var newPathElt = that.status.paper.importSVG(paths[i]);
+                        var newPathElt = that.status.paper.importSVG(regionPath);
 
 
                         const isBackgroundElement = (regionId === BACKGROUND_PATHID);
@@ -1495,7 +1576,7 @@ class ViewerManager {
                             });
 
                             //Create Background path in the SVG dedicated to edition
-                            that.createEditSVGBackground(paths[i]);
+                            that.createEditSVGBackground(regionPath);
                             hasBackground = true;
 
                         } else {
@@ -1547,6 +1628,10 @@ class ViewerManager {
 
                     //append region labels' group 
                     const regionsGroup = svgElement.getElementsByTagName('g')[0]
+
+                    regionsGroup.appendChild(roig);
+                    that.applyROIPresentation();
+
                     regionsGroup.appendChild(labelsg);
                     that.applyLabelPresentation();
 
@@ -1821,6 +1906,35 @@ class ViewerManager {
         this.status.labelsg.style.opacity = (this.status.displayLabels ? "1" : "0");
         this.signalStatusChanged(this.status);
     }
+
+    static setROIDisplay(active) {
+        this.status.displayROIs = active;
+        this.applyROIPresentation();
+    }
+
+    static toggleROIDisplay() {
+        this.setROIDisplay(!this.status.displayROIs);
+    }
+
+    static applyROIPresentation() {
+        this.status.roig.style.opacity = (this.status.displayROIs ? "1" : "0");
+        this.signalStatusChanged(this.status);
+    }
+
+    static centerOnROI(roiId) {
+        const el = document.querySelector("div#svgDelineationOverlay g#rois path.zav-roi[zav-roi-id='" + roiId + "']");
+        if (el) {
+            const bbox = el.getBBox();
+            const newX = (bbox.x - bbox.width / 2) / this.config.dzWidth;
+            const newY = (this.config.dzDiff + bbox.y - bbox.height / 2) / this.config.dzHeight;
+            console.log(newX, newY);
+            const windowPoint = new OpenSeadragon.Point(newX, newY);
+            this.viewer.viewport.panTo(windowPoint);
+            this.viewer.viewport.zoomTo(1.1);
+
+        }
+    }
+
 
     static applyMouseOverPresentation(element, forcedBorder = false) {
         const el = element.length ? element[0] : element;
@@ -2100,7 +2214,9 @@ class ViewerManager {
     */
     static goToPlaneSlice(plane, chosenSlice, regionsToCenterOn, force) {
         //TODO use plane 
-        if (force || plane != this.status.activePlane || chosenSlice != this.getCurrentPlaneChosenSlice()) {
+
+        const focusRoi = (typeof regionsToCenterOn == "object") && regionsToCenterOn.roiId;
+        if (force || plane != this.status.activePlane || chosenSlice != this.getCurrentPlaneChosenSlice() || focusRoi) {
             this.status.activePlane = plane;
             chosenSlice = this.checkNSetChosenSlice(plane, chosenSlice);
             this.status.chosenSlice = chosenSlice;
@@ -2109,7 +2225,11 @@ class ViewerManager {
             if (regionsToCenterOn) {
                 const that = this;
                 this.eventSource.addOnceHandler('zav-regions-created', (event) => {
-                    that.centerOnRegions(regionsToCenterOn);
+                    if (focusRoi) {
+                        that.centerOnROI(focusRoi);
+                    } else {
+                        that.centerOnRegions(regionsToCenterOn);
+                    }
                 });
             }
 

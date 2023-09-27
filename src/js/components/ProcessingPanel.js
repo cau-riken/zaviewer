@@ -36,9 +36,9 @@ class ProcessingPanel extends React.Component {
                                 fill={true}
                                 leftIcon="percentage"
                                 disabled={!ViewerManager.isZoomEnabled()}
-                                value={ViewerManager.getZoomFactor()}
-                                min={0.001} max={145}
-                                minorStepSize={0.1} majorStepSize={10}
+                                value={Number(ViewerManager.getZoomFactor()).toFixed(0)}
+                                min={1} max={600}
+                                minorStepSize={1} majorStepSize={10}
                                 onValueChange={
                                     (valueAsNumber, valueAsString) =>
                                         ViewerManager.setZoomFactor(valueAsNumber)
@@ -112,6 +112,14 @@ class ProcessingPanel extends React.Component {
     handleSaveProcessedImage() {
         const imageObj = ViewerManager.getProcessedImage();
         if (imageObj) {
+
+            /*
+            const link = document.createElement('a');
+            link.download = imageObj.name ? imageObj.name + '.png' : 'customprocessing-image.png';
+            link.href = imageObj.src;
+            link.click();
+            */
+
             //Image was created from blob, hence can not be directly downloaded,
             //thus, we recreate a blob via canvas
             const tmpCanvas = document.createElement("canvas");
@@ -129,6 +137,28 @@ class ProcessingPanel extends React.Component {
                 //Allow download to start before releasing objectUrl 
                 setTimeout(() => URL.revokeObjectURL(blobUrl), 2000);
             });
+
+
+            /*
+            //blob:
+            const img = new Image(imageObj);
+            img.onload = ()=> {
+                link.href = img.src;
+                link.click();    
+            };
+            img.onerror = (e)=> console.error(e);
+            */
+
+            /*
+            console.log(imageObj.src);
+            {
+                const newWindow = window.open('', '_blank');
+                newWindow.onload = function () {
+                    const img = newWindow.document.createElement("img");
+                    img.src = imageObj.src;
+                };
+            }
+            */
         }
     };
 

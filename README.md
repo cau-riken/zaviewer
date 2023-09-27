@@ -640,16 +640,32 @@ Region delineations display on top of images are defined in SVG files that must 
 * SVG user coordinate system must be identical to the viewport (i.e. it must not be redefined via a `viewBox` attribute, or by any `transform` attribute on container or graphic elements, since those will be lost when the SVG is imported in the UI).
 * Therefore, coordinates used for graphic elements directly map to pixels (1 user unit maps to 1 pixel), 
 * Region delineations are represented by `<path>` elements, which must have a unique value for their `id` attribute, and a region id in the custom attribute `bma:regionId` (declared namespace `xmlns:bma="https://www.brainminds.riken.jp/Atlas"`). The region hemisphere is indicated by a 2 characters suffix in the region id: an underscore separator `_` and the side letter (`L` or `R`).
+* **Region's path must be contained in the `<svg>`'s first group element.**
 * One path defining a closed rectangle the size of the image must be defined with `id="backgound"` (This element is **mandatory** for correct region rendering and region edition feature).
+* [Optionally] Region's labels may be included within a group element whose id is `region-labels` (`<g id="region-labels">`).
+* [Optionally] Other regions of interest may be defined within a group element whose id is `rois` (`<g id="rois">`).
 
 ```svg
 <?xml version="1.0"?>
-<svg xmlns="http://www.w3.org/2000/svg" xmlns:bma="https://www.brainminds.riken.jp/Atlas" width="18500" height="18500">
+<svg 
+    xmlns="http://www.w3.org/2000/svg"
+    xmlns:bma="https://www.brainminds.riken.jp/Atlas"
+    xmlns:zav="https://www.brainminds.riken.jp/ZAViewer"
+    width="18500" height="18500">
 <g>
     <path id="background" style="fill:#00000000;stroke:#00000000;stroke-width:0;" d="M 0 0 L 0 18500 18500 18500 18500 0Z"/>
     <path id="A8aD_L-1" bma:regionId="A8aD_L" style="fill:#a3c2f2;stroke:#a3c2f2;stroke-width:1;" d=" M 6381 3847 ..."/>
     ... 
 </g>
+<g id="region-labels">
+    <text id="lbl-A8aD_L_0" bma:regionId="A8aD_L" x="12098" y="5023" text-anchor="middle">A8aD</text>
+</g>
+
+<g id="rois">
+  <path zav:roi-id="inj-mask" fill="#00ff00" opacity="0.4" d="M 244.30 96.33 C 248.70 ..." />
+  ...   
+</g>
+
 </svg>
 ```
 

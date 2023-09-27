@@ -19,9 +19,13 @@ import { DrawerHandle, CollapseDirection } from './Drawer';
 import ZAVConfig from '../ZAVConfig.js';
 
 import RegionsManager, { IRegionsStatus, IRegionsPayload, } from '../RegionsManager';
-import ViewerManager from '../ViewerManager.js'
+import ViewerManager from '../ViewerManager.js';
+
+import { IROIsPayload, RoiInfos } from "../RoiInfo";
 
 import Utils from '../Utils.js';
+import UserSettings from '../UserSettings.js';
+
 import axios from 'axios';
 
 import "./App.scss";
@@ -116,6 +120,27 @@ const App = (props: AppProps) => {
             preselected
           );
 
+        })
+        .catch(error => {
+          // handle error
+          console.error(error);
+        });
+
+
+      //load regions of interest related data
+      const roiInfoUrl = Utils.makePath(
+        newConfig.PUBLISH_PATH, newConfig.svgFolerName,
+        "rois.json" + (newConfig.dataVersionTag ? newConfig.dataVersionTag : ''))
+
+      axios.request<IROIsPayload>({
+        method: "GET",
+        url: roiInfoUrl,
+      })
+        .then(response => {
+          RoiInfos.init(response.data);
+          if (UserSettings.getBoolItem(UserSettings.SettingsKeys.ShowOverlayROI, null) == null) {
+            ViewerManager.setROIDisplay(response.data.displayRoi);
+          }
         })
         .catch(error => {
           // handle error

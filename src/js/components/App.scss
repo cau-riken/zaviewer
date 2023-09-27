@@ -187,3 +187,18 @@ div#zav_licensecontainer .zav_miscLinks:hover {
 
 	transition: font-size 0.6s ease-out;
 }
+
+.zav-roi {
+	stroke: #5c5c5c;
+	stroke-width: 3;
+	stroke-linecap: round;
+	stroke-dasharray: 2, 7;
+	stroke-dashoffset: 0;
+	transition: stroke-dasharray 0.2s linear 0s;
+}
+
+.zav-roi:hover {
+	stroke: #000000;
+	transition: stroke-dasharray 0.7s ease-in-out;
+	stroke-dasharray: 0;
+}

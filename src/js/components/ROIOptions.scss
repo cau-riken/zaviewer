@@ -1,0 +1,43 @@
+.zav-roi-list {
+    background-color: hsl(0, 0%, 100%);
+    color: hsl(0, 0%, 0%);
+
+    padding: 1px;
+
+    width: calc(100% + 20px);
+    max-height: 45px;
+    overflow-y: auto;
+}
+
+.zav-roi-list-line {
+    display: grid;
+    grid-template-columns: 1fr 22px;
+}
+
+.zav-roi-list-label {
+    grid-column: 1;
+    background-color: transparent;
+}
+
+.zav-roi-list-button {
+    grid-column: 2;
+    transition: opacity 0.5s;
+    opacity: 0;
+    background-color: transparent;
+    padding-bottom: 2px;
+}
+
+.zav-roi-list-line.zav-roi-line-active {
+    background-color: hsl(203, 100%, 86%);
+    transition: background-color 0.8s ease-in-out;
+}
+
+.zav-roi-list-line.zav-roi-line-active>.zav-roi-list-button {
+    transition: opacity 0.8s ease-in-out;
+    opacity: 1;
+}
+
+.zav-roi-list-button:hover {
+    cursor: pointer;
+    opacity: 1;
+}

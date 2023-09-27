@@ -4,6 +4,7 @@ class UserSettings {
         ShowAtlasRegionArea: "zav:global:atlasRegionsArea:show",
         ShowAtlasRegionBorder: "zav:global:atlasRegionsBorder:show",
         ShowAtlasRegionLabel: "zav:global:atlasRegionsLabel:show",
+        ShowOverlayROI: "zav:global:overlayROI:show",
         OpacityAtlasRegionArea: "zav:global:atlasRegionsArea:opacity",
         UseCustomRegionBorder: "zav:global:atlasRegionsCustomBorder:use",
         CustomRegionBorderColor: "zav:global:atlasRegionsCustomBorder:color",

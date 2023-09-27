@@ -26,11 +26,13 @@ import ProcessingPanel from './ProcessingPanel.js';
 import SubViewPanel from './SubViewPanel.js';
 import SliderNavigatorPanel from './SliderNavigatorPanel.js';
 import RegionOptions from './RegionOptions.js';
+import ROIOptions from './ROIOptions.js';
 import RegionEditPanel from './RegionEditPanel.js';
 import QuickActionButtons from './QuickActionButtons.js';
 
 import ViewerManager from '../ViewerManager.js'
 import RegionsManager from '../RegionsManager'
+import RoiInfo from "../RoiInfo";
 import ZAVConfig from '../ZAVConfig.js';
 
 import MetadataView from "./MetadataView";
@@ -284,7 +286,7 @@ class ViewerComposed extends React.Component {
                 <BrandingMark brandingInfo={this.props.config && this.props.config.branding} />
 
                 <div className="zav-StatusBar">
-                    <div className={"zav-StatusBarContent" + (this.state.hoveredRegion ? " hasStatus" : "")}>
+                    <div className={"zav-StatusBarContent" + ((this.state.hoveredRegion || this.state.hoveredROI) ? " hasStatus" : "") + (this.state.hoveredROI ? " isROI" : "")}>
                         {
                             this.state.hoveredRegion
                                 ? <React.Fragment>
@@ -294,7 +296,9 @@ class ViewerComposed extends React.Component {
                                         : <span className="zav-StatusBarHint">[Shift]+Click on the image to reveal the border</span>
                                     }
                                 </React.Fragment>
-                                : null
+                                : (this.state.hoveredROI
+                                    ? <span><b>{this.state.hoveredROI}</b>{" "}{this.state.hoveredROILabel}</span>
+                                    : null)
                         }
                     </div>
                 </div>
@@ -451,6 +455,21 @@ class ViewerComposed extends React.Component {
                                         :
                                         null
                                 }
+                            </TitledCard>
+                            : null
+                    }
+
+                    {
+                        this.props.config && RoiInfo.hasROI ?
+                            <TitledCard
+                                className="zav-controlPanel_ROIs"
+                                header={"ROIs"}
+                                isCollapsible={true}
+                            >
+                                <ROIOptions
+                                    sliceHasROI={this.state.hasROIs}
+                                    displayROIs={this.state.displayROIs}
+                                />
                             </TitledCard>
                             : null
                     }

@@ -106,6 +106,10 @@ $zavstatusbar-contentwidth: 680px;
 	transition: opacity 0.8s;
 }
 
+.zav-StatusBarContent.isROI {
+	background-color: #7918668f;
+}
+
 .zav-StatusBarContent.hasStatus {
 	opacity: 1;
 	transition: opacity 0s;

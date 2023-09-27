@@ -1,6 +1,6 @@
 {
   "name": "zaviewer",
-  "version": "2.4.0",
+  "version": "2.5.0",
   "description": "Zooming Atlas Viewer – a web-based 2D high-resolution brain image viewer ",
   "main": "index.js",
   "author": "cau-riken <cau-contact@ml.riken.jp> (https://cau.riken.jp)",
