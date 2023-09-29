@@ -159,6 +159,9 @@ class ViewerManager {
             hasCurrentSVG: false,
             /** set to true if region delineation SVG includes labels */
             hasRegionLabels: false,
+            /** SVG group for region labels */
+            labelsg: undefined,
+
             /** set to true if current slice region delineation SVG includes miscellanous ROI such as volume of injection */
             hasROIs: false,
 
@@ -1903,8 +1906,10 @@ class ViewerManager {
     }
 
     static applyLabelPresentation() {
-        this.status.labelsg.style.opacity = (this.status.displayLabels ? "1" : "0");
-        this.signalStatusChanged(this.status);
+        if (this.status.labelsg) {
+            this.status.labelsg.style.opacity = (this.status.displayLabels ? "1" : "0");
+            this.signalStatusChanged(this.status);
+        }
     }
 
     static setROIDisplay(active) {
