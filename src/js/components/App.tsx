@@ -62,70 +62,72 @@ const App = (props: AppProps) => {
 
   const [regionsStatus, setRegionsStatus] = React.useState<IRegionsStatus | undefined>(undefined);
 
+  const loadAndInitRegionsTree = (treeDataUrl: string, hasBackend: boolean, hasMultiPlanes: boolean, preselected: string[] | undefined) => {
+    axios({
+      method: hasBackend ? "POST" : "GET",
+      url: treeDataUrl,
+    })
+
+      .then(response => {
+        const payload: IRegionsPayload = response.data;
+
+        //retrieve region data asynchronously...
+        RegionsManager.init(
+          payload,
+          (newRegionsStatus) => {
+            if (needsExtraInit.current && preselected) {
+
+              //Perform the focus on selected region center only once
+              needsExtraInit.current = false;
+
+              //Try to switch to center slice of (last) selected region
+              const selectedRegion = RegionsManager.getLastSelected()
+              if (selectedRegion) {
+
+                const centerSlice = RegionsManager.getRegionCenterSlice(selectedRegion, hasMultiPlanes, ViewerManager.getActivePlane());
+                if (typeof centerSlice != 'undefined') {
+                  ViewerManager.goToSlice(centerSlice);
+                }
+                //display at least regions' border, and labels
+                if (!ViewerManager.isShowingRegions()) {
+                  ViewerManager.setBorderDisplay(true);
+                }
+                ViewerManager.setLabelDisplay(true);
+              }
+            }
+
+            //... and update state after region data change
+            setRegionsStatus(newRegionsStatus);
+
+          },
+          preselected
+        );
+
+      })
+      .catch(error => {
+        // handle error
+        console.error(error);
+      });
+
+  };
+
+  const resetRegionsTree = (someConfig?, preselected?: string[]) => {
+    const usedConfig = someConfig || config;
+    //load regions related data
+    const treeDataUrl = usedConfig.getTreeDataUrl();
+    loadAndInitRegionsTree(treeDataUrl, usedConfig.hasBackend, usedConfig.hasMultiPlanes, preselected);
+  }
+
+
   React.useEffect(() => {
 
     //retrieve config asynchronously...
     ZAVConfig.getConfig(props.configId, props.dataSrc, props.dataVersionTag, (newConfig) => {
       setConfig(newConfig);
 
-      //load regions related data
-      const treeDataUrl =
-        newConfig.treeUrlPath
-          ? newConfig.hasBackend
-            ? Utils.makePath(newConfig.PUBLISH_PATH, newConfig.treeUrlPath, "regionTreeGroup_" + newConfig.viewerId + ".json" + props.dataVersionTag)
-            : Utils.makePath(newConfig.treeUrlPath, newConfig.fallbackTreeUrl)
-          : newConfig.fallbackTreeUrl
-
-
-      axios({
-        method: newConfig.hasBackend ? "POST" : "GET",
-        url: treeDataUrl,
-      })
-
-        .then(response => {
-          const payload: IRegionsPayload = response.data;
-
-          //preselected regions (specified on opening URL)
-          const preselected = (props?.initConfig?.rs) ? String(props?.initConfig?.rs).split(',') : undefined;
-
-          //retrieve region data asynchronously...
-          RegionsManager.init(
-            payload,
-            (newRegionsStatus) => {
-              if (needsExtraInit.current && preselected) {
-
-                //Perform the focus on selected region center only once
-                needsExtraInit.current = false;
-
-                //Try to switch to center slice of (last) selected region
-                const selectedRegion = RegionsManager.getLastSelected()
-                if (selectedRegion) {
-
-                  const centerSlice = RegionsManager.getRegionCenterSlice(selectedRegion, newConfig?.hasMultiPlanes, ViewerManager.getActivePlane());
-                  if (typeof centerSlice != 'undefined') {
-                    ViewerManager.goToSlice(centerSlice);
-                  }
-                  //display at least regions' border, and labels
-                  if (!ViewerManager.isShowingRegions()) {
-                    ViewerManager.setBorderDisplay(true);
-                  }
-                  ViewerManager.setLabelDisplay(true);
-                }
-              }
-
-              //... and update state after region data change
-              setRegionsStatus(newRegionsStatus);
-
-            },
-            preselected
-          );
-
-        })
-        .catch(error => {
-          // handle error
-          console.error(error);
-        });
-
+      //preselected regions (specified on opening URL)
+      const preselected = (props?.initConfig?.rs) ? String(props?.initConfig?.rs).split(',') : undefined;
+      resetRegionsTree(newConfig, preselected);
 
       //load regions of interest related data
       const roiInfoUrl = Utils.makePath(
@@ -253,6 +255,7 @@ const App = (props: AppProps) => {
               containerRef={containerRef}
               config={config}
               regionsStatus={regionsStatus}
+              resetRegionsTree={resetRegionsTree}
               history={history}
             />
           </div>

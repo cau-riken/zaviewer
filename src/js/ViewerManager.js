@@ -1426,6 +1426,14 @@ class ViewerManager {
 
 
     // - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
+    static setSelectedAtlasIndex(atlasIndex) {
+        if (this.config.currentAtlas != atlasIndex) {
+            this.config.setSelectedAtlas(atlasIndex);
+            this.signalStatusChanged(this.status);
+            this.goToSlice(this.getCurrentPlaneChosenSlice(), undefined, true);
+        }
+    }
+
 
     /** Add region delineations to specified overlay  
      * 

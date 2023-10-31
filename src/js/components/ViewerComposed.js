@@ -426,6 +426,9 @@ class ViewerComposed extends React.Component {
                                 isCollapsible={true}
                             >
                                 <RegionOptions
+                                    currentAtlas={this.props.config.currentAtlas}
+                                    atlases={this.props.config.atlases}
+                                    resetRegionsTree={this.props.resetRegionsTree}
                                     showRegions={this.state.showRegions}
                                     regionsOpacity={this.state.regionsOpacity}
                                     initRegionsOpacity={this.state.initRegionsOpacity}

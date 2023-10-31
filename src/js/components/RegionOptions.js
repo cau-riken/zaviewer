@@ -1,6 +1,7 @@
 import React from 'react';
 
 import {
+    HTMLSelect,
     Switch,
 } from "@blueprintjs/core";
 
@@ -18,6 +19,7 @@ class RegionOptions extends React.Component {
         this.handleOpacityChange = this.handleOpacityChange.bind(this);
         this.handleBorderChange = this.handleBorderChange.bind(this);
         this.handleClickLabelsShow = this.handleClickLabelsShow.bind(this);
+        this.handleSelectAtlas = this.handleSelectAtlas.bind(this);
     }
 
     render() {
@@ -25,6 +27,26 @@ class RegionOptions extends React.Component {
             <div
                 style={{ width: 196, marginLeft: 10 }}
             >
+                {
+                    this.props.atlases.length
+                        ?
+                        <span >Atlas:
+                            <div style={{ width: 156, display: "inline-block", marginLeft: 6 }} >
+
+                                <HTMLSelect
+                                    fill={true}
+                                    defaultValue={this.props.currentAtlas}
+                                    onChange={this.handleSelectAtlas}
+                                >
+                                    {this.props.atlases.map(
+                                        (a, index) => <option key={'atlas-' + index} value={index}>{a.label}</option>
+                                    )}
+                                </HTMLSelect>
+                            </div>
+                        </span>
+
+                        : null
+                }
                 <div title="adjust regions' area opacity">
                     <span title="toggle display of regions' area">
                         <Switch
@@ -100,6 +122,14 @@ class RegionOptions extends React.Component {
     handleClickLabelsShow() {
         ViewerManager.toggleLabelDisplay();
     }
+
+    handleSelectAtlas(event) {
+        const selectedAtlasIndex = parseInt(event.currentTarget.value);
+        ViewerManager.setSelectedAtlasIndex(selectedAtlasIndex);
+        if (this.props.resetRegionsTree) {
+            this.props.resetRegionsTree();
+        }
+    };
 
 }
 

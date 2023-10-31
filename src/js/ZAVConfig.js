@@ -152,8 +152,31 @@ class ZAVConfig {
             sagittalFirstIndex: 0,
 
 
-            /** folder of the SVG region files */
+            /** sets of (region tree + SVG region) */
+            atlases: [],
+            currentAtlas: undefined,
+            /** folder of the current set of SVG region files */
             svgFolerName: undefined,
+            /** URL path to the folder holding the current tree region data */
+            treeUrlPath: undefined,
+
+            getTreeDataUrl: function() {
+                return (this.treeUrlPath
+                    ? (this.hasBackend
+                        ? Utils.makePath(this.PUBLISH_PATH, this.treeUrlPath, "regionTreeGroup_" + this.viewerId + ".json" + this.dataVersionTag)
+                        : Utils.makePath(this.treeUrlPath, this.fallbackTreeUrl))
+                    : this.fallbackTreeUrl)
+            },
+
+            setSelectedAtlas: function(atlasIndex) {
+                if (atlasIndex>=0 && atlasIndex<this.atlases.length) {
+                    this.currentAtlas = atlasIndex;
+                    const regset = this.atlases[this.currentAtlas];
+                    this.treeUrlPath = regset.regionsTreeDef;
+                    this.svgFolerName = regset.regionsSVG;
+                }
+            },
+        
             /** atlas regions area & delineations visibility */
             showRegions: false,
             displayAreas: true,
@@ -276,10 +299,6 @@ class ZAVConfig {
             global_Z: 0, // Blue
 
             dzDiff: 0,//1290.0;
-
-
-            /** URL path to the folder holding tree region data */
-            treeUrlPath: undefined,
 
             /** raw configuration data for layers */
             data: undefined,
@@ -520,8 +539,6 @@ class ZAVConfig {
             this.config.hasCoronalPlane = true;
         }
 
-        this.config.treeUrlPath = response.tree;
-
         if (!this.config.hasBackend) {
             if (this.config.hasCOSource) {
                 // set according to server config, converting server relative url to absolute one
@@ -596,11 +613,18 @@ class ZAVConfig {
 
         }
 
-        if (response.delineations) {
+        if (response.atlases && response.atlases.length) {
+            this.config.atlases = response.atlases;
+            this.config.setSelectedAtlas(0);
             this.config.hasDelineation = true;
-            this.config.svgFolerName = response.delineations;
         } else {
-            this.config.hasDelineation = false;
+            this.config.treeUrlPath = response.tree;
+            if (response.delineations) {
+                this.config.hasDelineation = true;
+                this.config.svgFolerName = response.delineations;
+            } else {
+                this.config.hasDelineation = false;
+            }
         }
 
         this.config.anyMatrix = response.matrix ? response.matrix.split(",") : this.config.anyMatrix;
