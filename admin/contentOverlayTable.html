@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 	<head>
-		<title>ContentImageTable</title> 
+		<title>ContentOverlayTable</title> 
 		<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 		<script type="text/javascript" src="./script/jquery-3.3.1.min.js"></script>
 		<script type="text/javascript" src="./script/main.js"></script>
@@ -12,7 +12,7 @@
 	</head>
 	<body>
 	<div id="body">
-		<h3>Content Image</h3>
+		<h3>Content Overlay</h3>
 		<form>
 			<span>
 				<table id="editTable">
@@ -21,31 +21,31 @@
 						<td>
 							<input type="text" name="f_view_id" readonly />
 							<input type="button" name="content" value="Select" class="findKey"/>
+						</td>
 						<td></td>
 						<td>
-							<input type="text" name="f_upload_id" readonly />
+							<input type="text" name="f_svg_file" readonly />
 							<input type="button" name="file" value="Select" class="findKey"/>
-							<input type="hidden" name="path_type" value="0" class="s_upload_id"/>
+							<input type="hidden" name="path_type" value="2" class="s_svg_file"/>
 						</td>
 					</tr>
 					<tr>
 						<td></td>
-						<td><input type="number" min="0" max="100" name="f_initial_opacity" /></td>
-						<td></td>
 						<td><input type="number" min="0" name="f_sort_no" class="nocheck" /></td>
+						<td></td>
+						<td><input type="text" name="f_label" /></td>
 					</tr>
 					<tr>
 						<td></td>
-						<td><input type="text" name="f_protocol" /></td>
+						<td><input type="checkbox" name="f_is_atlas"/></td>
 						<td></td>
-						<td></td>
+						<td>
+							<input type="text" name="f_tree_view" readonly />
+							<input type="button" name="file" value="Select" class="findKey"/>
+							<input type="hidden" name="path_type" value="3" class="s_tree_view"/>
+						</td>
 					</tr>
-					<tr>
-						<td></td>
-						<td><input type="number" min="0.00" max="5.00" step="0.01" name="f_initial_contrast"/></td>
-						<td></td>
-						<td><input type="number" min="0.00" max="5.00" step="0.01" name="f_initial_gamma" /></td>
-					</tr>
+
 				</table>
 				<span id="submitMessage">
 				</span>
@@ -60,12 +60,11 @@
 				<table id="dataTable" class="dataList">
 					<tr id="columnName">
 						<td class="t_view_id keyColumn">View ID</td>
-						<td class="t_upload_id keyColumn">Upload ID</td>
-						<td class="t_initial_opacity">Initial Opacity</td>
+						<td class="t_svg_file keyColumn">SVG File</td>
 						<td class="t_sort_no">Sort No</td>
-						<td class="t_protocol">Protocol</td>
-						<td class="t_initial_contrast">Initial Contrast</td>
-						<td class="t_initial_gamma">Initial Gamma</td>
+						<td class="t_label">Label</td>
+						<td class="t_is_atlas">is Atlas?</td>
+						<td class="t_tree_view">Tree View</td>
 					</tr>
 					<tr>
 						<td><hr/></td>
@@ -75,7 +74,7 @@
 					<img src="./css/loader.png">
 				</div>
 			</span>
-			<input type="hidden" name="tableName" value="contentImage">
+			<input type="hidden" name="tableName" value="contentOverlay">
 		</form>
 		<div id="dialogArea" class="dialogArea">
 			<div class="blackbg dialogClose">

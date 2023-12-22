@@ -16,7 +16,6 @@ $pdo->exec(
 		subview_size INTEGER,
 		subview_range_min INTEGER,
 		subview_range_max INTEGER,
-		svg_file TEXT,
 		init_deliniation INTEGER,
 		image_size INTEGER,
 		slide_count INTEGER,
@@ -24,7 +23,6 @@ $pdo->exec(
 		first_slide INTEGER,
 		init_gamma INTEGER,
 		init_bright INTEGER,
-		tree_view TEXT,
 		matrix_data TEXT,
 		zaviwer_ver INTEGER
 	);"
@@ -147,15 +145,6 @@ function fieldCheck($data, $key){
 	if (!preg_match("/^\d+$/", $data["subview_range_max"])) {
 		$errAry["subview_range_max"] = ERROR_NUMBER_FORMAT;//"should be a value bigger than 0."
 	}
-	//svg_file
-	if($data["svg_file"] != null){
-		// FileTable not found error
-		if($res = $pdo->query("SELECT COUNT(*) FROM file_table WHERE upload_id = '".$data["svg_file"]."';")){
-			if($res->fetchColumn() == 0){
-				$errAry["svg_file"] = ERROR_KEY_NOT_EXISTS;
-			}
-		}
-	}
 	//init_deliniation
 	if($data["init_deliniation"] != 1) {
 		$data["init_deliniation"] = 0;
@@ -183,15 +172,6 @@ function fieldCheck($data, $key){
 	//init_bright
 	if (!preg_match("/^(\-|)\d+$/", $data["init_bright"])) {
 		$errAry["init_bright"] = ERROR_NUMBER_FORMAT;//"should be a value between -255 and 255."
-	}
-	//tree_view
-	if($data["tree_view"] != null){
-		// FileTable not found error
-		if($res = $pdo->query("SELECT COUNT(*) FROM file_table WHERE upload_id = '".$data["tree_view"]."';")){
-			if($res->fetchColumn() == 0){
-				$errAry["tree_view"] = ERROR_KEY_NOT_EXISTS;
-			}
-		}
 	}
 	//matrix_data
 	//zaviwer_ver

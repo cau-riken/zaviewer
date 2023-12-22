@@ -22,10 +22,8 @@ try{
 }
 
 // search
-$sql = "SELECT ct.*, ft1.publish_id as subview_upload_id, ft2.publish_id as svg_upload_id, ft3.publish_id as tree_upload_id FROM content ct ";
+$sql = "SELECT ct.*, ft1.publish_id as subview_upload_id FROM content ct ";
 $sql .= " LEFT OUTER JOIN file_table ft1 ON ct.subview_image = ft1.upload_id ";
-$sql .= " LEFT OUTER JOIN file_table ft2 ON ct.svg_file = ft2.upload_id ";
-$sql .= " LEFT OUTER JOIN file_table ft3 ON ct.tree_view = ft3.upload_id ";
 $sql .= " WHERE ct.view_publish_id = :id ";
 $stmt = $pdo->prepare($sql);
 $stmt->bindParam(":id", $id, PDO::PARAM_STR);
@@ -47,8 +45,6 @@ $json["subview"] = array(
 	"min"=>$data["subview_range_min"],
 	"max"=>$data["subview_range_max"],
 );
-$json["delineations"] = $data["svg_upload_id"];
-$json["tree"] = $data["tree_upload_id"];
 
 $json["first_access"] = array(
 	"slide"=>$data["first_slide"],
@@ -62,6 +58,43 @@ $json["bright"] = $data["init_bright"];
 $json["image_size"] = $data["image_size"];
 $json["slide_count"] = $data["slide_count"];
 $json["slice_step"] = $data["slice_step"];
+
+
+$sql = "SELECT cto.*, ft2.publish_id as svg_upload_id, ft3.publish_id as tree_upload_id";
+$sql .= " FROM content_overlay cto ";
+$sql .= " LEFT OUTER JOIN file_table ft2 ON cto.svg_file = ft2.upload_id ";
+$sql .= " LEFT OUTER JOIN file_table ft3 ON cto.tree_view = ft3.upload_id ";
+$sql .= " WHERE cto.view_id = :viewid ";
+$sql .= " ORDER BY cto.sort_no ";
+$stmt = $pdo->prepare($sql);
+$stmt->bindParam(":viewid", $data["view_id"], PDO::PARAM_STR);
+$stmt->execute();
+$overlays = $stmt->fetchAll();
+
+$nbOverlays = count($overlays);
+if($nbOverlays == 0){ // at least 1 overlay
+	echo json_encode(array("error"=>"content_overlay was not found."));
+	return;
+}
+
+if ($nbOverlays==1) {
+
+	$overlay = $overlays[0];
+	$json["delineations"] = $overlay["svg_upload_id"];
+	$json["tree"] = $overlay["tree_upload_id"];
+	
+} else {
+	$atlases = array();
+
+	foreach($overlays as $overlay){
+		array_push($atlases, array(
+			"label"          => $overlay["label"],
+			"regionsSVG"     => $overlay["svg_upload_id"],
+			"regionsTreeDef" => $overlay["tree_upload_id"]
+		));
+	}	
+	$json["atlases"] = $atlases;
+}
 
 // ImageGroup
 $sql = "SELECT * FROM image_group WHERE group_id = :id ";

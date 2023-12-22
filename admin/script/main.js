@@ -455,13 +455,23 @@ function showFindKeyDialog(){
 	$(dialogName +" input[type='text']").val("").addClass($(this).prev().attr("name"));
 	
 	// OK button click event
-	$(dialogName + " input[name='okBtn']").unbind("click").click(function(){
-		var field = $(dialogName + " input[type='text']");
-		var fieldName = field.attr("name").substring(2);
-		if(field.val() != ""){
-			$("#editTable input[name='" + field.attr("class")+"']").val(field.val());
+	$(dialogName + " input[name='okBtn']").unbind("click").click(function () {
+		var fields = $(dialogName + " input[type='text']");
+		var fieldsNb = fields.length;
+		for (var i = 0; i < fields.length; i++) {
+			var field = $(fields[i]);
+			if (field.val() != "") {
+				if (fieldsNb == 1) {
+					//legacy logic, affect value to field whose name was stored in class attribute (see above)
+					$("#editTable input[name='" + field.attr("class") + "']").val(field.val());
+				} else {
+					//use name of dialog box fields to populate main form fields
+					var fieldName = field.attr("name").substring(2);
+					$("#editTable input[name='" + "f_" + fieldName + "']").val(field.val());
+				}
+			}
+			field.removeClass();
 		}
-		field.removeClass();
 		$(this).parents(".dialogArea").hide();
 	});
 	
@@ -508,13 +518,16 @@ function errorFindKeyDialog(status, findTableName){
 	$("#l_" + findTableName +" .tableLoader").hide();
 }
 // Select row in the dialog
-function clickDialogRow(){
+function clickDialogRow() {
 	// Change selection state
 	$(this).siblings(".selected").removeClass("selected");
 	$(this).addClass("selected");
-	var field = $(this).parents(".dataListDialog").find("input[type='text']");
-	var fieldName = field.attr("name").substring(2);
-	field.val($(this).children(".t_" + fieldName)[0].innerHTML);
+	var fields = $(this).parents(".dataListDialog").find("input[type='text']");
+	for (var i = 0; i < fields.length; i++) {
+		var field = $(fields[i]);
+		var fieldName = field.attr("name").substring(2);
+		field.val($(this).children(".t_" + fieldName)[0].innerHTML);
+	}
 }
 
 // Get a normal message

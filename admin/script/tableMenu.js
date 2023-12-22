@@ -1,5 +1,5 @@
 $(function(){
-	var tableNameList = [["contentTable","contentImageTable",["importsGroupList"]],["imageGroupTable","imageGroupListTable"],["fileTable"]];
+	var tableNameList = [["contentTable","contentOverlayTable","contentImageTable",["importsGroupList"]],["imageGroupTable","imageGroupListTable"],["fileTable"]];
 	var tagStr = "<div id=\"tableMenu\"><div>MENU</div>";
 	$.each(tableNameList,function(){
 		tagStr += getUlList(this);

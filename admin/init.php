@@ -13,7 +13,6 @@ $pdo->exec(
 		subview_size INTEGER,
 		subview_range_min INTEGER,
 		subview_range_max INTEGER,
-		svg_file TEXT,
 		init_deliniation INTEGER,
 		image_size INTEGER,
 		slide_count INTEGER,
@@ -21,9 +20,20 @@ $pdo->exec(
 		first_slide INTEGER,
 		init_gamma INTEGER,
 		init_bright INTEGER,
-		tree_view TEXT,
 		matrix_data TEXT,
 		zaviwer_ver INTEGER
+	);"
+);
+
+$pdo->exec(
+"CREATE TABLE IF NOT EXISTS content_overlay(
+		view_id TEXT NOT NULL,
+		svg_file TEXT NOT NULL,
+		sort_no INTEGER NOT NULL DEFAULT 0,
+		label TEXT NOT NULL,
+		is_atlas INTEGER NOT NULL DEFAULT 1,
+		tree_view TEXT,
+		PRIMARY KEY (view_id, svg_file)	
 	);"
 );
 
